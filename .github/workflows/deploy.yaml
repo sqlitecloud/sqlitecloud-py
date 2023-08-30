@@ -1,0 +1,21 @@
+name: Deploy
+
+on: push
+
+jobs:
+  # label of the container job
+  tests:
+    # containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    # Docker Hub image that `postgres-job` executes in
+    container: python:3.10
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+            python -m pip install -r requirements.txt
+            python -m pip install -r requirements-dev.txt
+      - name: Linting and Testing
+        run: |
+              export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+              make lint
