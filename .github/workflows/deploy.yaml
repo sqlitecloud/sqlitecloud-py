@@ -19,3 +19,25 @@ jobs:
         run: |
               export PYTHONPATH=$PYTHONPATH:$(pwd)/src
               make lint
+
+  release:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: tests
+    name: Release 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - name: Set version
+        run: |
+              git config --local user.email "github-actions[bot]@users.noreply.github.com"
+              git config --local user.name "github-actions[bot]"
+              python -m pip install -r requirements-dev.txt
+              bump2version minor
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          force: true
+          tags: true
