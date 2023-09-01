@@ -1,4 +1,3 @@
-from uuid import UUID
 import os
 import ctypes
 
