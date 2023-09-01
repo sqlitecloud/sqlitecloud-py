@@ -6,4 +6,5 @@ venv/
 main.dSYM/
 .env
 *.pyc
+*.pyo
 
