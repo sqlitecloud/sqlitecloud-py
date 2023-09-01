@@ -12,7 +12,8 @@ class SqliteCloudResultSet:
 
 
 def _decode_conn_str(connection_str: str) -> Tuple[str, str, str, int]:
-    return b"user", b"pass", b"host"+connection_str, 8860
+    print(connection_str)
+    return b"user", b"pass", b"host", 8860
 
 
 class SqliteCloudClient:

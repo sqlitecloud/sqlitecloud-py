@@ -5,3 +5,5 @@ sdk/
 venv/
 main.dSYM/
 .env
+*.pyc
+

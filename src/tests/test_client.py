@@ -22,4 +22,4 @@ def test_sqlite_cloud_client_exec_query():
     # You would need to mock the _open_connection method and SQCloudConnect for more realistic testing.
 
     result = client.exec_query(query)
-    print(result)
+    assert result
