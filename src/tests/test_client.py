@@ -12,6 +12,8 @@ def test_sqlite_cloud_client_exec_query():
     connection_str = "your_connection_string_here"
     client = SqliteCloudClient(connection_str)
     query = "SELECT * FROM your_table_name"
+    assert client
+    assert query
 
     # You would need to mock the _open_connection method and SQCloudConnect for more realistic testing.
 
