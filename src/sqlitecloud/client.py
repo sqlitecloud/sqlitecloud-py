@@ -12,7 +12,7 @@ class SqliteCloudResultSet:
 
 
 def _decode_conn_str(connection_str: str) -> Tuple[str, str, str, int]:
-    return "user", "pass", connection_str, 8860
+    return b"user", b"pass", b"host"+connection_str, 8860
 
 
 class SqliteCloudClient:
@@ -39,6 +39,7 @@ class SqliteCloudClient:
         self.username, self.password, self.hostname, self.port = _decode_conn_str(
             connection_str
         )
+        print(self.username)
 
     def _open_connection(self) -> SQCloudConnect:
         """Opens a connection to the SQCloud server.
@@ -82,3 +83,4 @@ class SqliteCloudClient:
         """
         conn = self._open_connection()
         print(query, dir(conn))
+        return lambda  a: "None " +a

@@ -6,7 +6,8 @@ add_src_to_pypath:
 	export PYTHONPATH=$$PYTHONPATH:$(pwd)/src
 
 test:
-	python3 -m pytest -s
+	export PYTHONPATH=$$PYTHONPATH:$(pwd)/src
+	python3 -m pytest -s ./src
 
 lint: add_src_to_pypath
 	pylint src
