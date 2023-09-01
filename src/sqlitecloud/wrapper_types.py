@@ -1,5 +1,3 @@
-
-
 import ctypes
 
 
@@ -26,8 +24,9 @@ class SQCloudConfig(ctypes.Structure):
         ("tls_certificate_key", ctypes.c_char_p),
         ("insecure", ctypes.c_bool),
         ("callback", ctypes.c_void_p),  # This assumes config_cb is of type void pointer
-        ("data", ctypes.c_void_p)
+        ("data", ctypes.c_void_p),
     ]
+
 
 class SQCloudConfig(ctypes.Structure):
     _fields_ = [
@@ -52,5 +51,5 @@ class SQCloudConfig(ctypes.Structure):
         ("tls_certificate_key", ctypes.c_char_p),
         ("insecure", ctypes.c_bool),
         ("callback", ctypes.c_void_p),  # This assumes config_cb is of type void pointer
-        ("data", ctypes.c_void_p)
+        ("data", ctypes.c_void_p),
     ]
