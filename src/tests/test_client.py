@@ -8,6 +8,7 @@ def test_sqlite_cloud_client_init():
     client = SqliteCloudClient(connection_str)
     assert client is not None
 
+
 def test_sqlite_cloud_client_exec_query():
     connection_str = "your_connection_string_here"
     client = SqliteCloudClient(connection_str)

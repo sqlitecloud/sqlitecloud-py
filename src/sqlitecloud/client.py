@@ -84,4 +84,4 @@ class SqliteCloudClient:
         """
         conn = self._open_connection()
         print(query, dir(conn))
-        return lambda  a: "None " +a
+        return lambda a: "None " + a
