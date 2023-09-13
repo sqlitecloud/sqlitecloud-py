@@ -1,19 +1,28 @@
 """ Module to interact with remote SqliteCloud database
 
 """
-from typing import Tuple
+import ctypes
+from typing import Dict, Optional, Tuple
 from uuid import UUID, uuid4
-from sqlitecloud.wrapper_types import SQCloudConfig
-from sqlitecloud.driver import SQCloudConnect, SQCloudErrorMsg, SQCloudIsError
+from sqlitecloud.wrapper_types import SQCloudConfig,SQCloudResult
+from sqlitecloud.driver import SQCloudConnect, SQCloudErrorMsg, SQCloudIsError,SQCloudExec, SQCloudConnectWithString
+
 
 
 class SqliteCloudResultSet:
-    pass
+    _result = SQCloudResult
 
+    def __init__(self,result:SQCloudResult) -> None:
+        self._result = result
 
-def _decode_conn_str(connection_str: str) -> Tuple[str, str, str, int]:
-    print(connection_str)
-    return b"user", b"pass", b"host", 8860
+    def __iter__(self):
+        for row in range(self._result.contents.num_rows):
+            out: Dict[str,any] # todo convert type
+            for col in range(self._result.contents.num_columns):
+                data = self._result.contents.data[row * self._result.contents.num_columns + col].decode("utf-8")
+                column_name = self._result.contents.column_names[col].decode("utf-8")
+                out[column_name] = data
+            yield out
 
 
 class SqliteCloudClient:
@@ -22,8 +31,12 @@ class SqliteCloudClient:
     # TODO connection pooling
 
     id: UUID
+    _config:SQCloudConfig
+    connection_str:str = None
+    hostname:str
+    port:int
 
-    def __init__(self, connection_str: str, uuid: UUID = uuid4()) -> None:
+    def __init__(self, username:Optional[str]=None, password:Optional[str]=None, hostname:Optional[str]=None, port:Optional[int]=None ,  connection_str: Optional[str]=None) -> None:
         """Initializes a new instance of the class.
 
         Args:
@@ -33,16 +46,26 @@ class SqliteCloudClient:
         Raises:
             ValueError: If the connection string is invalid.
 
-        Returns:
-            None
         """
-        self.u_id = uuid
-        self.username, self.password, self.hostname, self.port = _decode_conn_str(
-            connection_str
-        )
-        print(self.username)
+        
+        if connection_str:
+            print(connection_str)
+            self.connection_str = connection_str
+        elif username and password:
+            self.config = SQCloudConfig()
+            self.config.username = self.encode_str_to_c(username)
+            self.config.password =  self.encode_str_to_c(password)
+            self.hostname = hostname
+            self.port = port
+        else:
+            raise Exception("Missing connection parameters")
 
-    def _open_connection(self) -> SQCloudConnect:
+    def encode_str_to_c(self, username):
+        return ctypes.c_char_p(username.encode("utf-8"))
+        
+       
+
+    def open_connection(self) -> SQCloudConnect:
         """Opens a connection to the SQCloud server.
 
         Returns:
@@ -51,11 +74,13 @@ class SqliteCloudClient:
         Raises:
             Exception: If an error occurs while opening the connection.
         """
-        config = SQCloudConfig()
-        config.username = self.username
-        config.password = self.password
+        
         # Set other config properties...
-        connection = SQCloudConnect(self.hostname, self.port, config)
+        connection = None
+        if self.connection_str:
+            connection = SQCloudConnectWithString(self.connection_str,None)
+        else:
+            connection = SQCloudConnect(self.encode_str_to_c(self.hostname), self.port, self.config)
         is_error = SQCloudIsError(connection)
         if is_error:  # TODO error handling
             error_message = SQCloudErrorMsg(connection)
@@ -64,7 +89,7 @@ class SqliteCloudClient:
 
         return connection
 
-    def _close_connection(self) -> None:
+    def close_connection(self) -> None:
         """Closes the connection to the database.
 
         This method is used to close the connection to the database. It does not take any arguments and does not return any value.
@@ -73,7 +98,7 @@ class SqliteCloudClient:
             None: This method does not return any value.
         """
 
-    def exec_query(self, query: str) -> SqliteCloudResultSet:
+    def exec_query(self, query: str, conn:SQCloudConnect=None) -> SqliteCloudResultSet:
         """Executes a SQL query on the SQLite database.
 
         Args:
@@ -82,6 +107,6 @@ class SqliteCloudClient:
         Returns:
             SqliteCloudResultSet: The result set of the executed query.
         """
-        conn = self._open_connection()
-        print(query, dir(conn))
-        return lambda a: "None " + a
+        local_conn = conn if conn else self.open_connection()
+        result = SQCloudExec(local_conn, ctypes.byref(query))
+        return SqliteCloudResultSet(result)

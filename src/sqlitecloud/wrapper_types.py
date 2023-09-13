@@ -26,3 +26,13 @@ class SQCloudConfig(ctypes.Structure):
         ("callback", ctypes.c_void_p),  # This assumes config_cb is of type void pointer
         ("data", ctypes.c_void_p),
     ]
+
+
+class SQCloudResult(ctypes.Structure):
+    _fields_ = [
+        ("num_rows", ctypes.c_int),
+        ("num_columns", ctypes.c_int),
+        ("column_names", ctypes.POINTER(ctypes.c_char_p)),
+        ("column_types", ctypes.POINTER(ctypes.c_int)),
+        ("data", ctypes.POINTER(ctypes.POINTER(ctypes.c_char))),
+    ]

@@ -1,7 +1,7 @@
 import os
 import ctypes
 
-from sqlitecloud.wrapper_types import SQCloudConfig
+from sqlitecloud.wrapper_types import SQCloudConfig, SQCloudResult
 
 lib = ctypes.CDLL(os.getenv("SQLITECLOUD_DRIVER_PATH", "libsqcloud.so"))
 connect = lib.SQCloudConnect
@@ -20,3 +20,9 @@ SQCloudErrorMsg.argtypes = [
     ctypes.c_void_p
 ]  # Assuming SQCloudConnection * is a void pointer
 SQCloudErrorMsg.restype = ctypes.c_char_p
+
+SQCloudExec = lib.SQCloudExec
+SQCloudExec.argtypes = [ctypes.c_void_p, ctypes.c_char_p]  # Assuming SQCloudConnection * is a void pointer
+SQCloudExec.restype = ctypes.POINTER(SQCloudResult)
+
+SQCloudConnectWithString = lib.SQCloudConnectWithString
