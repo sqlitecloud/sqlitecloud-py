@@ -5,7 +5,7 @@ import ctypes
 from typing import Dict, Optional, Tuple
 from uuid import UUID, uuid4
 from sqlitecloud.wrapper_types import SQCloudConfig,SQCloudResult
-from sqlitecloud.driver import SQCloudConnect, SQCloudErrorMsg, SQCloudIsError,SQCloudExec, SQCloudConnectWithString
+from sqlitecloud.driver import SQCloudConnect, SQCloudErrorMsg, SQCloudIsError,SQCloudExec, SQCloudConnectWithString,SQCloudDisconnect
 
 
 
@@ -89,7 +89,7 @@ class SqliteCloudClient:
 
         return connection
 
-    def close_connection(self) -> None:
+    def disconnect(self,conn:SQCloudConnect) -> None:
         """Closes the connection to the database.
 
         This method is used to close the connection to the database. It does not take any arguments and does not return any value.
@@ -97,6 +97,8 @@ class SqliteCloudClient:
         Returns:
             None: This method does not return any value.
         """
+        SQCloudDisconnect(conn)
+
 
     def exec_query(self, query: str, conn:SQCloudConnect=None) -> SqliteCloudResultSet:
         """Executes a SQL query on the SQLite database.

@@ -26,3 +26,7 @@ SQCloudExec.argtypes = [ctypes.c_void_p, ctypes.c_char_p]  # Assuming SQCloudCon
 SQCloudExec.restype = ctypes.POINTER(SQCloudResult)
 
 SQCloudConnectWithString = lib.SQCloudConnectWithString
+
+SQCloudDisconnect = lib.SQCloudDisconnect
+SQCloudDisconnect.argtypes = [ctypes.c_void_p]  # Assuming SQCloudConnection * is a void pointer
+SQCloudDisconnect.restype = None
