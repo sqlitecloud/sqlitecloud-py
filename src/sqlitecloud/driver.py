@@ -22,11 +22,16 @@ SQCloudErrorMsg.argtypes = [
 SQCloudErrorMsg.restype = ctypes.c_char_p
 
 SQCloudExec = lib.SQCloudExec
-SQCloudExec.argtypes = [ctypes.c_void_p, ctypes.c_char_p]  # Assuming SQCloudConnection * is a void pointer
+SQCloudExec.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+]  # Assuming SQCloudConnection * is a void pointer
 SQCloudExec.restype = ctypes.POINTER(SQCloudResult)
 
 SQCloudConnectWithString = lib.SQCloudConnectWithString
 
 SQCloudDisconnect = lib.SQCloudDisconnect
-SQCloudDisconnect.argtypes = [ctypes.c_void_p]  # Assuming SQCloudConnection * is a void pointer
+SQCloudDisconnect.argtypes = [
+    ctypes.c_void_p
+]  # Assuming SQCloudConnection * is a void pointer
 SQCloudDisconnect.restype = None

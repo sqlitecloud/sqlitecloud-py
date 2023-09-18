@@ -1,5 +1,7 @@
-from sqlitecloud.client import SqliteCloudClient
 import os
+from sqlitecloud.client import SqliteCloudClient
+
+
 # Mocking SQCloudConnect and other dependencies would be necessary for more comprehensive testing.
 
 
@@ -8,6 +10,7 @@ def test_sqlite_cloud_client_init():
     print("Connection:", connection_str)
     client = SqliteCloudClient(connection_str=connection_str)
     assert client is not None
+
 
 def test_sqlite_cloud_open_and_close_conn():
     connection_str = os.getenv("TEST_CONNECTION_URL")
@@ -21,7 +24,7 @@ def test_sqlite_cloud_open_and_close_conn():
 def test_sqlite_cloud_client_exec_query():
     connection_str = os.getenv("TEST_CONNECTION_URL")
     print("Connection:", connection_str)
-    client = SqliteCloudClient(connection_str=connection_str)   
+    client = SqliteCloudClient(connection_str=connection_str)
     conn = client.open_connection()
     query = "SELECT * FROM people"
     assert client
