@@ -35,3 +35,15 @@ SQCloudDisconnect.argtypes = [
     ctypes.c_void_p
 ]  # Assuming SQCloudConnection * is a void pointer
 SQCloudDisconnect.restype = None
+
+SQCloudResultIsOK = lib.SQCloudResultIsOK
+SQCloudResultIsOK.argtypes = [
+    ctypes.POINTER(SQCloudResult)
+]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudResultIsOK.restype = ctypes.c_bool
+
+SQCloudResultIsError = lib.SQCloudResultIsOK
+SQCloudResultIsError.argtypes = [
+    ctypes.POINTER(SQCloudResult)
+]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudResultIsError.restype = ctypes.c_bool

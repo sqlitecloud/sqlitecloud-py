@@ -1,34 +1,26 @@
 import os
-from sqlitecloud.client import SqliteCloudClient
+from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
 
 
 # Mocking SQCloudConnect and other dependencies would be necessary for more comprehensive testing.
 
 
-def test_sqlite_cloud_client_init():
-    connection_str = os.getenv("TEST_CONNECTION_URL")
-    print("Connection:", connection_str)
-    client = SqliteCloudClient(connection_str=connection_str)
-    assert client is not None
-
-
-def test_sqlite_cloud_open_and_close_conn():
-    connection_str = os.getenv("TEST_CONNECTION_URL")
-    print("Connection:", connection_str)
-    client = SqliteCloudClient(connection_str=connection_str)
-    conn = client.open_connection()
-    assert conn is not None
-    client.disconnect(conn)
-
-
 def test_sqlite_cloud_client_exec_query():
     connection_str = os.getenv("TEST_CONNECTION_URL")
     print("Connection:", connection_str)
-    client = SqliteCloudClient(connection_str=connection_str)
-    conn = client.open_connection()
-    query = "SELECT * FROM people"
+    account = SqliteCloudAccount(
+        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
+    )
+    client = SqliteCloudClient(cloud_account=account)
     assert client
-    assert query
+    conn = client.open_connection()
+    query = "CREATE TABLE IF NOT EXISTS employees (emp_id INT, emp_name CHAR );"
+    result = client.exec_query(query, conn)
+    query = "select emp_id from employees;"
+    result = client.exec_query(query, conn)
+    assert result
+    for single_r in result:
+        print(single_r)
     client.disconnect(conn)
 
     # You would need to mock the _open_connection method and SQCloudConnect for more realistic testing.

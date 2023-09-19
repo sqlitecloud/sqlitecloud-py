@@ -3,17 +3,6 @@ name: Deploy
 on: push
 
 jobs:
-  build_native_lib:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check out lib
-        uses: actions/checkout@v4
-        with:
-          repository: 'sqlitecloud/sdk'
-      - name: build lib
-        run: |
-          cd sdk/C
-          make libsqcloud.so
   tests:
     # containers must run in Linux based operating systems
     runs-on: ubuntu-latest
