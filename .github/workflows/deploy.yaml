@@ -20,7 +20,7 @@ jobs:
           sudo ./configure --prefix=/usr/local/lib/ --with-openssldir=/usr/local/lib/ 
           sudo make install
           echo "libre ssl COMPLETED"
-          ls -la /usr/local/lib/
+          ls -la /usr/local/lib/lib/
           echo "^^^^ LIB ^^^^^^"
           cd ../..
           cd C
