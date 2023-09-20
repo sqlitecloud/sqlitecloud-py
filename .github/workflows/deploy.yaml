@@ -32,6 +32,7 @@ jobs:
             path: C/libsqcloud.so
 
   tests:
+    needs: build_native_lib
     # containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `postgres-job` executes in
