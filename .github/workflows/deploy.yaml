@@ -52,8 +52,7 @@ jobs:
           TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
           SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/libsqcloud.so
         run: |
-              ls -la
-              echo $SQLITECLOUD_DRIVER_PATH
+              ls -la $SQLITECLOUD_DRIVER_PATH
               export PYTHONPATH=$PYTHONPATH:$(pwd)/src
               make lint
               make test
