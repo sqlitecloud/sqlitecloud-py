@@ -12,13 +12,12 @@ jobs:
           repository: 'sqlitecloud/sdk'
       - name: build lib
         run: |
-          sudo apt install libssl-dev
           mkdir LibreSSL
           cd LibreSSL
           wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
           tar xzf libressl-3.8.1.tar.gz
           cd libressl-3.8.1
-          sudo ./configure --prefix=/usr/local/libressl --with-openssldir=/usr/local/libressl && make && make install
+          sudo ./configure --prefix=/usr/local/lib/ --with-openssldir=/usr/local/lib/ && make && make install
           sudo ./configure && make && make install
           echo "libre ssl COMPLETED"
           cd ../..
@@ -44,7 +43,7 @@ jobs:
               make lint
 
   release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/mimmo' }}
     needs: tests
     name: Release 
     runs-on: ubuntu-latest
