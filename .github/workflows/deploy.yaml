@@ -12,6 +12,7 @@ jobs:
           repository: 'sqlitecloud/sdk'
       - name: build lib
         run: |
+          sudo apt install libssl-dev
           mkdir LibreSSL
           cd LibreSSL
           wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
