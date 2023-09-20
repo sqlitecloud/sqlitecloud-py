@@ -50,7 +50,10 @@ jobs:
       - name: Linting and Testing
         env: 
           TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
+          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/libsqcloud.so
         run: |
+              ls-la
+              echo $SQLITECLOUD_DRIVER_PATH
               export PYTHONPATH=$PYTHONPATH:$(pwd)/src
               make lint
               make test
