@@ -20,6 +20,7 @@ jobs:
           sudo ./configure --prefix=/usr/local/lib/ --with-openssldir=/usr/local/lib/ && make && make install
           sudo ./configure && make && make install
           echo "libre ssl COMPLETED"
+          ls -la /usr/local/lib/
           cd ../..
           cd C
           sudo make libsqcloud.so
