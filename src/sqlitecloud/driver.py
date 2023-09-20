@@ -3,7 +3,7 @@ import ctypes
 
 from sqlitecloud.wrapper_types import SQCloudConfig, SQCloudResult
 
-lib = ctypes.CDLL(os.getenv("SQLITECLOUD_DRIVER_PATH", "libsqcloud.so"))
+lib = ctypes.CDLL(os.getenv("SQLITECLOUD_DRIVER_PATH", "./libsqcloud.so"))
 connect = lib.SQCloudConnect
 
 SQCloudConnect = lib.SQCloudConnect

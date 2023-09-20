@@ -39,7 +39,7 @@ jobs:
     container: python:3.10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: libsqcloud
 
