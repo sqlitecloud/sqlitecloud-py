@@ -26,6 +26,11 @@ jobs:
           cd C
           sudo make libsqcloud.so
 
+      - uses: actions/upload-artifact@v2
+        with:
+            name: libsqcloud
+            path: C/libsqcloud.so
+
   tests:
     # containers must run in Linux based operating systems
     runs-on: ubuntu-latest
@@ -33,6 +38,10 @@ jobs:
     container: python:3.10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v2
+        with:
+          name: libsqcloud
+
       - name: Install dependencies
         run: |
             python -m pip install -r requirements.txt
@@ -43,6 +52,7 @@ jobs:
         run: |
               export PYTHONPATH=$PYTHONPATH:$(pwd)/src
               make lint
+              make test
 
   release:
     if: ${{ github.ref == 'refs/heads/mimmo' }}
