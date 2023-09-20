@@ -17,10 +17,10 @@ jobs:
           wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
           tar xzf libressl-3.8.1.tar.gz
           cd libressl-3.8.1
-          sudo ./configure --prefix=/usr/local/lib/ --with-openssldir=/usr/local/lib/ 
+          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/ 
           sudo make install
           echo "libre ssl COMPLETED"
-          ls -la /usr/local/lib/lib/
+          ls -la /usr/local/lib/
           echo "^^^^ LIB ^^^^^^"
           cd ../..
           cd C
