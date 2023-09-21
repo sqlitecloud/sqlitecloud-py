@@ -16,7 +16,7 @@ def test_sqlite_cloud_client_exec_query():
     conn = client.open_connection()
     query = "CREATE TABLE IF NOT EXISTS employees (emp_id INT, emp_name CHAR );"
     result = client.exec_query(query, conn)
-    query = "select emp_id from employees;"
+    query = "select * from employees;"
     result = client.exec_query(query, conn)
     assert result
     for single_r in result:

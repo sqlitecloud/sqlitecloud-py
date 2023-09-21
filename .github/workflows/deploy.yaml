@@ -44,8 +44,8 @@ jobs:
           cd libressl-3.8.1
           pwd
           ls -la
-          ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/ 
-          make install
+          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/ 
+          sudo make install
       - uses: actions/download-artifact@v3
         with:
           name: libsqcloud

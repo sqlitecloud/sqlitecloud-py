@@ -23,6 +23,7 @@ class SqliteCloudResultSet:
             self._result.contents.num_rows,
             self._result.contents.num_columns,
         )
+        print(f"Result {self._result.contents.column_names}")
         if self.row < self._result.contents.num_rows:
             out: Dict[str, any] = {}  # todo convert type
             for col in range(self._result.contents.num_columns):
