@@ -32,15 +32,20 @@ jobs:
             path: C/libsqcloud.so
 
   tests:
-    # containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    # Docker Hub image that `postgres-job` executes in
-    container: python:3.10
     steps:
       - uses: actions/checkout@v4
       - name: build lib
         run: |
-          sudo apt-get install libssl-dev
+          mkdir LibreSSL
+          cd LibreSSL
+          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
+          tar xzf libressl-3.8.1.tar.gz
+          cd libressl-3.8.1
+          pwd
+          ls -la
+          ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/ 
+          make install
       - uses: actions/download-artifact@v3
         with:
           name: libsqcloud
