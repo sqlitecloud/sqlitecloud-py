@@ -36,3 +36,11 @@ class SQCloudResult(ctypes.Structure):
         ("column_types", ctypes.POINTER(ctypes.c_int)),
         ("data", ctypes.POINTER(ctypes.POINTER(ctypes.c_char))),
     ]
+
+
+class SQCLOUD_VALUE_TYPE(ctypes.c_uint):
+    VALUE_INTEGER = 1
+    VALUE_FLOAT = 2
+    VALUE_TEXT = 3
+    VALUE_BLOB = 4
+    VALUE_NULL = 5
