@@ -49,3 +49,23 @@ SQCloudResultIsError.argtypes = [
     ctypes.POINTER(SQCloudResult)
 ]  # Assuming SQCloudResult * is a pointer to void pointer
 SQCloudResultIsError.restype = ctypes.c_bool
+SQCloudRowsetCols = lib.SQCloudRowsetCols
+SQCloudRowsetCols.argtypes = [ctypes.POINTER(SQCloudResult)]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudRowsetCols.restype = ctypes.c_uint32
+
+SQCloudRowsetRows = lib.SQCloudRowsetRows
+SQCloudRowsetRows.argtypes = [ctypes.POINTER(SQCloudResult)]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudRowsetRows.restype = ctypes.c_uint32
+
+_SQCloudRowsetColumnName = lib.SQCloudRowsetColumnName
+_SQCloudRowsetColumnName.argtypes = [
+    ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
+    ctypes.c_uint32,  # uint32_t col
+    ctypes.POINTER(ctypes.c_uint32)  # uint32_t *len
+]
+_SQCloudRowsetColumnName.restype = ctypes.c_char_p
+def SQCloudRowsetColumnName(result_set, col_n):
+    name_len = ctypes.c_uint32()
+    col_name = _SQCloudRowsetColumnName(result_set,col_n,ctypes.byref(name_len))
+    print("name_len",name_len.value, col_name.decode('utf-8'))
+    return col_name

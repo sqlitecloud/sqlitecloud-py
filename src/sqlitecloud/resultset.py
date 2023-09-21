@@ -1,6 +1,8 @@
 from typing import Dict
-from sqlitecloud.driver import SQCloudResultIsError
+from sqlitecloud.driver import SQCloudResultIsError, SQCloudRowsetCols, SQCloudRowsetColumnName, SQCloudRowsetRows
 from sqlitecloud.wrapper_types import SQCloudResult
+
+
 
 
 class SqliteCloudResultSet:
@@ -11,27 +13,28 @@ class SqliteCloudResultSet:
 
         self._result = result
         self.row = 0
+        self.rows = SQCloudRowsetRows(result)
+        self.cols = SQCloudRowsetCols(self._result)
+        self.col_names = list([SQCloudRowsetColumnName(self._result,i) for i in range(self.cols) ])
+        print(self.rows, self.cols,len(self.col_names),'\n' ,self.col_names,'\n----------------------\n')
+
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        print(
-            "row",
-            self.row,
-            "on",
-            self._result.contents.num_rows,
-            self._result.contents.num_columns,
-        )
-        print(f"Result {self._result.contents.column_names}")
-        if self.row < self._result.contents.num_rows:
+        
+
+
+
+        if self.row < self.rows:
             out: Dict[str, any] = {}  # todo convert type
-            for col in range(self._result.contents.num_columns):
-                print("\t", col)
+            for col in range(self.cols):
+                #print("\t", col, self.col_names[col] )
                 data = self._result.contents.data[
-                    self.row * self._result.contents.num_columns + col
-                ].decode("utf-8")
-                column_name = self._result.contents.column_names[col].decode("utf-8")
+                    self.row * self.cols + col
+                ]
+                column_name = self.col_names[col]
                 out[column_name] = data
             self.row += 1
             return out
