@@ -14,8 +14,6 @@ def test_sqlite_cloud_client_exec_query():
     client = SqliteCloudClient(cloud_account=account)
     assert client
     conn = client.open_connection()
-    query = "CREATE TABLE IF NOT EXISTS employees (emp_id INT, emp_name CHAR );"
-    result = client.exec_query(query, conn)
     query = "select * from employees;"
     result = client.exec_query(query, conn)
     assert result
