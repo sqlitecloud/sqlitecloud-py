@@ -3,13 +3,14 @@ name: Deploy
 on: push
 
 jobs:
-  build_native_lib:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: check out lib
         uses: actions/checkout@v4
         with:
           repository: 'sqlitecloud/sdk'
+          path: 'sdk'
       - name: build lib
         run: |
           mkdir LibreSSL
@@ -21,35 +22,10 @@ jobs:
           sudo make install
           echo "libre ssl COMPLETED"
           ls -la /usr/local/lib/
-          echo "^^^^ LIB ^^^^^^"
           cd ../..
-          cd C
+          cd sdk/C
           sudo make libsqcloud.so
-
-      - uses: actions/upload-artifact@v2
-        with:
-            name: libsqcloud
-            path: C/libsqcloud.so
-
-  tests:
-    runs-on: ubuntu-latest
-    needs: build_native_lib
-    steps:
       - uses: actions/checkout@v4
-      - name: build lib
-        run: |
-          mkdir LibreSSL
-          cd LibreSSL
-          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
-          tar xzf libressl-3.8.1.tar.gz
-          cd libressl-3.8.1
-          pwd
-          ls -la
-          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/ 
-          sudo make install
-      - uses: actions/download-artifact@v3
-        with:
-          name: libsqcloud
 
       - name: Install dependencies
         run: |
@@ -58,7 +34,7 @@ jobs:
       - name: Linting and Testing
         env: 
           TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
-          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/libsqcloud.so
+          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/sdk/C/libsqcloud.so
         run: |
               ls -la $SQLITECLOUD_DRIVER_PATH
               export PYTHONPATH=$PYTHONPATH:$(pwd)/src

@@ -50,38 +50,31 @@ SQCloudResultIsError.argtypes = [
 ]  # Assuming SQCloudResult * is a pointer to void pointer
 SQCloudResultIsError.restype = ctypes.c_bool
 SQCloudRowsetCols = lib.SQCloudRowsetCols
-SQCloudRowsetCols.argtypes = [
-    ctypes.POINTER(SQCloudResult)
-]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudRowsetCols.argtypes = [ctypes.POINTER(SQCloudResult)]  # Assuming SQCloudResult * is a pointer to void pointer
 SQCloudRowsetCols.restype = ctypes.c_uint32
 
 SQCloudRowsetRows = lib.SQCloudRowsetRows
-SQCloudRowsetRows.argtypes = [
-    ctypes.POINTER(SQCloudResult)
-]  # Assuming SQCloudResult * is a pointer to void pointer
+SQCloudRowsetRows.argtypes = [ctypes.POINTER(SQCloudResult)]  # Assuming SQCloudResult * is a pointer to void pointer
 SQCloudRowsetRows.restype = ctypes.c_uint32
 
 _SQCloudRowsetColumnName = lib.SQCloudRowsetColumnName
 _SQCloudRowsetColumnName.argtypes = [
     ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
     ctypes.c_uint32,  # uint32_t col
-    ctypes.POINTER(ctypes.c_uint32),  # uint32_t *len
+    ctypes.POINTER(ctypes.c_uint32)  # uint32_t *len
 ]
 _SQCloudRowsetColumnName.restype = ctypes.c_char_p
-
-
 def SQCloudRowsetColumnName(result_set, col_n):
     name_len = ctypes.c_uint32()
-    col_name = _SQCloudRowsetColumnName(result_set, col_n, ctypes.byref(name_len))
-    # print("name_len",name_len.value, col_name.decode('utf-8'))
+    col_name = _SQCloudRowsetColumnName(result_set,col_n,ctypes.byref(name_len))
+    #print("name_len",name_len.value, col_name.decode('utf-8'))
     return col_name
-
 
 SQCloudRowsetValueType = lib.SQCloudRowsetValueType
 SQCloudRowsetValueType.argtypes = [
     ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
     ctypes.c_uint32,  # uint32_t row
-    ctypes.c_uint32,  # uint32_t col
+    ctypes.c_uint32   # uint32_t col
 ]
 SQCloudRowsetValueType.restype = SQCLOUD_VALUE_TYPE
 
@@ -90,7 +83,7 @@ SQCloudRowsetInt32Value = lib.SQCloudRowsetInt32Value
 SQCloudRowsetInt32Value.argtypes = [
     ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
     ctypes.c_uint32,  # uint32_t row
-    ctypes.c_uint32,  # uint32_t col
+    ctypes.c_uint32   # uint32_t col
 ]
 SQCloudRowsetInt32Value.restype = ctypes.c_int32  # int32_t return type
 
@@ -101,14 +94,12 @@ _SQCloudRowsetValue.argtypes = [
     ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
     ctypes.c_uint32,  # uint32_t row
     ctypes.c_uint32,  # uint32_t col
-    ctypes.POINTER(ctypes.c_uint32),  # uint32_t *len
+    ctypes.POINTER(ctypes.c_uint32)  # uint32_t *len
 ]
-_SQCloudRowsetValue.restype = ctypes.c_char_p
-
+_SQCloudRowsetValue.restype = ctypes.c_char_p 
 
 def SQCloudRowsetValue(result_set, row, col):
     value_len = ctypes.c_uint32()
-
-    data = _SQCloudRowsetValue(result_set, row, col, ctypes.byref(value_len))
-    print(value_len.value, data, "\n------------_______________------------")
+    data = _SQCloudRowsetValue(result_set,row,col,ctypes.byref(value_len))
+    print('row:',row,'col:',col,'returned len',value_len.value, "Value:")
     return data

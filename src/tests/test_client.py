@@ -18,10 +18,5 @@ def test_sqlite_cloud_client_exec_query():
     result = client.exec_query(query, conn)
     assert result
     for single_r in result:
-        print(single_r)
+        print(single_r['col_1'])
     client.disconnect(conn)
-
-    # You would need to mock the _open_connection method and SQCloudConnect for more realistic testing.
-
-    # result = client.exec_query(query)
-    # assert result
