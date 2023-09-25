@@ -19,6 +19,6 @@ def test_sqlite_cloud_client_exec_query():
     assert result
     first_element = next(result)
     assert len(first_element) == 2
-    assert 'emp_id' in first_element.keys()
-    assert 'emp_name' in first_element.keys()
+    assert "emp_id" in first_element.keys()
+    assert "emp_name" in first_element.keys()
     client.disconnect(conn)

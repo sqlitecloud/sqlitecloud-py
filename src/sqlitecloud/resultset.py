@@ -4,11 +4,12 @@ from sqlitecloud.driver import (
     SQCloudRowsetCols,
     SQCloudRowsetColumnName,
     SQCloudRowsetInt32Value,
+    SQCloudRowsetFloatValue,
     SQCloudRowsetRows,
     SQCloudRowsetValue,
     SQCloudRowsetValueType,
 )
-from sqlitecloud.wrapper_types import SQCloudResult
+from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudResult
 
 
 class SqliteCloudResultSet:
@@ -25,7 +26,6 @@ class SqliteCloudResultSet:
             SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
         )
         print(self.col_names)
-
 
     def __iter__(self):
         return self
@@ -47,7 +47,11 @@ class SqliteCloudResultSet:
 
     def _resolve_type(self, col, col_type):
         match col_type:
-            case 1:
+            case SQCLOUD_VALUE_TYPE.VALUE_INTEGER:
                 return SQCloudRowsetInt32Value(self._result, self.row, col)
-            case 3:
+            case SQCLOUD_VALUE_TYPE.VALUE_FLOAT:
+                return SQCloudRowsetFloatValue(self._result, self.row, col)
+            case SQCLOUD_VALUE_TYPE.VALUE_TEXT:
+                return SQCloudRowsetValue(self._result, self.row, col)
+            case SQCLOUD_VALUE_TYPE.VALUE_BLOB:
                 return SQCloudRowsetValue(self._result, self.row, col)
