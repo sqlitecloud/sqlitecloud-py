@@ -18,5 +18,5 @@ def test_sqlite_cloud_client_exec_query():
     result = client.exec_query(query, conn)
     assert result
     for single_r in result:
-        print(single_r['col_1'])
+        print(single_r["col_1"])
     client.disconnect(conn)

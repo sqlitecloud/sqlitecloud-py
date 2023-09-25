@@ -24,7 +24,6 @@ class SqliteCloudResultSet:
         self.col_names = list(
             SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
         )
-        
 
     def __iter__(self):
         return self
