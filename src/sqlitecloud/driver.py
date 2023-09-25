@@ -101,5 +101,5 @@ _SQCloudRowsetValue.restype = ctypes.c_char_p
 def SQCloudRowsetValue(result_set, row, col):
     value_len = ctypes.c_uint32()
     data = _SQCloudRowsetValue(result_set,row,col,ctypes.byref(value_len))
-    print('row:',row,'col:',col,'returned len',value_len.value, "Value:")
-    return data
+    print('row:',row,'col:',col,'returned len',value_len.value)
+    return data[0:value_len.value]
