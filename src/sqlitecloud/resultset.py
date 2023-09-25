@@ -24,6 +24,8 @@ class SqliteCloudResultSet:
         self.col_names = list(
             SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
         )
+        print(self.col_names)
+
 
     def __iter__(self):
         return self
@@ -38,7 +40,7 @@ class SqliteCloudResultSet:
                 ).value  # TODO memoize
 
                 data = self._resolve_type(col, col_type)
-                out[f"col_{col}"] = data
+                out[self.col_names[col]] = data
             self.row += 1
             return out
         raise StopIteration

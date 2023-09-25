@@ -17,6 +17,8 @@ def test_sqlite_cloud_client_exec_query():
     query = "select * from employees;"
     result = client.exec_query(query, conn)
     assert result
-    for single_r in result:
-        print(single_r["col_1"])
+    first_element = next(result)
+    assert len(first_element) == 2
+    assert 'emp_id' in first_element.keys()
+    assert 'emp_name' in first_element.keys()
     client.disconnect(conn)

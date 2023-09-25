@@ -73,9 +73,8 @@ _SQCloudRowsetColumnName.restype = ctypes.c_char_p
 def SQCloudRowsetColumnName(result_set, col_n):
     name_len = ctypes.c_uint32()
     col_name = _SQCloudRowsetColumnName(result_set, col_n, ctypes.byref(name_len))
-    # print("name_len",name_len.value, col_name.decode('utf-8'))
-    return col_name
-
+    #print("name_len",name_len.value, col_name.decode('utf-8'))
+    return col_name.decode('utf-8')[0:name_len.value]
 
 SQCloudRowsetValueType = lib.SQCloudRowsetValueType
 SQCloudRowsetValueType.argtypes = [
@@ -109,5 +108,5 @@ _SQCloudRowsetValue.restype = ctypes.c_char_p
 def SQCloudRowsetValue(result_set, row, col):
     value_len = ctypes.c_uint32()
     data = _SQCloudRowsetValue(result_set, row, col, ctypes.byref(value_len))
-    print("row:", row, "col:", col, "returned len", value_len.value)
+    #print("row:", row, "col:", col, "returned len", value_len.value)
     return data[0 : value_len.value]
