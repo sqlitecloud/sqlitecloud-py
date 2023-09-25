@@ -1,11 +1,11 @@
 name: Deploy
 
 on: 
-  push:
-    branches:
+    push:
+      branches:
       - 'main'
-  schedule:
-    - cron:  '30 1 * * *'
+    schedule:
+      - cron:  '30 1 * * *'
 
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
     name: Release 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
       - name: Set version
         run: |
@@ -73,3 +73,16 @@ jobs:
           branch: ${{ github.ref }}
           force: true
           tags: true
+
+  nightly:
+    if: ${{ github.ref == 'refs/heads/mimmo' }}
+    needs: tests
+    name: Nightly build 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - name: Set version
+        run: |
+              python -m pip install -r requirements-dev.txt
+              bump2version patch
