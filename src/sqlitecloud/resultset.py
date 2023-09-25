@@ -25,16 +25,14 @@ class SqliteCloudResultSet:
         self.col_names = list(
             SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
         )
-        print(self.col_names)
 
     def __iter__(self):
         return self
 
     def __next__(self):
         if self.row < self.rows:
-            out: Dict[str, any] = {}  # todo convert type
+            out: Dict[str, any] = {}
             for col in range(self.cols):
-                # print("\t", col, self.col_names[col] )
                 col_type = SQCloudRowsetValueType(
                     self._result, self.row, col
                 ).value  # TODO memoize

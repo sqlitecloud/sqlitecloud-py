@@ -26,7 +26,9 @@ class SqliteCloudAccount:
 
 
 class SqliteCloudClient:
-    """_summary_"""
+    """
+    Client to connect to SqliteCloud
+    """
 
     # TODO connection pooling
     _config: SQCloudConfig = (None,)
@@ -52,7 +54,6 @@ class SqliteCloudClient:
         """
 
         if connection_str:
-            print(connection_str)
             self.connection_str = connection_str
         elif cloud_account:
             self.config = SQCloudConfig()
