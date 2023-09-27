@@ -53,7 +53,7 @@ jobs:
               make test
 
   release:
-    if: ${{ github.ref == 'refs/heads/mimmo' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: tests
     name: Release 
     runs-on: ubuntu-latest

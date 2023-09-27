@@ -16,25 +16,25 @@ class SqliteCloudResultSet:
     _result = SQCloudResult
 
     def __init__(self, result: SQCloudResult) -> None:
-        print("is ok", SQCloudResultIsError(result))  # TODO
-
+        print("is Error", SQCloudResultIsError(result))
+        if SQCloudResultIsError(result):
+            raise Exception("Query error")  # TODO
         self._result = result
         self.row = 0
         self.rows = SQCloudRowsetRows(result)
+        print("rows", self.rows)
         self.cols = SQCloudRowsetCols(self._result)
         self.col_names = list(
             SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
         )
-        print(self.col_names)
 
     def __iter__(self):
         return self
 
     def __next__(self):
         if self.row < self.rows:
-            out: Dict[str, any] = {}  # todo convert type
+            out: Dict[str, any] = {}
             for col in range(self.cols):
-                # print("\t", col, self.col_names[col] )
                 col_type = SQCloudRowsetValueType(
                     self._result, self.row, col
                 ).value  # TODO memoize
