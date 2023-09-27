@@ -1,5 +1,7 @@
+import dataclasses
 import os
 import ctypes
+from typing import Any, List, Type
 
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
 
@@ -126,3 +128,53 @@ def SQCloudRowsetValue(result_set, row, col):
     value_len = ctypes.c_uint32()
     data = _SQCloudRowsetValue(result_set, row, col, ctypes.byref(value_len))
     return data[0 : value_len.value]
+
+
+_SQCloudExecArray = lib.SQCloudExecArray
+_SQCloudExecArray.argtypes = [
+    ctypes.c_void_p,  # SQCloudConnection *connection
+    ctypes.c_char_p,  # const char *command
+    ctypes.POINTER(ctypes.c_char_p),  # const char **values
+    ctypes.POINTER(ctypes.c_uint32),  # uint32_t len[]
+    ctypes.POINTER(ctypes.c_uint32),  # SQCLOUD_VALUE_TYPE types[]
+    ctypes.c_uint32,  # uint32_t n
+]
+
+_SQCloudExecArray.restype = ctypes.POINTER(SQCloudResult)  # SQCloudResult * return type
+
+
+def _envinc_type(value: Any) -> int:
+    if not isinstance(value, (float, int, str)):
+        raise Exception("Invalid type parameter " + type(value))
+    print("ev type:", str(type(value)))
+    match str(type(value)):
+        case "str":
+            return SQCLOUD_VALUE_TYPE.VALUE_TEXT
+        case "<class 'int'>":
+            return SQCLOUD_VALUE_TYPE.VALUE_INTEGER
+        case "float":
+            return SQCLOUD_VALUE_TYPE.VALUE_FLOAT
+
+
+@dataclasses.dataclass
+class SqlParameter:
+    byte_value: ctypes.c_char_p
+    py_value: Type
+
+
+def SQCloudExecArray(
+    conn: SQCloudConnect, query: ctypes.c_char_p, values: List[SqlParameter]
+) -> SQCloudResult:
+    n = len(values)
+    b_values = [v.byte_value for v in values]
+    lengths = [len(val.byte_value.value) for val in values]
+    types = list(ctypes.c_uint32(_envinc_type(v.py_value)) for v in values)
+    result_ptr = _SQCloudExecArray(
+        conn,
+        query,
+        (ctypes.c_char_p * n)(*b_values),
+        (ctypes.c_uint32 * n)(*lengths),
+        (ctypes.c_uint32 * n)(*types),
+        ctypes.c_uint32(n),
+    )
+    return result_ptr

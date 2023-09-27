@@ -1,4 +1,3 @@
-import os
 from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
 
 
@@ -6,8 +5,6 @@ from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
 
 
 def test_sqlite_cloud_client_exec_query():
-    connection_str = os.getenv("TEST_CONNECTION_URL")
-    print("Connection:", connection_str)
     account = SqliteCloudAccount(
         "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
     )
@@ -22,3 +19,14 @@ def test_sqlite_cloud_client_exec_query():
     assert "emp_id" in first_element.keys()
     assert "emp_name" in first_element.keys()
     client.disconnect(conn)
+
+
+def test_sqlite_cloud_client_exec_array():
+    account = SqliteCloudAccount(
+        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
+    )
+    client = SqliteCloudClient(cloud_account=account)
+    result = client.exec_statement("select * from employees where emp_id = ?", [1])
+    assert result
+    first_element = next(result)
+    assert len(first_element) == 2
