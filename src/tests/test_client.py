@@ -30,3 +30,48 @@ def test_sqlite_cloud_client_exec_array():
     assert result
     first_element = next(result)
     assert len(first_element) == 2
+
+
+def test_sqlite_cloud_error_query():
+    account = SqliteCloudAccount(
+        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
+    )
+    client = SqliteCloudClient(cloud_account=account)
+    assert client
+    conn = client.open_connection()
+    query = "select * from ibiza;"
+    is_error = False
+    try:
+        result = client.exec_query(query, conn)
+    except:
+        is_error = True
+    assert is_error
+
+
+def test_sqlite_cloud_float_agg_query():
+    account = SqliteCloudAccount(
+        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
+    )
+    client = SqliteCloudClient(cloud_account=account)
+    assert client
+    conn = client.open_connection()
+    query = "GET INFO disk_usage_perc;"
+    result = client.exec_query(query, conn)
+    assert result
+    first_element = next(result)
+    assert 'result' in first_element.keys()
+    print("Float result",first_element)
+
+def test_sqlite_cloud_int_agg_query():
+    account = SqliteCloudAccount(
+        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
+    )
+    client = SqliteCloudClient(cloud_account=account)
+    assert client
+    conn = client.open_connection()
+    query = "GET INFO process_id;"
+    result = client.exec_query(query, conn)
+    assert result
+    first_element = next(result)
+    print("Int result",first_element)
+    assert 'result' in first_element.keys()

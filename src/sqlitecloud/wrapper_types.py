@@ -44,3 +44,16 @@ class SQCLOUD_VALUE_TYPE(ctypes.c_uint):
     VALUE_TEXT = 3
     VALUE_BLOB = 4
     VALUE_NULL = 5
+
+
+class SQCLOUD_RESULT_TYPE(ctypes.c_uint):
+    RESULT_OK = 0
+    RESULT_FLOAT = 2
+    RESULT_STRING = 2
+    RESULT_INTEGER = 3
+    RESULT_ERROR = 4
+    RESULT_ROWSET = 5
+    RESULT_ARRAY = 6
+    RESULT_NULL = 7
+    RESULT_JSON = 8
+    RESULT_BLOB = 9

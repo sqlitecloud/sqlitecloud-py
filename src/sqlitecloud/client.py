@@ -123,10 +123,11 @@ class SqliteCloudClient:
         Returns:
             SqliteCloudResultSet: The result set of the executed query.
         """
+        print(query)
         local_conn = conn if conn else self.open_connection()
         result: SQCloudResult = SQCloudExec(local_conn, self._encode_str_to_c(query))
         self._check_connection(local_conn)
-        # TODO Close conn if onened
+        # TODO Close conn if opened
         return SqliteCloudResultSet(result)
 
     def exec_statement(

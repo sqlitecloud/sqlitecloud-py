@@ -51,6 +51,12 @@ SQCloudResultIsError.argtypes = [
     ctypes.POINTER(SQCloudResult)
 ]  # Assuming SQCloudResult * is a pointer to void pointer
 SQCloudResultIsError.restype = ctypes.c_bool
+
+SQCloudResultType = lib.SQCloudResultType
+SQCloudResultType.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
+SQCloudResultType.restype = ctypes.c_uint32  # SQCLOUD_RESULT_TYPE return type
+
+
 SQCloudRowsetCols = lib.SQCloudRowsetCols
 SQCloudRowsetCols.argtypes = [
     ctypes.POINTER(SQCloudResult)
@@ -178,3 +184,16 @@ def SQCloudExecArray(
         ctypes.c_uint32(n),
     )
     return result_ptr
+
+
+SQCloudResultFree = lib.SQCloudResultFree
+SQCloudResultFree.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
+SQCloudResultFree.restype = None
+
+SQCloudResultFloat = lib.SQCloudResultFloat
+SQCloudResultFloat.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
+SQCloudResultFloat.restype = ctypes.c_float  # float return type
+
+SQCloudResultInt32 = lib.SQCloudResultInt32
+SQCloudResultInt32.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
+SQCloudResultInt32.restype = ctypes.c_int32  # int32_t return type
