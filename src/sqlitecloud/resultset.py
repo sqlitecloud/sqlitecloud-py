@@ -25,13 +25,13 @@ class SqliteCloudResultSet:
     _data: List[Dict[str, Any]] = []
 
     def __init__(self, result: SQCloudResult) -> None:
-        #print("is Error", SQCloudResultIsError(result))
+        # print("is Error", SQCloudResultIsError(result))
         if SQCloudResultIsError(result):
             raise Exception("Query error")  # TODO
         rs_type = SQCloudResultType(
             result,
         )
-        #print("SQCLOUD_RESULT_TYPE", rs_type)
+        # print("SQCLOUD_RESULT_TYPE", rs_type)
         match rs_type:
             case SQCLOUD_RESULT_TYPE.RESULT_ROWSET:
                 self._init_resultset(result)
@@ -47,7 +47,7 @@ class SqliteCloudResultSet:
     def init_data(
         self,
         result: SQCloudResult,
-        extract_fn=Callable[[SQCloudResult], List[Dict[str, Any]]],
+        extract_fn:Callable[[SQCloudResult], List[Dict[str, Any]]],
     ):
         self.row = 0
         self.rows = 1
@@ -61,7 +61,7 @@ class SqliteCloudResultSet:
 
     def _extract_float_data(self, result: SQCloudResult):
         return [{"result": SQCloudResultFloat(result)}]
-    
+
     def _extract_int_data(self, result: SQCloudResult):
         return [{"result": SQCloudResultInt32(result)}]
 
