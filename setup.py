@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='SqliteCloud',
-    version='0.1.29',
+    version='0.1.30',
     author='Sam and Pietro',
     description='A Python package for working with SQLite databases in the cloud.',
     packages=find_packages(),
