@@ -8,3 +8,5 @@ main.dSYM/
 *.pyc
 *.pyo
 
+.DS_Store
+test.db

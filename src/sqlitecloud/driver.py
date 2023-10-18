@@ -197,3 +197,18 @@ SQCloudResultFloat.restype = ctypes.c_float  # float return type
 SQCloudResultInt32 = lib.SQCloudResultInt32
 SQCloudResultInt32.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
 SQCloudResultInt32.restype = ctypes.c_int32  # int32_t return type
+
+CallbackFunc = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32), ctypes.c_int64, ctypes.c_int64)
+
+SQCloudUploadDatabase = lib.SQCloudUploadDatabase
+SQCloudUploadDatabase.argtypes = [
+    ctypes.c_void_p,  # SQCloudConnection *connection
+    ctypes.c_char_p,  # const char *dbname
+    ctypes.c_char_p,  # const char *key
+    ctypes.c_void_p,  # void *xdata
+    ctypes.c_int64,   # int64_t dbsize
+    CallbackFunc      # int (*xCallback)(void *xdata, void *buffer, uint32_t *blen, int64_t ntot, int64_t nprogress)
+]
+SQCloudUploadDatabase.restype = ctypes.c_int  # Return type
+
+
