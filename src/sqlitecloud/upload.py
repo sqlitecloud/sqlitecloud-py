@@ -7,16 +7,16 @@ from sqlitecloud.driver import CallbackFunc, SQCloudConnect, SQCloudUploadDataba
 
 # Define the callback function
 def xCallback(xdata, buffer, blen, ntot, nprogress):
-    fd = ctypes.cast(xdata, ctypes.POINTER(ctypes.c_int)).contents.value
-    """  nread = os.read(fd, buffer, blen.contents.value)
+    #fd = ctypes.cast(xdata, ctypes.POINTER(ctypes.c_int))#.contents.value
+    nread = os.read(xdata, blen.contents.value)
     if nread == -1:
         return -1
     elif nread == 0:
         print("UPLOAD COMPLETE\n\n")
     else:
-        print(f"{(nprogress.value + nread) / ntot * 100:.2f}%")
+        print(f"{(nprogress + len(nread)) / ntot * 100:.2f}%")
 
-    blen.contents.value = nread """
+    blen.contents.value = len(nread)
     return 0
 
 
