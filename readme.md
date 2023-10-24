@@ -14,7 +14,6 @@ SqliteCloudClient is the class managing the connection for you
 
 
 ```python
-from sqlitecloud.conn_info import user,password,host,db_name,port
 from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
 ```
 
@@ -33,8 +32,6 @@ conn = client.open_connection()
 query = "select * from employees;"
 result = client.exec_query(query, conn)
 ```
-
-    select * from employees;
 
 
 The result is an iterable
