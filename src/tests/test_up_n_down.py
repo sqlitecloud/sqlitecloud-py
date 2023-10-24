@@ -9,4 +9,4 @@ def test_sqlite_upload():
     account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     conn = client.open_connection()
-    upload_db(conn, "demo-test-1", None, "test.db")
+    upload_db(conn, "demo-test-1", None, "./tests/test.db")

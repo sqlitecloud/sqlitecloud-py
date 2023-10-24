@@ -21,7 +21,7 @@ def xCallback(xdata, buffer, blen, ntot, nprogress):  # pylint: disable=W0613
 def upload_db(
     connection: SQCloudConnect, dbname: str, key: Optional[str], filename: str
 ) -> None:
-    fd_value = os.open("test.db", os.O_RDONLY)
+    fd_value = os.open(filename, os.O_RDONLY)
     fd_void_ptr = ctypes.c_void_p(fd_value)
     dbsize = os.path.getsize(filename)
     print("dbsize", dbsize)
