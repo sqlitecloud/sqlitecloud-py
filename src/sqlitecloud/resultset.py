@@ -47,7 +47,7 @@ class SqliteCloudResultSet:
     def init_data(
         self,
         result: SQCloudResult,
-        extract_fn:Callable[[SQCloudResult], List[Dict[str, Any]]],
+        extract_fn: Callable[[SQCloudResult], List[Dict[str, Any]]],
     ):
         self.row = 0
         self.rows = 1
