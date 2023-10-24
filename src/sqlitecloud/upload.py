@@ -5,7 +5,7 @@ from sqlitecloud.driver import CallbackFunc, SQCloudConnect, SQCloudUploadDataba
 
 
 # Define the callback function
-def xCallback(xdata, buffer, blen, ntot, nprogress): # pylint: disable=W0613
+def xCallback(xdata, buffer, blen, ntot, nprogress):  # pylint: disable=W0613
     nread = os.read(xdata, blen.contents.value)
     if nread == -1:
         return -1

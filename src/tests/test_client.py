@@ -1,13 +1,11 @@
 from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
-
+from sqlitecloud.conn_info import user,password,host,db_name,port
 
 # Mocking SQCloudConnect and other dependencies would be necessary for more comprehensive testing.
 
 
 def test_sqlite_cloud_client_exec_query():
-    account = SqliteCloudAccount(
-        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
-    )
+    account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     assert client
     conn = client.open_connection()
@@ -22,9 +20,7 @@ def test_sqlite_cloud_client_exec_query():
 
 
 def test_sqlite_cloud_client_exec_array():
-    account = SqliteCloudAccount(
-        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
-    )
+    account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     result = client.exec_statement("select * from employees where emp_id = ?", [1])
     assert result
@@ -33,9 +29,7 @@ def test_sqlite_cloud_client_exec_array():
 
 
 def test_sqlite_cloud_error_query():
-    account = SqliteCloudAccount(
-        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
-    )
+    account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     assert client
     conn = client.open_connection()
@@ -49,9 +43,7 @@ def test_sqlite_cloud_error_query():
 
 
 def test_sqlite_cloud_float_agg_query():
-    account = SqliteCloudAccount(
-        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
-    )
+    account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     assert client
     conn = client.open_connection()
@@ -64,9 +56,7 @@ def test_sqlite_cloud_float_agg_query():
 
 
 def test_sqlite_cloud_int_agg_query():
-    account = SqliteCloudAccount(
-        "ADMIN", "F77VNEnVTS", "qrznfgtzm.sqlite.cloud", "people", 8860
-    )
+    account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
     assert client
     conn = client.open_connection()

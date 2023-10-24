@@ -95,7 +95,7 @@ class SqliteCloudClient:
 
         return connection
 
-    def _check_connection(self, connection):
+    def _check_connection(self, connection) -> None:
         is_error = SQCloudIsError(connection)
         if is_error:
             error_message = SQCloudErrorMsg(connection)
