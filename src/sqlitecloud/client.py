@@ -4,6 +4,7 @@
 import ctypes
 from dataclasses import dataclass
 from typing import Any, List, Optional
+from sqlitecloud.pubsub import SQCloudPubSubCallback, subscribe_pub_sub
 from sqlitecloud.resultset import SqliteCloudResultSet
 from sqlitecloud.wrapper_types import SQCloudConfig, SQCloudResult
 from sqlitecloud.driver import (
@@ -71,7 +72,7 @@ class SqliteCloudClient:
     def _encode_str_to_c(self, text):
         return ctypes.c_char_p(text.encode("utf-8"))
 
-    def open_connection(self) -> SQCloudConnect:
+    def open_connection(self, pub_sub_callback:SQCloudPubSubCallback= None) -> SQCloudConnect:
         """Opens a connection to the SQCloud server.
 
         Returns:
@@ -92,6 +93,10 @@ class SqliteCloudClient:
         self._check_connection(connection)
         SQCloudExec(connection, self._encode_str_to_c(f"USE DATABASE {self.dbname};"))
         self._check_connection(connection)
+        if pub_sub_callback:
+            subscribe_pub_sub(connection,pub_sub_callback)
+            SQCloudExec(connection, self._encode_str_to_c("LISTEN channel1;"))
+
 
         return connection
 

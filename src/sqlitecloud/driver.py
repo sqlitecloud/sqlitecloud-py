@@ -217,3 +217,21 @@ SQCloudUploadDatabase.argtypes = [
     CallbackFunc,  # int (*xCallback)(void *xdata, void *buffer, uint32_t *blen, int64_t ntot, int64_t nprogress)
 ]
 SQCloudUploadDatabase.restype = ctypes.c_int  # Return type
+
+
+# Define the SQCloudPubSubCB function signature 
+SQCloudPubSubCB = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+
+
+# Define the function signature
+SQCloudSetPubSubCallback = lib.SQCloudSetPubSubCallback
+SQCloudSetPubSubCallback.argtypes = [
+    ctypes.c_void_p,  # SQCloudConnection *connection
+    SQCloudPubSubCB,  # SQCloudPubSubCB callback
+    ctypes.c_void_p   # void *data
+]
+SQCloudSetPubSubCallback.restype = None
+
+
+
+
