@@ -15,6 +15,9 @@ from sqlitecloud.driver import (
     SQCloudExecArray,
     SQCloudConnectWithString,
     SQCloudDisconnect,
+    SQCloudPubSubCB,
+    SQCloudResultDump,
+    SQCloudResultIsError,
     SqlParameter,
 )
 
@@ -39,11 +42,13 @@ class SqliteCloudClient:
     hostname: str
     dbname: str
     port: int
+    _pub_sub_cb:SQCloudPubSubCB = None
 
     def __init__(
         self,
         cloud_account: Optional[SqliteCloudAccount] = None,
         connection_str: Optional[str] = None,
+        pub_sub_callback:SQCloudPubSubCallback= None,
     ) -> None:
         """Initializes a new instance of the class.
 
@@ -55,7 +60,8 @@ class SqliteCloudClient:
             ValueError: If the connection string is invalid.
 
         """
-
+        if pub_sub_callback:
+            self._pub_sub_cb = SQCloudPubSubCB(pub_sub_callback)
         if connection_str:
             self.connection_str = connection_str
         elif cloud_account:
@@ -72,7 +78,7 @@ class SqliteCloudClient:
     def _encode_str_to_c(self, text):
         return ctypes.c_char_p(text.encode("utf-8"))
 
-    def open_connection(self, pub_sub_callback:SQCloudPubSubCallback= None) -> SQCloudConnect:
+    def open_connection(self) -> SQCloudConnect:
         """Opens a connection to the SQCloud server.
 
         Returns:
@@ -93,9 +99,9 @@ class SqliteCloudClient:
         self._check_connection(connection)
         SQCloudExec(connection, self._encode_str_to_c(f"USE DATABASE {self.dbname};"))
         self._check_connection(connection)
-        if pub_sub_callback:
-            subscribe_pub_sub(connection,pub_sub_callback)
-            SQCloudExec(connection, self._encode_str_to_c("LISTEN channel1;"))
+        if  self._pub_sub_cb:
+            subscribe_pub_sub(connection, self._pub_sub_cb)
+            
 
 
         return connection
@@ -129,10 +135,9 @@ class SqliteCloudClient:
             SqliteCloudResultSet: The result set of the executed query.
         """
         print(query)
-        local_conn = conn if conn else self.open_connection()
+        local_conn, close_at_end = (conn , False) if conn else (self.open_connection(), True)
         result: SQCloudResult = SQCloudExec(local_conn, self._encode_str_to_c(query))
         self._check_connection(local_conn)
-        # TODO Close conn if opened
         return SqliteCloudResultSet(result)
 
     def exec_statement(
@@ -144,4 +149,6 @@ class SqliteCloudClient:
             self._encode_str_to_c(query),
             [SqlParameter(self._encode_str_to_c(str(v)), v) for v in values],
         )
+        if SQCloudResultIsError(result):
+            raise Exception("Query error: " + str(SQCloudResultDump(local_conn,result)))  
         return SqliteCloudResultSet(result)

@@ -198,6 +198,13 @@ SQCloudResultInt32 = lib.SQCloudResultInt32
 SQCloudResultInt32.argtypes = [ctypes.POINTER(SQCloudResult)]  # SQCloudResult *result
 SQCloudResultInt32.restype = ctypes.c_int32  # int32_t return type
 
+SQCloudResultDump = lib.SQCloudResultDump
+SQCloudResultDump.argtypes = [
+    ctypes.c_void_p,  # SQCloudConnection *connection
+    ctypes.POINTER(SQCloudResult)  # SQCloudResult *result
+]
+SQCloudResultDump.restype = None
+
 CallbackFunc = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,

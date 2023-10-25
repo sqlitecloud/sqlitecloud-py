@@ -25,13 +25,11 @@ class SqliteCloudResultSet:
     _data: List[Dict[str, Any]] = []
 
     def __init__(self, result: SQCloudResult) -> None:
-        # print("is Error", SQCloudResultIsError(result))
-        if SQCloudResultIsError(result):
-            raise Exception("Query error")  # TODO
+        
+       
         rs_type = SQCloudResultType(
             result,
         )
-        # print("SQCLOUD_RESULT_TYPE", rs_type)
         match rs_type:
             case SQCLOUD_RESULT_TYPE.RESULT_ROWSET:
                 self._init_resultset(result)
