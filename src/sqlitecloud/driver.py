@@ -1,7 +1,7 @@
 import dataclasses
 import os
 import ctypes
-from typing import Any, List, Type
+from typing import Any, Callable, List, Type
 
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
 
@@ -9,10 +9,12 @@ lib_path = os.getenv("SQLITECLOUD_DRIVER_PATH", "./libsqcloud.so")
 print("Loading SQLITECLOUD lib from:",lib_path)
 lib = ctypes.CDLL(lib_path)
 connect = lib.SQCloudConnect
-
-SQCloudConnect = lib.SQCloudConnect
+class SQCloudConnection:
+    pass
+SQCloudConnect:Callable[[str,str,int,SQCloudConfig],SQCloudConnection]  = lib.SQCloudConnect # self._encode_str_to_c(self.hostname), self.port, self.config
 SQCloudConnect.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(SQCloudConfig)]
 SQCloudConnect.restype = ctypes.c_void_p
+
 SQCloudIsError = lib.SQCloudIsError
 SQCloudIsError.argtypes = [
     ctypes.c_void_p
@@ -160,6 +162,7 @@ def _envinc_type(value: Any) -> int:
             return SQCLOUD_VALUE_TYPE.VALUE_INTEGER
         case "float":
             return SQCLOUD_VALUE_TYPE.VALUE_FLOAT
+    return SQCLOUD_VALUE_TYPE.VALUE_NULL
 
 
 @dataclasses.dataclass

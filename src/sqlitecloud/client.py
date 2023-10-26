@@ -37,8 +37,8 @@ class SqliteCloudClient:
     """
 
     # TODO connection pooling
-    _config: SQCloudConfig = (None,)
-    connection_str: str = None
+    _config: Optional[SQCloudConfig] = None
+    connection_str: Optional[str] = None
     hostname: str
     dbname: str
     port: int
