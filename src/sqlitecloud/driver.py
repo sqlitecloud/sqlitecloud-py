@@ -6,12 +6,18 @@ from typing import Any, Callable, List, Type
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
 
 lib_path = os.getenv("SQLITECLOUD_DRIVER_PATH", "./libsqcloud.so")
-print("Loading SQLITECLOUD lib from:",lib_path)
+print("Loading SQLITECLOUD lib from:", lib_path)
 lib = ctypes.CDLL(lib_path)
 connect = lib.SQCloudConnect
+
+
 class SQCloudConnection:
     pass
-SQCloudConnect:Callable[[str,str,int,SQCloudConfig],SQCloudConnection]  = lib.SQCloudConnect # self._encode_str_to_c(self.hostname), self.port, self.config
+
+
+SQCloudConnect: Callable[
+    [str, str, int, SQCloudConfig], SQCloudConnection
+] = lib.SQCloudConnect  # self._encode_str_to_c(self.hostname), self.port, self.config
 SQCloudConnect.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(SQCloudConfig)]
 SQCloudConnect.restype = ctypes.c_void_p
 
@@ -204,7 +210,7 @@ SQCloudResultInt32.restype = ctypes.c_int32  # int32_t return type
 SQCloudResultDump = lib.SQCloudResultDump
 SQCloudResultDump.argtypes = [
     ctypes.c_void_p,  # SQCloudConnection *connection
-    ctypes.POINTER(SQCloudResult)  # SQCloudResult *result
+    ctypes.POINTER(SQCloudResult),  # SQCloudResult *result
 ]
 SQCloudResultDump.restype = None
 
@@ -229,8 +235,10 @@ SQCloudUploadDatabase.argtypes = [
 SQCloudUploadDatabase.restype = ctypes.c_int  # Return type
 
 
-# Define the SQCloudPubSubCB function signature 
-SQCloudPubSubCB = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+# Define the SQCloudPubSubCB function signature
+SQCloudPubSubCB = ctypes.CFUNCTYPE(
+    ctypes.c_void_p, ctypes.POINTER(SQCloudResult), ctypes.c_void_p
+)
 
 
 # Define the function signature
@@ -238,10 +246,6 @@ SQCloudSetPubSubCallback = lib.SQCloudSetPubSubCallback
 SQCloudSetPubSubCallback.argtypes = [
     ctypes.c_void_p,  # SQCloudConnection *connection
     SQCloudPubSubCB,  # SQCloudPubSubCB callback
-    ctypes.c_void_p   # void *data
+    ctypes.c_void_p,  # void *data
 ]
 SQCloudSetPubSubCallback.restype = None
-
-
-
-

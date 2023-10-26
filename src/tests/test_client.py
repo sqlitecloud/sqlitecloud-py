@@ -1,5 +1,5 @@
 from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
-from sqlitecloud.conn_info import user,password,host,db_name,port
+from sqlitecloud.conn_info import user, password, host, db_name, port
 
 # Mocking SQCloudConnect and other dependencies would be necessary for more comprehensive testing.
 

@@ -25,8 +25,6 @@ class SqliteCloudResultSet:
     _data: List[Dict[str, Any]] = []
 
     def __init__(self, result: SQCloudResult) -> None:
-        
-       
         rs_type = SQCloudResultType(
             result,
         )
