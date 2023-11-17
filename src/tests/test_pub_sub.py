@@ -1,7 +1,7 @@
 from typing import Any
-from experiments.test_ctypes import SQCloudConnect
 from sqlitecloud.client import SqliteCloudAccount, SqliteCloudClient
 from sqlitecloud.conn_info import user, password, host, db_name, port
+from sqlitecloud.driver import SQCloudConnect
 from sqlitecloud.pubsub import SQCloudPubSubCallback
 from sqlitecloud.resultset import SqliteCloudResultSet
 from sqlitecloud.wrapper_types import SQCloudResult
@@ -9,8 +9,7 @@ from sqlitecloud.wrapper_types import SQCloudResult
 
 def _l_cb(conn: SQCloudConnect, res: SQCloudResult, data: Any = None):
     print("\t start callback")
-    # rs = SqliteCloudResultSet(res)
-    print(type(res))
+
 
 
 def test_sqlite_cloud_client_exec_query():
@@ -22,4 +21,4 @@ def test_sqlite_cloud_client_exec_query():
     query = 'NOTIFY channel1 "Hello World"'
     # query = "select * from employees;"
     client.exec_query(query, conn)
-    client.disconnect(conn)
+    #client.disconnect(conn)

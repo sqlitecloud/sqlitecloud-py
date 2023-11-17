@@ -249,3 +249,11 @@ SQCloudSetPubSubCallback.argtypes = [
     ctypes.c_void_p,  # void *data
 ]
 SQCloudSetPubSubCallback.restype = None
+
+class SQCloudVM(ctypes.Structure):
+    pass
+
+SQCloudVMCompile = lib.SQCloudVMCompile
+
+SQCloudVMCompile.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int32, ctypes.c_void_p]
+SQCloudVMCompile.restype = ctypes.POINTER(SQCloudVM)
