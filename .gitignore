@@ -12,3 +12,4 @@ main.dSYM/
 
 .idea
 SqliteCloud.egg-info
+src/sqlitecloud/libsqcloud.so

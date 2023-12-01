@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Type
 
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
 
-lib_path = os.getenv("SQLITECLOUD_DRIVER_PATH", "./libsqcloud.so")
+lib_path = os.getenv(key="SQLITECLOUD_DRIVER_PATH", default="./libsqcloud.so")
 print("Loading SQLITECLOUD lib from:", lib_path)
 lib = ctypes.CDLL(lib_path)
 connect = lib.SQCloudConnect
