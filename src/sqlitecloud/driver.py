@@ -1,6 +1,6 @@
+import ctypes
 import dataclasses
 import os
-import ctypes
 from typing import Any, Callable, List, Type
 
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
@@ -250,8 +250,10 @@ SQCloudSetPubSubCallback.argtypes = [
 ]
 SQCloudSetPubSubCallback.restype = None
 
+
 class SQCloudVM(ctypes.Structure):
     pass
+
 
 SQCloudVMCompile = lib.SQCloudVMCompile
 
