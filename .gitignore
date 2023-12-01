@@ -10,3 +10,5 @@ main.dSYM/
 
 .DS_Store
 
+.idea
+SqliteCloud.egg-info
