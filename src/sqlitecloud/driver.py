@@ -3,7 +3,11 @@ import dataclasses
 import os
 from typing import Any, Callable, List, Type
 
+from dotenv import load_dotenv
+
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE, SQCloudConfig, SQCloudResult
+
+load_dotenv()
 
 lib_path = os.getenv(key="SQLITECLOUD_DRIVER_PATH", default="./libsqcloud.so")
 print("Loading SQLITECLOUD lib from:", lib_path)
