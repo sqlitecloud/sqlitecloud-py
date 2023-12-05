@@ -259,11 +259,12 @@ class SQCloudVM(ctypes.Structure):
     pass
 
 
+# Define the SQCloudVMCompile signature
 SQCloudVMCompile = lib.SQCloudVMCompile
-
 SQCloudVMCompile.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int32, ctypes.c_void_p]
 SQCloudVMCompile.restype = ctypes.POINTER(SQCloudVM)
 
+# Define the SQCloudVMStep signature
 SQCloudVMStep = lib.SQCloudVMStep
-SQCloudVMStep.argtypes = [SQCloudVMCompile]
+SQCloudVMStep.argtypes = [ctypes.c_void_p]
 SQCloudVMStep.restype = ctypes.c_int8
