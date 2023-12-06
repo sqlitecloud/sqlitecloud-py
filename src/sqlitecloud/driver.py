@@ -268,3 +268,8 @@ SQCloudVMCompile.restype = ctypes.POINTER(SQCloudVM)
 SQCloudVMStep = lib.SQCloudVMStep
 SQCloudVMStep.argtypes = [ctypes.c_void_p]
 SQCloudVMStep.restype = ctypes.c_int8
+
+# Define the SQCloudVMResult signature
+SQCloudVMResult = lib.SQCloudVMResult
+SQCloudVMResult.argtypes = [ctypes.c_void_p]
+SQCloudVMResult.restype = ctypes.c_void_p
