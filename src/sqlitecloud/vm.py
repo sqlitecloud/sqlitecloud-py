@@ -1,6 +1,6 @@
 import ctypes
 
-from sqlitecloud.driver import SQCloudConnect, SQCloudVM, SQCloudVMCompile, SQCloudVMStep
+from sqlitecloud.driver import SQCloudConnect, SQCloudVM, SQCloudVMCompile, SQCloudVMStep, SQCloudResult, SQCloudVMResult
 
 
 def compile_vm(conn: SQCloudConnect, query: str) -> SQCloudVM:
@@ -9,3 +9,7 @@ def compile_vm(conn: SQCloudConnect, query: str) -> SQCloudVM:
 
 def step_vm(vm: SQCloudVMCompile) -> int:
     return SQCloudVMStep(vm)
+
+
+def result_vm(vm: SQCloudVMCompile) -> SQCloudResult:
+    return SQCloudVMResult(vm)
