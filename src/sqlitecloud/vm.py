@@ -14,7 +14,9 @@ from sqlitecloud.driver import (
     SQCloudVMIsExplain,
     SQCloudVMIsFinalized,
     SQCloudVMBindParameterCount,
-    SQCloudVMBindParameterIndex, SQCloudVMBindParameterName, SQCloudVMColumnCount
+    SQCloudVMBindParameterIndex,
+    SQCloudVMBindParameterName,
+    SQCloudVMColumnCount
 )
 
 
