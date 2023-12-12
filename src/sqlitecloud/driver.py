@@ -273,3 +273,63 @@ SQCloudVMStep.restype = ctypes.c_int8
 SQCloudVMResult = lib.SQCloudVMResult
 SQCloudVMResult.argtypes = [ctypes.c_void_p]
 SQCloudVMResult.restype = ctypes.c_void_p
+
+
+# Define the SQCloudVMClose signature
+SQCloudVMClose = lib.SQCloudVMClose
+SQCloudVMClose.argtypes = [ctypes.c_void_p]
+SQCloudVMClose.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMErrorMsg signature
+SQCloudVMErrorMsg = lib.SQCloudVMErrorMsg
+SQCloudVMErrorMsg.argtypes = [ctypes.c_void_p]
+SQCloudVMErrorMsg.restype = ctypes.c_char_p
+
+
+# Define the SQCloudVMErrorCode signature
+SQCloudVMErrorCode = lib.SQCloudVMErrorCode
+SQCloudVMErrorCode.argtypes = [ctypes.c_void_p]
+SQCloudVMErrorCode.restype = ctypes.c_int
+
+
+# Define the SQCloudVMIsReadOnly signature
+SQCloudVMIsReadOnly = lib.SQCloudVMIsReadOnly
+SQCloudVMIsReadOnly.argtypes = [ctypes.c_void_p]
+SQCloudVMIsReadOnly.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMIsExplain signature
+SQCloudVMIsExplain = lib.SQCloudVMIsExplain
+SQCloudVMIsExplain.argtypes = [ctypes.c_void_p]
+SQCloudVMIsExplain.restype = ctypes.c_int
+
+
+# Define the SQCloudVMIsFinalized signature
+SQCloudVMIsFinalized = lib.SQCloudVMIsFinalized
+SQCloudVMIsFinalized.argtypes = [ctypes.c_void_p]
+SQCloudVMIsFinalized.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindParameterCount signature
+SQCloudVMBindParameterCount = lib.SQCloudVMBindParameterCount
+SQCloudVMBindParameterCount.argtypes = [ctypes.c_void_p]
+SQCloudVMBindParameterCount.restype = ctypes.c_int
+
+
+# Define the SQCloudVMBindParameterIndex signature
+SQCloudVMBindParameterIndex = lib.SQCloudVMBindParameterIndex
+SQCloudVMBindParameterIndex.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+SQCloudVMBindParameterIndex.restype = ctypes.c_int
+
+
+# Define the SQCloudVMBindParameterName signature
+SQCloudVMBindParameterName = lib.SQCloudVMBindParameterName
+SQCloudVMBindParameterName.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMBindParameterName.restype = ctypes.c_char_p
+
+
+# Define the SQCloudVMColumnCount signature
+SQCloudVMColumnCount = lib.SQCloudVMColumnCount
+SQCloudVMColumnCount.argtypes = [ctypes.c_void_p]
+SQCloudVMColumnCount.restype = ctypes.c_int
