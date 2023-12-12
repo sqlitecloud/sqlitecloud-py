@@ -4,7 +4,9 @@ from sqlitecloud.driver import SQCloudConnect, SQCloudVM, SQCloudVMCompile, SQCl
 
 
 def compile_vm(conn: SQCloudConnect, query: str) -> SQCloudVM:
-    return SQCloudVMCompile(conn, ctypes.c_char_p(query.encode("utf-8")), -1, None)
+    vm = SQCloudVMCompile(conn, ctypes.c_char_p(query.encode("utf-8")), -1, None)
+
+    return vm
 
 
 def step_vm(vm: SQCloudVMCompile) -> int:
