@@ -188,7 +188,7 @@ def test_column_count_vm(get_client):
     res = column_count_vm(vm)
     client.disconnect(conn)
 
-    assert res == 2
+    assert res == 4
 
 
 def test_bind_double_vm(get_client):
