@@ -259,6 +259,8 @@ def test_column_type_vm(get_client):
 
     column_type = column_type_vm(vm, 0)
 
+    client.disconnect(conn)
+
     assert column_type == SQCLOUD_VALUE_TYPE.VALUE_INTEGER
 
 
@@ -278,6 +280,8 @@ def test_column_blob_vm(get_client):
             case SQCLOUD_VALUE_TYPE.VALUE_BLOB:
                 value = column_blob_vm(vm, index)
                 break
+
+    client.disconnect(conn)
 
     assert isinstance(value, str)
     assert value == '\x01\x02\x03\x04\x05'
@@ -302,6 +306,8 @@ def test_column_text_vm(get_client):
             case _:
                 value = None
 
+    client.disconnect(conn)
+
     assert isinstance(value, str)
 
 
@@ -323,6 +329,8 @@ def test_column_double_vm(get_client):
                 break
             case _:
                 value = None
+
+    client.disconnect(conn)
 
     assert isinstance(value, float)
     assert value == 18000.0
@@ -347,6 +355,8 @@ def test_column_int_32_vm(get_client):
             case _:
                 value = None
 
+    client.disconnect(conn)
+
     assert isinstance(value, int)
     assert value == 1
 
@@ -370,6 +380,8 @@ def test_column_int_64_vm(get_client):
             case _:
                 value = None
 
+    client.disconnect(conn)
+
     assert isinstance(value, int)
     assert value == 1
 
@@ -392,6 +404,8 @@ def test_column_len_vm(get_client):
                 break
             case _:
                 column_content_length = None
+
+    client.disconnect(conn)
 
     assert isinstance(column_content_length, int)
     assert column_content_length == 4
