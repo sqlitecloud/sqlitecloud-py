@@ -333,3 +333,45 @@ SQCloudVMBindParameterName.restype = ctypes.c_char_p
 SQCloudVMColumnCount = lib.SQCloudVMColumnCount
 SQCloudVMColumnCount.argtypes = [ctypes.c_void_p]
 SQCloudVMColumnCount.restype = ctypes.c_int
+
+
+# Define the SQCloudVMBindDouble signature
+SQCloudVMBindDouble = lib.SQCloudVMBindDouble
+SQCloudVMBindDouble.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_double]
+SQCloudVMBindDouble.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindInt signature
+SQCloudVMBindInt = lib.SQCloudVMBindInt
+SQCloudVMBindInt.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+SQCloudVMBindInt.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindInt64 signature
+SQCloudVMBindInt64 = lib.SQCloudVMBindInt64
+SQCloudVMBindInt64.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int64]
+SQCloudVMBindInt64.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindNull signature
+SQCloudVMBindNull = lib.SQCloudVMBindNull
+SQCloudVMBindNull.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMBindNull.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindText signature
+SQCloudVMBindText = lib.SQCloudVMBindText
+SQCloudVMBindText.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int32]
+SQCloudVMBindText.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindBlob signature
+SQCloudVMBindBlob = lib.SQCloudVMBindBlob
+SQCloudVMBindBlob.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int32]
+SQCloudVMBindBlob.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMBindZeroBlob signature
+SQCloudVMBindZeroBlob = lib.SQCloudVMBindZeroBlob
+SQCloudVMBindZeroBlob.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int32]
+SQCloudVMBindZeroBlob.restype = ctypes.c_bool
