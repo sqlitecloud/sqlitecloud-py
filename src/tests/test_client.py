@@ -13,8 +13,8 @@ def test_sqlite_cloud_client_exec_query():
     result = client.exec_query(query, conn)
     assert result
     first_element = next(result)
-    assert len(first_element) == 2
-    assert "emp_id" in first_element.keys()
+    assert len(first_element) == 4
+    assert "id" in first_element.keys()
     assert "emp_name" in first_element.keys()
     client.disconnect(conn)
 
@@ -22,10 +22,10 @@ def test_sqlite_cloud_client_exec_query():
 def test_sqlite_cloud_client_exec_array():
     account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
-    result = client.exec_statement("select * from employees where emp_id = ?", [1])
+    result = client.exec_statement("select * from employees where id = ?", [1])
     assert result
     first_element = next(result)
-    assert len(first_element) == 2
+    assert len(first_element) == 4
 
 
 def test_sqlite_cloud_error_query():
