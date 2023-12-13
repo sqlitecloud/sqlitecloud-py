@@ -26,7 +26,9 @@ from sqlitecloud.vm import (
     column_int_32_vm,
     column_int_64_vm,
     column_len_vm,
-    column_type_vm
+    column_type_vm,
+    last_row_id_vm,
+    changes_vm, total_changes_vm
 )
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE
 
@@ -409,3 +411,50 @@ def test_column_len_vm(get_client):
 
     assert isinstance(column_content_length, int)
     assert column_content_length == 4
+
+
+def test_last_row_id_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    step_vm(vm)
+
+    row_id = last_row_id_vm(vm)
+    client.disconnect(conn)
+
+    assert isinstance(row_id, int)
+
+
+def test_changes_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    step_vm(vm)
+
+    changes = changes_vm(vm)
+
+    client.disconnect(conn)
+
+    assert changes == 1
+
+
+def test_total_changes_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    step_vm(vm)
+
+    changes = total_changes_vm(vm)
+
+    assert changes == 1
+
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    step_vm(vm)
+
+    changes = total_changes_vm(vm)
+
+    assert changes == 2
+
+    client.disconnect(conn)
