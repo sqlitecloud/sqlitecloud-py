@@ -15,7 +15,11 @@ from sqlitecloud.vm import (
     bind_parameter_count_vm,
     bind_parameter_index_vm,
     bind_parameter_name_vm,
-    column_count_vm
+    column_count_vm,
+    bind_double_vm,
+    bind_null_vm,
+    bind_text_vm,
+    bind_blob_vm
 )
 
 
@@ -177,3 +181,63 @@ def test_column_count_vm(get_client):
     client.disconnect(conn)
 
     assert res == 2
+
+
+def test_bind_double_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_double_vm(vm=vm, index=2, value=2.340)
+    client.disconnect(conn)
+
+    assert res is True
+
+
+def test_bind_int_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_double_vm(vm=vm, index=2, value=2)
+    client.disconnect(conn)
+
+    assert res is True
+
+
+def test_bind_int64_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_double_vm(vm=vm, index=2, value=123456789012345)
+    client.disconnect(conn)
+
+    assert res is True
+
+
+def test_bind_null_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_null_vm(vm=vm, index=1)
+    client.disconnect(conn)
+
+    assert res is True
+
+
+def test_bind_text_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_text_vm(vm=vm, index=1, value='Jonathan')
+    client.disconnect(conn)
+
+    assert res is True
+
+
+def test_bind_blob_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
+    res = bind_blob_vm(vm=vm, index=1, value='Fake Blob Value')
+    client.disconnect(conn)
+
+    assert res is True

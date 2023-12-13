@@ -16,7 +16,13 @@ from sqlitecloud.driver import (
     SQCloudVMBindParameterCount,
     SQCloudVMBindParameterIndex,
     SQCloudVMBindParameterName,
-    SQCloudVMColumnCount
+    SQCloudVMColumnCount,
+    SQCloudVMBindDouble,
+    SQCloudVMBindInt,
+    SQCloudVMBindInt64,
+    SQCloudVMBindNull,
+    SQCloudVMBindText,
+    SQCloudVMBindBlob
 )
 
 
@@ -82,3 +88,37 @@ def bind_parameter_name_vm(vm: SQCloudVMCompile, index: int) -> str | None:
 
 def column_count_vm(vm: SQCloudVMCompile) -> int:
     return SQCloudVMColumnCount(vm)
+
+
+def bind_double_vm(vm: SQCloudVMCompile, index: int, value: float) -> bool:
+    return SQCloudVMBindDouble(vm, index, ctypes.c_double(value))
+
+
+def bind_int_vm(vm: SQCloudVMCompile, index: int, value: int) -> bool:
+    return SQCloudVMBindInt(vm, index, value)
+
+
+def bind_int64_vm(vm: SQCloudVMCompile, index: int, value: int) -> bool:
+    return SQCloudVMBindInt64(vm, index, ctypes.c_int64(value))
+
+
+def bind_null_vm(vm: SQCloudVMCompile, index: int) -> bool:
+    return SQCloudVMBindNull(vm, index)
+
+
+def bind_text_vm(vm: SQCloudVMCompile, index: int, value: str) -> bool:
+    return SQCloudVMBindText(
+        vm,
+        index,
+        ctypes.c_char_p(value.encode('utf-8')),
+        len(value.encode('utf-8'))
+        )
+
+
+def bind_blob_vm(vm: SQCloudVMCompile, index: int, value) -> bool:
+    return SQCloudVMBindBlob(
+        vm,
+        index,
+        value,
+        len(value.encode('utf-8'))
+    )
