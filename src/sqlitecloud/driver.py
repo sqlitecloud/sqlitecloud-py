@@ -375,3 +375,45 @@ SQCloudVMBindBlob.restype = ctypes.c_bool
 SQCloudVMBindZeroBlob = lib.SQCloudVMBindZeroBlob
 SQCloudVMBindZeroBlob.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int32]
 SQCloudVMBindZeroBlob.restype = ctypes.c_bool
+
+
+# Define the SQCloudVMColumnBlob signature
+SQCloudVMColumnBlob = lib.SQCloudVMColumnBlob
+SQCloudVMColumnBlob.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_uint32)]
+SQCloudVMColumnBlob.restype = ctypes.c_void_p
+
+
+# Define the SQCloudVMColumnText signature
+SQCloudVMColumnText = lib.SQCloudVMColumnText
+SQCloudVMColumnText.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_uint32)]
+SQCloudVMColumnText.restype = ctypes.c_char_p
+
+
+# Define the SQCloudVMColumnDouble signature
+SQCloudVMColumnDouble = lib.SQCloudVMColumnDouble
+SQCloudVMColumnDouble.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMColumnDouble.restype = ctypes.c_double
+
+
+# Define the SQCloudVMColumnInt32 signature
+SQCloudVMColumnInt32 = lib.SQCloudVMColumnInt32
+SQCloudVMColumnInt32.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMColumnInt32.restype = ctypes.c_int32
+
+
+# Define the SQCloudVMColumnInt64 signature
+SQCloudVMColumnInt64 = lib.SQCloudVMColumnInt64
+SQCloudVMColumnInt64.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMColumnInt64.restype = ctypes.c_int64
+
+
+# Define the SQCloudVMColumnLen signature
+SQCloudVMColumnLen = lib.SQCloudVMColumnLen
+SQCloudVMColumnLen.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMColumnLen.restype = ctypes.c_int64
+
+
+# Define the SQCloudVMColumnType signature
+SQCloudVMColumnType = lib.SQCloudVMColumnType
+SQCloudVMColumnType.argtypes = [ctypes.c_void_p, ctypes.c_int]
+SQCloudVMColumnType.restype = ctypes.c_void_p
