@@ -134,6 +134,7 @@ class SqliteCloudClient:
             SqliteCloudResultSet: The result set of the executed query.
         """
         print(query)
+        # pylint: disable=unused-variable
         local_conn, close_at_end = (
             (conn, False) if conn else (self.open_connection(), True)
         )

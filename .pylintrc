@@ -1,5 +1,5 @@
 [pylint]
-disable = C0111, C0301, W0511, R0903,C0103, W0703,W0102
+disable = C0111, C0301, W0511, R0903, C0103, W0703, W0102, W0621
 
 [MASTER]
 extension-pkg-whitelist=cv2
