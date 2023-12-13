@@ -19,8 +19,16 @@ from sqlitecloud.vm import (
     bind_double_vm,
     bind_null_vm,
     bind_text_vm,
-    bind_blob_vm
+    bind_blob_vm,
+    column_blob_vm,
+    column_text_vm,
+    column_double_vm,
+    column_int_32_vm,
+    column_int_64_vm,
+    column_len_vm,
+    column_type_vm
 )
+from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +40,7 @@ def get_client():
 
 
 # FIXTURE EXAMPLE
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def get_client_v2():
     account = SqliteCloudAccount(user, password, host, db_name, port)
     client = SqliteCloudClient(cloud_account=account)
@@ -241,3 +249,149 @@ def test_bind_blob_vm(get_client):
     client.disconnect(conn)
 
     assert res is True
+
+
+def test_column_type_vm(get_client):
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_type = column_type_vm(vm, 0)
+
+    assert column_type == SQCLOUD_VALUE_TYPE.VALUE_INTEGER
+
+
+def test_column_blob_vm(get_client):
+    value: str | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1 OFFSET 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_BLOB:
+                value = column_blob_vm(vm, index)
+                break
+
+    assert isinstance(value, str)
+    assert value == '\x01\x02\x03\x04\x05'
+
+
+def test_column_text_vm(get_client):
+    value: str | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_TEXT:
+                value = column_text_vm(vm, index)
+                break
+            case _:
+                value = None
+
+    assert isinstance(value, str)
+
+
+def test_column_double_vm(get_client):
+    value: float | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_FLOAT:
+                value: float = column_double_vm(vm, index)
+                break
+            case _:
+                value = None
+
+    assert isinstance(value, float)
+    assert value == 18000.0
+
+
+def test_column_int_32_vm(get_client):
+    value: int | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_INTEGER:
+                value: int = column_int_32_vm(vm, index)
+                break
+            case _:
+                value = None
+
+    assert isinstance(value, int)
+    assert value == 1
+
+
+def test_column_int_64_vm(get_client):
+    value: int | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_INTEGER:
+                value: int = column_int_64_vm(vm, index)
+                break
+            case _:
+                value = None
+
+    assert isinstance(value, int)
+    assert value == 1
+
+
+def test_column_len_vm(get_client):
+    column_content_length: int | None = None
+    client = get_client
+    conn = client.open_connection()
+    vm = compile_vm(conn, "SELECT * FROM employees LIMIT 1;")
+    step_vm(vm)
+
+    column_count: int = column_count_vm(vm)
+
+    for index in range(0, column_count):
+        column_type = column_type_vm(vm, index)
+
+        match column_type:
+            case SQCLOUD_VALUE_TYPE.VALUE_TEXT:
+                column_content_length = column_len_vm(vm, index)
+                break
+            case _:
+                column_content_length = None
+
+    assert isinstance(column_content_length, int)
+    assert column_content_length == 4
