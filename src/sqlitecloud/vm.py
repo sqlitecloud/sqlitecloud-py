@@ -22,8 +22,16 @@ from sqlitecloud.driver import (
     SQCloudVMBindInt64,
     SQCloudVMBindNull,
     SQCloudVMBindText,
-    SQCloudVMBindBlob
+    SQCloudVMBindBlob,
+    SQCloudVMColumnBlob,
+    SQCloudVMColumnText,
+    SQCloudVMColumnDouble,
+    SQCloudVMColumnInt32,
+    SQCloudVMColumnInt64,
+    SQCloudVMColumnLen,
+    SQCloudVMColumnType
 )
+from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE
 
 
 def compile_vm(conn: SQCloudConnect, query: str) -> SQCloudVM:
@@ -122,3 +130,44 @@ def bind_blob_vm(vm: SQCloudVMCompile, index: int, value) -> bool:
         value,
         len(value.encode('utf-8'))
     )
+
+
+def column_type_vm(vm: SQCloudVMCompile, index: int) -> SQCLOUD_VALUE_TYPE:
+    return SQCloudVMColumnType(vm, index)
+
+
+def column_blob_vm(vm: SQCloudVMCompile, index: int) -> str:
+    len_holder = ctypes.c_uint32()
+
+    blob_pointer = SQCloudVMColumnBlob(vm, index, ctypes.byref(len_holder))
+
+    blob_size = len_holder.value
+    blob_data = ctypes.cast(blob_pointer, ctypes.POINTER(ctypes.c_ubyte * blob_size)).contents
+
+    return bytes(blob_data[:blob_size]).decode('utf-8')
+
+
+def column_text_vm(vm: SQCloudVMCompile, index: int) -> str:
+    len_holder = ctypes.c_uint32()
+
+    value = SQCloudVMColumnText(vm, index, ctypes.byref(len_holder))
+
+    text_value = value.decode('utf-8') if value else None
+
+    return text_value[:len_holder.value]
+
+
+def column_double_vm(vm: SQCloudVMCompile, index: int) -> float:
+    return SQCloudVMColumnDouble(vm, index)
+
+
+def column_int_32_vm(vm: SQCloudVMCompile, index: int) -> int:
+    return SQCloudVMColumnInt32(vm, index)
+
+
+def column_int_64_vm(vm: SQCloudVMCompile, index: int) -> int:
+    return SQCloudVMColumnInt64(vm, index)
+
+
+def column_len_vm(vm: SQCloudVMCompile, index: int) -> int:
+    return SQCloudVMColumnLen(vm, index)
