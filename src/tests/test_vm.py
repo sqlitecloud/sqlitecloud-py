@@ -329,35 +329,25 @@ def test_column_len_vm(get_conn):
     assert column_content_length == 4
 
 
-def test_last_row_id_vm(get_client):
-    client = get_client
-    conn = client.open_connection()
+def test_last_row_id_vm(get_conn):
+    conn = get_conn
     vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
     step_vm(vm)
 
     row_id = last_row_id_vm(vm)
-    client.disconnect(conn)
-
     assert isinstance(row_id, int)
 
 
-def test_changes_vm(get_client):
-    client = get_client
-    conn = client.open_connection()
-
+def test_changes_vm(get_conn):
+    conn = get_conn
     vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
     step_vm(vm)
-
     changes = changes_vm(vm)
-
-    client.disconnect(conn)
-
     assert changes == 1
 
 
-def test_total_changes_vm(get_client):
-    client = get_client
-    conn = client.open_connection()
+def test_total_changes_vm(get_conn):
+    conn = get_conn
 
     vm = compile_vm(conn, "INSERT INTO employees (emp_name, salary) VALUES (?1, ?2)")
     step_vm(vm)
@@ -372,5 +362,3 @@ def test_total_changes_vm(get_client):
     changes = total_changes_vm(vm)
 
     assert changes == 2
-
-    client.disconnect(conn)
