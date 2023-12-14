@@ -1,4 +1,4 @@
-name: Publish SqliteCloud 🐍 distributions to PyPI 📦
+name: Publish SqliteCloud 🐍 to PyPI 📦
 
 on:
     push:
@@ -7,11 +7,11 @@ on:
 
 jobs:
   build-n-publish:
-    name: Build and publish SqliteCloud 🐍 distributions to PyPI 📦
+    name: Build and publish SqliteCloud 🐍 to PyPI 📦
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Set up Python 3.10
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
@@ -29,6 +29,6 @@ jobs:
       run: >-
         python setup.py sdist bdist_wheel
     - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
