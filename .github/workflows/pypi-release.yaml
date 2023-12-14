@@ -33,4 +33,5 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       run: cd src/
       with:
+        packages-dir: src/
         password: ${{ secrets.PYPI_API_TOKEN }}
