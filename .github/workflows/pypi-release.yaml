@@ -32,7 +32,7 @@ jobs:
     - name: delete SqliteCloud.egg-info
       run: |
         echo "Current Directory: $(pwd)"
-        rm -r SqliteCloud.egg-info
+        rm -r src/SqliteCloud.egg-info
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
