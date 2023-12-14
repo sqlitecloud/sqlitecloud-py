@@ -421,17 +421,17 @@ SQCloudVMColumnType.restype = ctypes.c_void_p
 
 # Define the SQCloudVMLastRowID signature
 SQCloudVMLastRowID = lib.SQCloudVMLastRowID
-SQCloudVMLastRowID.argtypes = [ctypes.c_void_p]
+SQCloudVMLastRowID.argtypes = [ctypes.POINTER(SQCloudVM)]
 SQCloudVMLastRowID.restype = ctypes.c_int64
 
 
 # Define the SQCloudVMChanges signature
 SQCloudVMChanges = lib.SQCloudVMChanges
-SQCloudVMChanges.argtypes = [ctypes.c_void_p]
+SQCloudVMChanges.argtypes = [ctypes.POINTER(SQCloudVM)]
 SQCloudVMChanges.restype = ctypes.c_int64
 
 
 # Define the SQCloudVMTotalChanges signature
 SQCloudVMTotalChanges = lib.SQCloudVMTotalChanges
-SQCloudVMTotalChanges.argtypes = [ctypes.c_void_p]
+SQCloudVMTotalChanges.argtypes = [ctypes.POINTER(SQCloudVM)]
 SQCloudVMTotalChanges.restype = ctypes.c_int64
