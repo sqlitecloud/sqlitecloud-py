@@ -29,7 +29,10 @@ from sqlitecloud.driver import (
     SQCloudVMColumnInt32,
     SQCloudVMColumnInt64,
     SQCloudVMColumnLen,
-    SQCloudVMColumnType
+    SQCloudVMColumnType,
+    SQCloudVMLastRowID,
+    SQCloudVMChanges,
+    SQCloudVMTotalChanges
 )
 from sqlitecloud.wrapper_types import SQCLOUD_VALUE_TYPE
 
@@ -171,3 +174,15 @@ def column_int_64_vm(vm: SQCloudVMCompile, index: int) -> int:
 
 def column_len_vm(vm: SQCloudVMCompile, index: int) -> int:
     return SQCloudVMColumnLen(vm, index)
+
+
+def last_row_id_vm(vm: SQCloudVMCompile) -> int:
+    return SQCloudVMLastRowID(vm)
+
+
+def changes_vm(vm: SQCloudVMCompile) -> int:
+    return SQCloudVMChanges(vm)
+
+
+def total_changes_vm(vm: SQCloudVMCompile) -> int:
+    return SQCloudVMTotalChanges(vm)
