@@ -6,7 +6,7 @@ setup(
     author='Sam Reghenzi & Matteo Fredi',
     description='A Python package for working with SQLite databases in the cloud.',
     # long_description=open('../README.md').read(),
-    long_description_content_type='text/markdown',
+    # long_description_content_type='text/markdown',
 
     url="https://github.com/codermine/sqlitecloud-python-sdk",
     packages=find_packages(),
