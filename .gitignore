@@ -10,3 +10,6 @@ main.dSYM/
 
 .DS_Store
 
+.idea
+SqliteCloud.egg-info
+src/sqlitecloud/libsqcloud.so

@@ -6,3 +6,4 @@ typing-extensions==4.8.0
 bump2version==1.0.1
 pytest-mock==3.10.0
 black==23.7.0
+python-dotenv==1.0.0

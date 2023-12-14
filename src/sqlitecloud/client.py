@@ -4,9 +4,7 @@
 import ctypes
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
-from sqlitecloud.pubsub import SQCloudPubSubCallback, subscribe_pub_sub
-from sqlitecloud.resultset import SqliteCloudResultSet
-from sqlitecloud.wrapper_types import SQCloudConfig, SQCloudResult
+
 from sqlitecloud.driver import (
     SQCloudConnect,
     SQCloudErrorMsg,
@@ -20,6 +18,9 @@ from sqlitecloud.driver import (
     SQCloudResultIsError,
     SqlParameter,
 )
+from sqlitecloud.pubsub import SQCloudPubSubCallback, subscribe_pub_sub
+from sqlitecloud.resultset import SqliteCloudResultSet
+from sqlitecloud.wrapper_types import SQCloudConfig, SQCloudResult
 
 
 @dataclass
@@ -133,6 +134,7 @@ class SqliteCloudClient:
             SqliteCloudResultSet: The result set of the executed query.
         """
         print(query)
+        # pylint: disable=unused-variable
         local_conn, close_at_end = (
             (conn, False) if conn else (self.open_connection(), True)
         )
