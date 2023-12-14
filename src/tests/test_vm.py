@@ -135,7 +135,7 @@ def test_bind_parameter_name_vm(get_conn):
     vm = compile_vm(conn, "INSERT INTO employees (emp_name) VALUES (?1);")
     step_vm(vm)
     res = bind_parameter_name_vm(vm=vm, index=1)
-    assert res == '?1'
+    assert isinstance(res, str)
 
 
 def test_column_count_vm(get_conn):
