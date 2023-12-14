@@ -1,9 +1,8 @@
 # Python SDK for SqliteCloud
 
-
-
 ![Build Status](https://github.com/codermine/sqlitecloud-python-sdk/actions/workflows/deploy.yaml/badge.svg "Build Status") ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=plastic&logo=jupyter&logoColor=white)
 
+![SQLiteCloud Logo](https://sqlitecloud.io/static/image/c19460c9ed65bc09aea9.png)
 # Usage
 
 ## Import SqliteCloudClient and SqliteCloudAccount
