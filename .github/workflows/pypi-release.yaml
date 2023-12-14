@@ -29,6 +29,9 @@ jobs:
       run: |
         cd src
         python3 -m pip install --upgrade build && python3 -m build
+    - name: delete SqliteCloud.egg-info
+      run: |
+            rm -r SqliteCloud.egg-info
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
