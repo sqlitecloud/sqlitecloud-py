@@ -33,6 +33,7 @@ jobs:
       run: |
         echo "Current Directory: $(pwd)"
         rm -r src/SqliteCloud.egg-info
+        ls src/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
