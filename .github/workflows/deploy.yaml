@@ -14,14 +14,14 @@ on:
 
 
 jobs:
-#  tests:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: check out lib
-#        uses: actions/checkout@v4
-#        with:
-#          repository: 'sqlitecloud/sdk'
-#          path: 'sdk'
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out lib
+        uses: actions/checkout@v4
+        with:
+          repository: 'sqlitecloud/sdk'
+          path: 'sdk'
 #      - name: build lib
 #        run: |
 #          mkdir LibreSSL
