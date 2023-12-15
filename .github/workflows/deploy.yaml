@@ -70,6 +70,7 @@ jobs:
               git config --local user.email "github-actions[bot]@users.noreply.github.com"
               git config --local user.name "github-actions[bot]"
               python -m pip install -r requirements-dev.txt
+              ls
               bump2version patch
       - name: Push changes
         uses: ad-m/github-push-action@master
