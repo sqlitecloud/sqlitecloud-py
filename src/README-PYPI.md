@@ -3,57 +3,62 @@
 ![Build Status](https://github.com/codermine/sqlitecloud-python-sdk/actions/workflows/deploy.yaml/badge.svg "Build Status") ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=plastic&logo=jupyter&logoColor=white)
 
 ![SQLiteCloud Logo](https://sqlitecloud.io/static/image/c19460c9ed65bc09aea9.png)
-# Usage
 
-## Import SqliteCloudClient and SqliteCloudAccount
+SQLiteCloud is a powerful Python package that allows you to interact with the SQLite Cloud backend server seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
 
-SqliteCloudAccount is the class rapresenting your auth data for SqliteCloud
 
-SqliteCloudClient is the class managing the connection for you
+## Installation
 
+You can install SqliteCloud Package using Python Package Index (PYPI):
+
+```bash
+$ pip install SqliteCloud
+```
+
+## Usage
+<hr>
 
 ```python
 from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
 ```
 
-## Init a connection
+### _Init a connection_
 
-Initialize the client with account connection info
+#### Using explicit configuration
 
 ```python
 account = SqliteCloudAccount(user, password, host, db_name, port)
 client = SqliteCloudClient(cloud_account=account)
 conn = client.open_connection()
-query = "SELECT * FROM table_name;"
-result = client.exec_query(query, conn)
 ```
 
-
-The result is an iterable
-
+#### _Using string configuration_
 
 ```python
-for row in result:
-    print(row)
+account = SqliteCloudAccount("sqlitecloud://user:pass@host.com:port/dbname?timeout=10&key2=value2&key3=value3")
+client = SqliteCloudClient(cloud_account=account)
+conn = client.open_connection()
 ```
 
-
-Then you are done clean up the connection
-
-
-```python
-client.disconnect(conn)
-
-```
-
+### _Execute a query_
 You can bind values to parametric queries: you can pass parameters as positional values in an array
-
-
 ```python
-new_connection = client.open_connection()
-result = client.exec_statement("SELECT * FROM table_name WHERE id = ?", [1],conn=new_connection)
-for row in result:
-    print(row)
-client.disconnect(conn)
+result = client.exec_statement(
+    "SELECT * FROM table_name WHERE id = ?",
+    [1],
+    conn=conn
+)
 ```
 
+### _Iterate result_
+result is an iterable object
+```python
+for row in result:
+    print(row)
+```
+
+### _Close connection_
+
+```python 
+client.disconnect(conn)
+```
