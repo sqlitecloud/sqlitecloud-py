@@ -22,40 +22,40 @@ jobs:
         with:
           repository: 'sqlitecloud/sdk'
           path: 'sdk'
-#      - name: build lib
-#        run: |
-#          mkdir LibreSSL
-#          cd LibreSSL
-#          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
-#          tar xzf libressl-3.8.1.tar.gz
-#          cd libressl-3.8.1
-#          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/
-#          sudo make install
-#          echo "libre ssl COMPLETED"
-#          ls -la /usr/local/lib/
-#          cd ../..
-#          cd sdk/C
-#          sudo make libsqcloud.so
-#      - uses: actions/checkout@v4
-#        with:
-#          path: 'pysqlcloud'
-#
-#      - name: Install dependencies
-#        run: |
-#            cd pysqlcloud
-#            python -m pip install -r requirements.txt
-#            python -m pip install -r requirements-dev.txt
-#      - name: Linting and Testing
-#        env:
-#          TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
-#          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/sdk/C/libsqcloud.so
-#          LD_LIBRARY_PATH: /usr/local/lib/
-#        run: |
-#              cd pysqlcloud
-#              ls -la $SQLITECLOUD_DRIVER_PATH
-#              export PYTHONPATH=$PYTHONPATH:$(pwd)/src
-#              make lint
-#              make test
+      - name: build lib
+        run: |
+          mkdir LibreSSL
+          cd LibreSSL
+          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
+          tar xzf libressl-3.8.1.tar.gz
+          cd libressl-3.8.1
+          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/
+          sudo make install
+          echo "libre ssl COMPLETED"
+          ls -la /usr/local/lib/
+          cd ../..
+          cd sdk/C
+          sudo make libsqcloud.so
+      - uses: actions/checkout@v4
+        with:
+          path: 'pysqlcloud'
+
+      - name: Install dependencies
+        run: |
+            cd pysqlcloud
+            python -m pip install -r requirements.txt
+            python -m pip install -r requirements-dev.txt
+      - name: Linting and Testing
+        env:
+          TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
+          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/sdk/C/libsqcloud.so
+          LD_LIBRARY_PATH: /usr/local/lib/
+        run: |
+              cd pysqlcloud
+              ls -la $SQLITECLOUD_DRIVER_PATH
+              export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+              make lint
+              make test
 
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
