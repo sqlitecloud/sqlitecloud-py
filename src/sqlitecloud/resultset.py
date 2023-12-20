@@ -80,7 +80,7 @@ class SqliteCloudResultSet:
                 for col in range(self.cols):
                     col_type = SQCloudRowsetValueType(
                         self._result, self.row, col
-                    ).value  # TODO memoize
+                    ).value
 
                     data = self._resolve_type(col, col_type)
                     out[self.col_names[col]] = data

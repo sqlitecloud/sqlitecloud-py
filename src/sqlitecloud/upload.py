@@ -4,7 +4,6 @@ from typing import Optional
 from sqlitecloud.driver import CallbackFunc, SQCloudConnect, SQCloudUploadDatabase
 
 
-# Define the callback function
 def xCallback(xdata, buffer, blen, ntot, nprogress):  # pylint: disable=W0613
     nread = os.read(xdata, blen.contents.value)
     if nread == -1:

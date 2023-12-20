@@ -21,7 +21,7 @@ class SQCloudConnection(ctypes.Structure):
 
 SQCloudConnect: Callable[
     [str, str, int, SQCloudConfig], SQCloudConnection
-] = lib.SQCloudConnect  # self._encode_str_to_c(self.hostname), self.port, self.config
+] = lib.SQCloudConnect
 SQCloudConnect.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(SQCloudConfig)]
 SQCloudConnect.restype = ctypes.c_void_p
 

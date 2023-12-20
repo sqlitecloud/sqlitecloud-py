@@ -37,7 +37,6 @@ class SqliteCloudClient:
     Client to connect to SqliteCloud
     """
 
-    # TODO connection pooling
     _config: Optional[SQCloudConfig] = None
     connection_str: Optional[str] = None
     hostname: str
