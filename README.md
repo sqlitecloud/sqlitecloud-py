@@ -1,8 +1,6 @@
 # Python SDK for SqliteCloud
 
-![Build Status](https://github.com/codermine/sqlitecloud-python-sdk/actions/workflows/deploy.yaml/badge.svg "Build Status") ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=plastic&logo=jupyter&logoColor=white)
-
-![SQLiteCloud Logo](https://sqlitecloud.io/static/image/c19460c9ed65bc09aea9.png)
+![Build Status](https://github.com/sqlitecloud/python/actions/workflows/deploy.yaml/badge.svg "Build Status") ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=plastic&logo=jupyter&logoColor=white)
 
 SQLiteCloud is a powerful Python package that allows you to interact with the SQLite Cloud backend server seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
 
@@ -14,6 +12,10 @@ You can install SqliteCloud Package using Python Package Index (PYPI):
 ```bash
 $ pip install SqliteCloud
 ```
+
+- Follow the instructions reported here https://github.com/sqlitecloud/sdk/tree/master/C to build the driver.
+
+- Set SQLITECLOUD_DRIVER_PATH environment variable to the path of the driver file build.
 
 ## Usage
 <hr>
