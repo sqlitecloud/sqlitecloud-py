@@ -18,7 +18,7 @@ def read_file(filename):
 
 setup(
     name='SqliteCloud',
-    version='0.0.51',
+    version='0.0.52',
     author='Sam Reghenzi & Matteo Fredi',
     description='A Python package for working with SQLite databases in the cloud.',
     long_description=read_file('README-PYPI.md'),
