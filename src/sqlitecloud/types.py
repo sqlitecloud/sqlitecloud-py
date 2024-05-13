@@ -2,6 +2,8 @@ from enum import Enum
 from typing import List, Optional
 from enum import Enum
 
+from click import Option
+
 
 class SQCLOUD_VALUE_TYPE(Enum):
     VALUE_INTEGER = 1
@@ -174,3 +176,14 @@ class SQCloudNumber:
         self.value: int = 0
         self.cstart: int = 0
         self.extcode: int = None
+
+
+class SQCloudValue:
+    """
+    Represents the parse value.
+    """
+
+    def __init__(self) -> None:
+        self.value: Optional[str] = None
+        self.len: int = 0
+        self.cellsize: int = 0
