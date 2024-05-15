@@ -1,8 +1,6 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 from enum import Enum
-
-from click import Option
 
 
 class SQCLOUD_VALUE_TYPE(Enum):
@@ -45,6 +43,10 @@ class SQCLOUD_CMD(Enum):
     ARRAY = "="
 
 
+class SQCLOUD_ROWSET(Enum):
+    CHUNKS_END = "/6 0 0 0 "
+
+
 class SQCLOUD_INTERNAL_ERRCODE(Enum):
     INTERNAL_ERRCODE_NONE = 0
     # INTERNAL_ERRCODE_GENERIC = 100000
@@ -56,6 +58,20 @@ class SQCLOUD_INTERNAL_ERRCODE(Enum):
     # INTERNAL_ERRCODE_FORMAT = 100006
     # INTERNAL_ERRCODE_INDEX = 100007
     # INTERNAL_ERRCODE_SOCKCLOSED = 100008
+
+
+class SQCloudRowsetSignature:
+    """
+    Represents the parsed signature for a rowset.
+    """
+
+    def __init__(self) -> None:
+        self.start: int = -1
+        self.len: int = 0
+        self.idx: int = 0
+        self.version: int = 0
+        self.nrows: int = 0
+        self.ncols: int = 0
 
 
 class SqliteCloudAccount:
@@ -82,7 +98,6 @@ class SQCloudConnect:
 
         self.socket: any = None
 
-        self.chunk: SQCloudResult
         self.config: SQCloudConfig
 
         self.isblob: bool = False
@@ -99,11 +114,6 @@ class SQCloudConnect:
 
         # todo: which is the proper type?
         self.data: any
-
-        # self.errmsg: str = ''
-        # self.errcode: int  # error code
-        # self.extcode: int  # extended error code
-        # self.offcode: int  # offset error code
 
 
 class SQCloudConfig:
@@ -131,9 +141,9 @@ class SQCloudConfig:
         self.no_verify_certificate = False
 
         # Filepath of certificates
-        self.tls_root_certificate: str = None
-        self.tls_certificate: str = None
-        self.tls_certificate_key: str = None
+        self.root_certificate: str = None
+        self.certificate: str = None
+        self.certificate_key: str = None
 
         # Server should send BLOB columns
         self.noblob = False
@@ -145,26 +155,13 @@ class SQCloudConfig:
         self.maxrowset = 0
 
 
-class SQCloudResult:
-    def __init__(self) -> None:
-        self.num_rows: int = 0
-        self.num_columns: int = 0
-        self.column_names: List[str] = []
-        self.column_types: List[int] = []
-        self.data: List[any] = []
-
-
 class SQCloudException(Exception):
     def __init__(
-        self, message: str, code: int, xerrcode=0, exception: Optional[Exception] = None
+        self, message: str, code: int, xerrcode=0
     ) -> None:
         self.errmsg = str(message)
-        if exception:
-            self.errmsg += " " + str(exception)
-
         self.errcode = code
         self.xerrcode = xerrcode
-        self.exception = exception
 
 
 class SQCloudNumber:
@@ -173,7 +170,7 @@ class SQCloudNumber:
     """
 
     def __init__(self) -> None:
-        self.value: int = 0
+        self.value: Optional[int] = None
         self.cstart: int = 0
         self.extcode: int = None
 

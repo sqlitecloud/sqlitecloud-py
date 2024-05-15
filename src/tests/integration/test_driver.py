@@ -72,6 +72,7 @@ class TestDriver:
         assert expected_len == result.len
         assert expected_cellsize == result.cellsize
 
+    # TODO
     def test_parse_array(self):
         driver = Driver()
         buffer = "=5 +11 Hello World:123456 ,3.1415 _ $10 0123456789"
@@ -83,3 +84,15 @@ class TestDriver:
 
     # TODO: test compression
 
+    def test_parse_rowset_signature(self):
+        driver = Driver()
+        buffer = "*35 0:1 1 2 +2 42+7 'hello':42 +5 hello"
+
+        result = driver._internal_parse_rowset_signature(buffer)
+
+        assert 12 == result.start
+        assert 35 == result.len
+        assert 0 == result.idx
+        assert 1 == result.version
+        assert 1 == result.nrows
+        assert 2 == result.ncols

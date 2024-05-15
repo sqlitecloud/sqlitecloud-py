@@ -1,107 +1,76 @@
-from typing import Any, Callable, Dict, List, Optional
-from sqlitecloud.driver import (
-    SQCloudResultFloat,
-    SQCloudResultFree,
-    SQCloudResultInt32,
-    SQCloudResultIsError,
-    SQCloudResultType,
-    SQCloudRowsetCols,
-    SQCloudRowsetColumnName,
-    SQCloudRowsetInt32Value,
-    SQCloudRowsetFloatValue,
-    SQCloudRowsetRows,
-    SQCloudRowsetValue,
-    SQCloudRowsetValueType,
-)
-from sqlitecloud.wrapper_types import (
-    SQCLOUD_VALUE_TYPE,
-    SQCLOUD_RESULT_TYPE,
-    SQCloudResult,
-)
+from typing import Any, Dict, List, Optional
+
+
+class SQCloudResult:
+    def __init__(self, result: Optional[any] = None) -> None:
+        self.nrows: int = 0
+        self.ncols: int = 0
+        self.version: int = 0
+        # table values are stored in 1-dimensional array
+        self.data: List[Any] = []
+        self.colname: List[str] = []
+        self.decltype: List[str] = []
+        self.dbname: List[str] = []
+        self.tblname: List[str] = []
+        self.origname: List[str] = []
+        self.notnull: List[str] = []
+        self.prikey: List[str] = []
+        self.autoinc: List[str] = []
+
+        self.is_result: bool = False
+
+        if result:
+            self.init_data(result)
+
+    def init_data(self, result: any) -> None:
+        self.nrows = 1
+        self.ncols = 1
+        # TODO: what if result is array?
+        self.data = [result]
+        self.is_result = True
 
 
 class SqliteCloudResultSet:
-    _result: Optional[SQCloudResult] = None
-    _data: List[Dict[str, Any]] = []
-
     def __init__(self, result: SQCloudResult) -> None:
-        rs_type = SQCloudResultType(
-            result,
-        )
-        match rs_type:
-            case SQCLOUD_RESULT_TYPE.RESULT_ROWSET:
-                self._init_resultset(result)
-            case SQCLOUD_RESULT_TYPE.RESULT_OK:
-                self.init_data(result, self._extract_ok_data)
-            case SQCLOUD_RESULT_TYPE.RESULT_ERROR:
-                self.init_data(result, self._extract_error_data)
-            case SQCLOUD_RESULT_TYPE.RESULT_FLOAT:
-                self.init_data(result, self._extract_float_data)
-            case SQCLOUD_RESULT_TYPE.RESULT_INTEGER:
-                self.init_data(result, self._extract_int_data)
+        self._iter_row: int = 0
+        self._result: SQCloudResult = result
 
-    def init_data(
-        self,
-        result: SQCloudResult,
-        extract_fn: Callable[[SQCloudResult], List[Dict[str, Any]]],
-    ):
-        self.row = 0
-        self.rows = 1
-        self._data = extract_fn(result)
-
-    def _extract_ok_data(self, result: SQCloudResult):
-        return [{"result": not SQCloudResultIsError(result)}]
-
-    def _extract_error_data(self, result: SQCloudResult):
-        return [{"result": SQCloudResultIsError(result)}]
-
-    def _extract_float_data(self, result: SQCloudResult):
-        return [{"result": SQCloudResultFloat(result)}]
-
-    def _extract_int_data(self, result: SQCloudResult):
-        return [{"result": SQCloudResultInt32(result)}]
-
-    def _init_resultset(self, result):
-        self._result = result
-        self.row = 0
-        self.rows = SQCloudRowsetRows(result)
-        self.cols = SQCloudRowsetCols(self._result)
-        self.col_names = list(
-            SQCloudRowsetColumnName(self._result, i) for i in range(self.cols)
-        )
+    def __getattr__(self, attr: str) -> Any:
+        return getattr(self._result, attr)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self._result:
-            if self.row < self.rows:
-                out: Dict[str, any] = {}
-                for col in range(self.cols):
-                    col_type = SQCloudRowsetValueType(
-                        self._result, self.row, col
-                    ).value
+        if self._result.data and self._iter_row < self._result.nrows:
+            out: Dict[str, any] = {}
 
-                    data = self._resolve_type(col, col_type)
-                    out[self.col_names[col]] = data
-                self.row += 1
-                return out
-        elif self._data:
-            if self.row < self.rows:
-                out: Dict[str, any] = self._data[self.row]
-                self.row += 1
-                return out
+            if self._result.is_result:
+                out = {"result": self.get_value(0, 0)}
+                self._iter_row += 1
+            else:
+                for col in range(self._result.ncols):
+                    out[self.get_name(col)] = self.get_value(self._iter_row, col)
+                self._iter_row += 1
 
-        SQCloudResultFree(self._result)
+            return out
+
         raise StopIteration
 
-    def _resolve_type(self, col, col_type):
-        match col_type:
-            case SQCLOUD_VALUE_TYPE.VALUE_INTEGER:
-                return SQCloudRowsetInt32Value(self._result, self.row, col)
-            case SQCLOUD_VALUE_TYPE.VALUE_FLOAT:
-                return SQCloudRowsetFloatValue(self._result, self.row, col)
-            case SQCLOUD_VALUE_TYPE.VALUE_TEXT:
-                return SQCloudRowsetValue(self._result, self.row, col)
-            case SQCLOUD_VALUE_TYPE.VALUE_BLOB:
-                return SQCloudRowsetValue(self._result, self.row, col)
+    def _compute_index(self, row: int, col: int) -> int:
+        if row < 0 or row >= self._result.nrows:
+            return -1
+        if col < 0 or col >= self._result.ncols:
+            return -1
+        return row * self._result.ncols + col
+
+    def get_value(self, row: int, col: int) -> any:
+        index = self._compute_index(row, col)
+        if index < 0 or not self._result.data or index >= len(self._result.data):
+            return None
+        return self._result.data[index]
+
+    def get_name(self, col: int) -> str:
+        if col < 0 or col >= self._result.ncols:
+            return None
+        return self._result.colname[col]
