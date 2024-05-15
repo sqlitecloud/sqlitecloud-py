@@ -16,7 +16,7 @@ from sqlitecloud.types import (
 
 class SqliteCloudClient:
     """
-    Client to connect to SqliteCloud
+    Client to interact with Sqlite Cloud
     """
 
     SQLITE_DEFAULT_PORT = 8860
@@ -27,13 +27,10 @@ class SqliteCloudClient:
         connection_str: Optional[str] = None,
         # pub_subs: SQCloudPubSubCallback = [],
     ) -> None:
-        """Initializes a new instance of the class.
+        """Initializes a new instance of the class with connection information.
 
         Args:
             connection_str (str): The connection string for the database.
-
-        Raises:
-            ValueError: If the connection string is invalid.
 
         """
         self.driver = Driver()
@@ -47,7 +44,7 @@ class SqliteCloudClient:
         elif cloud_account:
             self.config.account = cloud_account
         else:
-            raise Exception("Missing connection parameters")
+            raise SQCloudException("Missing connection parameters")
 
     def open_connection(self) -> SQCloudConnect:
         """Opens a connection to the SQCloud server.
@@ -72,17 +69,14 @@ class SqliteCloudClient:
     def disconnect(self, conn: SQCloudConnect) -> None:
         """Closes the connection to the database.
 
-        This method is used to close the connection to the database. It does not take any arguments and does not return any value.
-
-        Returns:
-            None: This method does not return any value.
+        This method is used to close the connection to the database.
         """
         self.driver.disconnect(conn)
 
     def exec_query(
         self, query: str, conn: SQCloudConnect = None
     ) -> SqliteCloudResultSet:
-        """Executes a SQL query on the SQLite database.
+        """Executes a SQL query on the SQLite Cloud database.
 
         Args:
             query (str): The SQL query to be executed.
@@ -90,30 +84,25 @@ class SqliteCloudClient:
         Returns:
             SqliteCloudResultSet: The result set of the executed query.
         """
-        if not conn:
+        provided_connection = conn is not None
+        if not provided_connection:
             conn = self.open_connection()
 
         result = self.driver.execute(query, conn)
+
+        if not provided_connection:
+            self.disconnect(conn)
+
         return SqliteCloudResultSet(result)
 
-    # def exec_statement(
-    #     self, query: str, values: List[Any], conn: SQCloudConnect = None
-    # ) -> SqliteCloudResultSet:
-    # local_conn = conn if conn else self.open_connection()
-    # result: SQCloudResult = SQCloudExecArray(
-    #     local_conn,
-    #     self._encode_str_to_c(query),
-    #     [SqlParameter(self._encode_str_to_c(str(v)), v) for v in values],
-    # )
-    # if SQCloudResultIsError(result):
-    #     raise Exception(
-    #         "Query error: " + str(SQCloudResultDump(local_conn, result))
-    #     )
-    # return SqliteCloudResultSet(result)
-    # pass
+    def sendblob(self, blob: bytes, conn: SQCloudConnect) -> SqliteCloudResultSet:
+        """Sends a blob to the SQLite database.
 
-    def sendblob(self):
-        pass
+        Args:
+            blob (bytes): The blob to be sent to the database.
+            conn (SQCloudConnect): The connection to the database.
+        """
+        return self.driver.sendblob(blob, conn)
 
     def _parse_connection_string(self, connection_string) -> SQCloudConfig:
         # URL STRING FORMAT

@@ -1,10 +1,5 @@
-from binhex import hexbin
-import os
-from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.driver import Driver, SQCloudConnect
-from sqlitecloud.types import SQCloudConfig, SqliteCloudAccount
+from sqlitecloud.driver import Driver
 import pytest
-import binascii
 
 
 class TestDriver:
@@ -27,7 +22,7 @@ class TestDriver:
     def test_parse_number(self, number_data):
         driver = Driver()
         buffer, expected_value, expected_extcode, expected_cstart = number_data
-        result = driver._internal_parse_number(buffer)
+        result = driver._internal_parse_number(buffer.encode())
 
         assert expected_value == result.value
         assert expected_extcode == result.extcode
@@ -66,27 +61,24 @@ class TestDriver:
         driver = Driver()
         buffer, expected_value, expected_len, expected_cellsize = value_data
 
-        result = driver._internal_parse_value(buffer)
+        result = driver._internal_parse_value(buffer.encode())
 
         assert expected_value == result.value
         assert expected_len == result.len
         assert expected_cellsize == result.cellsize
 
-    # TODO
     def test_parse_array(self):
         driver = Driver()
-        buffer = "=5 +11 Hello World:123456 ,3.1415 _ $10 0123456789"
+        buffer = b"=5 +11 Hello World:123456 ,3.1415 _ $10 0123456789"
         expected_list = ["Hello World", "123456", "3.1415", None, "0123456789"]
 
         result = driver._internal_parse_array(buffer)
 
         assert expected_list == result
 
-    # TODO: test compression
-
     def test_parse_rowset_signature(self):
         driver = Driver()
-        buffer = "*35 0:1 1 2 +2 42+7 'hello':42 +5 hello"
+        buffer = b"*35 0:1 1 2 +2 42+7 'hello':42 +5 hello"
 
         result = driver._internal_parse_rowset_signature(buffer)
 

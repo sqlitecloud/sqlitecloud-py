@@ -19,13 +19,12 @@ class SQCloudResult:
 
         self.is_result: bool = False
 
-        if result:
+        if result is not None:
             self.init_data(result)
 
     def init_data(self, result: any) -> None:
         self.nrows = 1
         self.ncols = 1
-        # TODO: what if result is array?
         self.data = [result]
         self.is_result = True
 
@@ -64,13 +63,16 @@ class SqliteCloudResultSet:
             return -1
         return row * self._result.ncols + col
 
-    def get_value(self, row: int, col: int) -> any:
+    def get_value(self, row: int, col: int) -> Optional[any]:
         index = self._compute_index(row, col)
         if index < 0 or not self._result.data or index >= len(self._result.data):
             return None
         return self._result.data[index]
 
-    def get_name(self, col: int) -> str:
+    def get_name(self, col: int) -> Optional[str]:
         if col < 0 or col >= self._result.ncols:
             return None
         return self._result.colname[col]
+
+    def get_result(self) -> Optional[any]:
+        return self.get_value(0, 0)

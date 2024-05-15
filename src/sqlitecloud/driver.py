@@ -1,7 +1,8 @@
 import ssl
-from typing import Optional
+from typing import Optional, Union
 import lz4.block
-from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
+from sqlitecloud.lz4_custom import lz4decode
+from sqlitecloud.resultset import SQCloudResult
 from sqlitecloud.types import (
     SQCLOUD_CMD,
     SQCLOUD_INTERNAL_ERRCODE,
@@ -14,13 +15,12 @@ from sqlitecloud.types import (
     SQCloudValue,
 )
 import socket
-import sys
 
 
 class Driver:
     def __init__(self) -> None:
-        # used for parsing chunked rowset
-        self._rowset: SqliteCloudResultSet = None
+        # Used while parsing chunked rowset
+        self._rowset: SQCloudResult = None
 
     def connect(
         self, hostname: str, port: int, config: SQCloudConfig
@@ -29,9 +29,9 @@ class Driver:
         Connects to the SQLite Cloud server.
 
         Args:
-            hostname (str, optional): The hostname of the server. Defaults to "localhost".
-            port (int, optional): The port number of the server. Defaults to 8860.
-            config (SQCloudConfig, optional): The configuration for the connection. Defaults to None.
+            hostname (str): The hostname of the server.
+            port (int): The port number of the server.
+            config (SQCloudConfig): The configuration for the connection.
 
         Returns:
             SQCloudConnect: The connection object.
@@ -66,15 +66,27 @@ class Driver:
         return connection
 
     def disconnect(self, conn: SQCloudConnect):
-        if conn.socket:
-            conn.socket.close()
-        conn.socket = None
+        try:
+            if conn.socket:
+                conn.socket.close()
+        finally:
+            conn.socket = None
 
     def execute(self, command: str, connection: SQCloudConnect) -> SQCloudResult:
         return self._internal_run_command(connection, command)
 
-    def sendblob(self):
-        pass
+    def sendblob(self, blob: bytes, conn: SQCloudConnect) -> SQCloudResult:
+        try:
+            conn.isblob = True
+            return self._internal_run_command(conn, blob)
+        finally:
+            conn.isblob = False
+
+    def _internal_reconnect(self, buffer: bytes) -> bool:
+        return True
+
+    def _internal_setup_pubsub(self, buffer: bytes) -> bool:
+        return True
 
     def _internal_config_apply(
         self, connection: SQCloudConnect, config: SQCloudConfig
@@ -85,7 +97,7 @@ class Driver:
         buffer = ""
 
         if config.account.apikey:
-            buffer += f"AUTH APIKEY {connection.account.apikey};"
+            buffer += f"AUTH APIKEY {config.account.apikey};"
 
         if config.account.username and config.account.password:
             command = "HASH" if config.account.password_hashed else "PASSWORD"
@@ -120,14 +132,18 @@ class Driver:
         if len(buffer) > 0:
             self._internal_run_command(connection, buffer)
 
-    def _internal_run_command(self, connection: SQCloudConnect, command: str) -> None:
+    def _internal_run_command(
+        self, connection: SQCloudConnect, command: Union[str, bytes]
+    ) -> None:
         self._internal_socket_write(connection, command)
         return self._internal_socket_read(connection)
 
-    def _internal_socket_write(self, connection: SQCloudConnect, command: str) -> None:
+    def _internal_socket_write(
+        self, connection: SQCloudConnect, command: Union[str, bytes]
+    ) -> None:
         # compute header
         delimit = "$" if connection.isblob else "+"
-        buffer = command.encode()
+        buffer = command.encode() if isinstance(command, str) else command
         buffer_len = len(buffer)
         header = f"{delimit}{buffer_len} "
 
@@ -152,55 +168,62 @@ class Driver:
             ) from exc
 
     def _internal_socket_read(self, connection: SQCloudConnect) -> SQCloudResult:
+        """
+        Read from the socket and parse the response.
+
+        The buffer is stored as a string of bytes without decoding it with UTF-8.
+        The dimensions (LEN) specified in the SCSP protocol are in bytes, while
+        Python counts decoded strings in characters. This can cause issues when
+        slicing the buffer into parts if there are special characters like "ò".
+        """
         buffer = b""
         buffer_size = 8192
         nread = 0
 
-        try:
-            while True:
+        while True:
+            try:
                 data = connection.socket.recv(buffer_size)
                 if not data:
                     raise SQCloudException("Incomplete response from server.")
+            except Exception as exc:
+                raise SQCloudException(
+                    "An error occurred while reading data from the socket.",
+                    SQCLOUD_INTERNAL_ERRCODE.INTERNAL_ERRCODE_NETWORK,
+                ) from exc
 
-                # the expected data length to read
-                # matches the string size before decoding it
-                nread += len(data)
-                # update buffers
-                buffer += data
+            # the expected data length to read
+            # matches the string size before decoding it
+            nread += len(data)
+            # update buffers
+            buffer += data
 
-                c = chr(buffer[0])
+            c = chr(buffer[0])
 
-                if (
-                    c == SQCLOUD_CMD.INT.value
-                    or c == SQCLOUD_CMD.FLOAT.value
-                    or c == SQCLOUD_CMD.NULL.value
-                ):
-                    if not buffer.endswith(b" "):
-                        continue
-                elif c == SQCLOUD_CMD.ROWSET_CHUNK.value:
-                    isEndOfChunk = buffer.endswith(SQCLOUD_ROWSET.CHUNKS_END.value)
-                    if not isEndOfChunk:
-                        continue
-                else:
-                    sqcloud_number = self._internal_parse_number(buffer)
-                    n = sqcloud_number.value
-                    cstart = sqcloud_number.cstart
+            if (
+                c == SQCLOUD_CMD.INT.value
+                or c == SQCLOUD_CMD.FLOAT.value
+                or c == SQCLOUD_CMD.NULL.value
+            ):
+                if not buffer.endswith(b" "):
+                    continue
+            elif c == SQCLOUD_CMD.ROWSET_CHUNK.value:
+                isEndOfChunk = buffer.endswith(SQCLOUD_ROWSET.CHUNKS_END.value)
+                if not isEndOfChunk:
+                    continue
+            else:
+                sqcloud_number = self._internal_parse_number(buffer)
+                n = sqcloud_number.value
+                cstart = sqcloud_number.cstart
 
-                    can_be_zerolength = (
-                        c == SQCLOUD_CMD.BLOB.value or c == SQCLOUD_CMD.STRING.value
-                    )
-                    if n == 0 and not can_be_zerolength:
-                        continue
-                    if n + cstart != nread:
-                        continue
+                can_be_zerolength = (
+                    c == SQCLOUD_CMD.BLOB.value or c == SQCLOUD_CMD.STRING.value
+                )
+                if n == 0 and not can_be_zerolength:
+                    continue
+                if n + cstart != nread:
+                    continue
 
-                return self._internal_parse_buffer(buffer, len(buffer))
-
-        except Exception as exc:
-            raise SQCloudException(
-                "An error occurred while reading data from the socket.",
-                SQCLOUD_INTERNAL_ERRCODE.INTERNAL_ERRCODE_NETWORK,
-            ) from exc
+            return self._internal_parse_buffer(connection, buffer, len(buffer))
 
     def _internal_parse_number(self, buffer: bytes, index: int = 1) -> SQCloudNumber:
         sqcloud_number = SQCloudNumber()
@@ -235,7 +258,9 @@ class Driver:
         sqcloud_number.value = 0
         return sqcloud_number
 
-    def _internal_parse_buffer(self, buffer: bytes, blen: int) -> SQCloudResult:
+    def _internal_parse_buffer(
+        self, connection: SQCloudConnect, buffer: bytes, blen: int
+    ) -> SQCloudResult:
         # possible return values:
         # True 	=> OK
         # False 	=> error
@@ -271,9 +296,9 @@ class Driver:
             SQCLOUD_CMD.BLOB.value,
             SQCLOUD_CMD.JSON.value,
         ]:
-            cstart = 0
-            sqlite_number = self._internal_parse_number(buffer, cstart)
+            sqlite_number = self._internal_parse_number(buffer)
             len_ = sqlite_number.value
+            cstart = sqlite_number.cstart
             if len_ == 0:
                 return SQCloudResult("")
 
@@ -282,16 +307,16 @@ class Driver:
             clone = buffer[cstart : cstart + len_]
 
             if cmd == SQCLOUD_CMD.COMMAND.value:
-                return SQCloudResult(self._internal_run_command(clone))
+                return self._internal_run_command(connection, clone)
             elif cmd == SQCLOUD_CMD.PUBSUB.value:
-                # TODO
-                return self._internal_setup_pubsub(clone)
+                return SQCloudResult(self._internal_setup_pubsub(clone))
             elif cmd == SQCLOUD_CMD.RECONNECT.value:
                 return SQCloudResult(self._internal_reconnect(clone))
             elif cmd == SQCLOUD_CMD.ARRAY.value:
                 return SQCloudResult(self._internal_parse_array(clone))
 
-            return clone
+            clone = clone.decode() if cmd != SQCLOUD_CMD.BLOB.value else clone
+            return SQCloudResult(clone)
 
         elif cmd == SQCLOUD_CMD.ERROR.value:
             # -LEN ERRCODE:EXTCODE ERRMSG
@@ -309,7 +334,7 @@ class Driver:
             len_ -= cstart2
             errmsg = clone[cstart2:]
 
-            raise SQCloudException(errmsg, errcode, xerrcode)
+            raise SQCloudException(errmsg.decode(), errcode, xerrcode)
 
         elif cmd in [SQCLOUD_CMD.ROWSET.value, SQCLOUD_CMD.ROWSET_CHUNK.value]:
             # CMD_ROWSET:          *LEN 0:VERSION ROWS COLS DATA
@@ -337,7 +362,7 @@ class Driver:
             sign_len = rowset_signature.len
             buffer = buffer[sign_len + len(f"/{sign_len} ") :]
             if buffer:
-                return self._internal_parse_buffer(buffer, len(buffer))
+                return self._internal_parse_buffer(connection, buffer, len(buffer))
 
             return rowset
 
@@ -345,7 +370,7 @@ class Driver:
             return None
 
         elif cmd in [SQCLOUD_CMD.INT.value, SQCLOUD_CMD.FLOAT.value]:
-            sqcloud_value = self._internal_parse_value(buffer, blen)
+            sqcloud_value = self._internal_parse_value(buffer)
             clone = sqcloud_value.value
 
             if clone is None:
@@ -362,7 +387,7 @@ class Driver:
         # TODO: exception here?
         return SQCloudResult(None)
 
-    def _internal_uncompress_data(self, buffer: bytes, blen: int) -> Optional[str]:
+    def _internal_uncompress_data(self, buffer: bytes, blen: int) -> Optional[bytes]:
         """
         %LEN COMPRESSED UNCOMPRESSED BUFFER
 
@@ -372,9 +397,6 @@ class Driver:
 
         Returns:
             str: The uncompressed data.
-
-        Raises:
-            None
         """
         tlen = 0  # total length
         clen = 0  # compressed length
@@ -385,7 +407,7 @@ class Driver:
         start = 1
         counter = 0
         for i in range(blen):
-            if buffer[i] != b" ":
+            if chr(buffer[i]) != " ":
                 continue
             counter += 1
 
@@ -413,7 +435,8 @@ class Driver:
         start += hlen
 
         # perform real decompression
-        clone = header + lz4.block.decompress(buffer[start:])
+        # clone = header + lz4.block.decompress(buffer[start:])
+        clone = lz4decode(buffer, start, header)
 
         # sanity check result
         if len(clone) != ulen + hlen:
@@ -421,16 +444,13 @@ class Driver:
 
         return clone
 
-    def _internal_reconnect(self, buffer: bytes) -> bool:
-        return True
-
     def _internal_parse_array(self, buffer: bytes) -> list:
         start = 0
         sqlite_number = self._internal_parse_number(buffer, start)
         n = sqlite_number.value
         start = sqlite_number.cstart
 
-        r = []
+        r: str = []
         for i in range(n):
             sqcloud_value = self._internal_parse_value(buffer, start)
             start += sqcloud_value.cellsize
@@ -460,10 +480,7 @@ class Driver:
         cstart = sqcloud_number.cstart
 
         # handle decimal/float cases
-        if (
-            c == SQCLOUD_CMD.INT.value
-            or c == SQCLOUD_CMD.FLOAT.value
-        ):
+        if c == SQCLOUD_CMD.INT.value or c == SQCLOUD_CMD.FLOAT.value:
             nlen = cstart - index
             len = nlen - 2
             cellsize = nlen

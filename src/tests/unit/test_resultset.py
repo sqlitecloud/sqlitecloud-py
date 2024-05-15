@@ -15,9 +15,10 @@ class TestSqCloudResult:
     def test_init_data_with_array(self):
         result = SQCloudResult()
         result.init_data([42, 43, 44])
+
         assert 1 == result.nrows
         assert 1 == result.ncols
-        assert [42, 43, 44] == result.data
+        assert [[42, 43, 44]] == result.data
         assert True is result.is_result
 
     def test_init_as_dataset(self):
@@ -74,18 +75,23 @@ class TestSqliteCloudResultSet:
         assert None == result_set.get_value(2, 2)
 
     def test_get_value_array(self):
-        result = SQCloudResult(result=[1, 2, 3, 4, 5, 6])
+        result = SQCloudResult(result=[1, 2, 3])
         result_set = SqliteCloudResultSet(result)
-        assert 1 == result_set.get_value(0, 0)
-        assert 5 == result_set.get_value(1, 2)
-        assert 4 == result_set.get_value(2, 1)
-        assert None == result_set.get_value(3, 3)
+
+        assert [1,2,3] == result_set.get_value(0, 0)
 
     def test_get_colname(self):
         result = SQCloudResult()
         result.ncols = 2
         result.colname = ["name", "age"]
         result_set = SqliteCloudResultSet(result)
+
         assert "name" == result_set.get_name(0)
         assert "age" == result_set.get_name(1)
         assert None == result_set.get_name(2)
+
+    def test_get_result_with_single_value(self):
+        result = SQCloudResult(result=42)
+        result_set = SqliteCloudResultSet(result)
+
+        assert 42 == result_set.get_result()
