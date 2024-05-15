@@ -44,7 +44,7 @@ class SQCLOUD_CMD(Enum):
 
 
 class SQCLOUD_ROWSET(Enum):
-    CHUNKS_END = "/6 0 0 0 "
+    CHUNKS_END = b"/6 0 0 0 "
 
 
 class SQCLOUD_INTERNAL_ERRCODE(Enum):
@@ -112,9 +112,6 @@ class SQCloudConnect:
 
         # callback: SQCloudPubSubCB
 
-        # todo: which is the proper type?
-        self.data: any
-
 
 class SQCloudConfig:
     def __init__(self) -> None:
@@ -157,7 +154,7 @@ class SQCloudConfig:
 
 class SQCloudException(Exception):
     def __init__(
-        self, message: str, code: int, xerrcode=0
+        self, message: str, code: Optional[int] = -1, xerrcode: Optional[int] = 0
     ) -> None:
         self.errmsg = str(message)
         self.errcode = code

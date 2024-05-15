@@ -67,7 +67,7 @@ class TestClient:
         connection_string = os.getenv("SQLITE_CONNECTION_STRING")
 
         client = SqliteCloudClient(connection_str=connection_string)
-        
+
         conn = client.open_connection()
         assert isinstance(conn, SQCloudConnect)
 
@@ -77,7 +77,7 @@ class TestClient:
         connection_string = f"sqlitecloud://{os.getenv('SQLITE_USER')}:{os.getenv('SQLITE_PASSWORD')}@{os.getenv('SQLITE_HOST')}/{os.getenv('SQLITE_DB')}"
 
         client = SqliteCloudClient(connection_str=connection_string)
-        
+
         conn = client.open_connection()
         assert isinstance(conn, SQCloudConnect)
 
@@ -92,7 +92,7 @@ class TestClient:
         assert False == result.is_result
         assert 1 == result.nrows
         assert 1 == result.ncols
-        assert 'Hello' == result.get_value(0, 0)
+        assert "Hello" == result.get_value(0, 0)
 
     def test_rowset_data(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -106,12 +106,12 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("SELECT * FROM albums", connection)
         assert result
-        assert '1' == result.get_value(0, 0)
-        assert 'For Those About To Rock We Salute You' == result.get_value(0, 1)
-        assert '2' == result.get_value(1, 0)
+        assert "1" == result.get_value(0, 0)
+        assert "For Those About To Rock We Salute You" == result.get_value(0, 1)
+        assert "2" == result.get_value(1, 0)
 
     def test_get_utf8_value(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("SELECT 'Minha História'", connection)
         assert result
-        assert 'Minha História' == result.get_value(0, 0)
+        assert "Minha História" == result.get_value(0, 0)
