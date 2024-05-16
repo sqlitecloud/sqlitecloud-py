@@ -27,7 +27,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_USER")
         account.password = os.getenv("SQLITE_PASSWORD")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = 8860
 
@@ -44,7 +44,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_USER")
         account.password = os.getenv("SQLITE_PASSWORD")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = 8860
 
@@ -68,7 +68,7 @@ class TestClient:
 
     def test_connection_without_credentials_and_apikey(self):
         account = SqliteCloudAccount()
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = 8860
 
@@ -287,7 +287,7 @@ class TestClient:
     def test_max_rows_option(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
         client = SqliteCloudClient(cloud_account=account)
@@ -302,7 +302,7 @@ class TestClient:
     def test_max_rowset_option_to_fail_when_rowset_is_bigger(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
         client = SqliteCloudClient(cloud_account=account)
@@ -317,7 +317,7 @@ class TestClient:
     def test_max_rowset_option_to_succeed_when_rowset_is_lighter(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
         client = SqliteCloudClient(cloud_account=account)
@@ -375,7 +375,7 @@ class TestClient:
     def test_query_timeout(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
         client = SqliteCloudClient(cloud_account=account)
@@ -465,7 +465,7 @@ class TestClient:
     def test_select_database(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
-        account.database = ""
+        account.dbname = ""
         account.apikey = os.getenv("SQLITE_API_KEY")
 
         client = SqliteCloudClient(cloud_account=account)
@@ -588,7 +588,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.apikey = os.getenv("SQLITE_API_KEY")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
 
         client = SqliteCloudClient(cloud_account=account)
         client.config.compression = True
@@ -609,7 +609,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.apikey = os.getenv("SQLITE_API_KEY")
-        account.database = os.getenv("SQLITE_DB")
+        account.dbname = os.getenv("SQLITE_DB")
 
         client = SqliteCloudClient(cloud_account=account)
         client.config.compression = True
@@ -622,32 +622,3 @@ class TestClient:
         assert rowset.nrows > 0
         assert rowset.ncols > 0
         assert rowset.get_name(0) == "AlbumId"
-
-    # def test_send_blob(self, sqlitecloud_connection):
-    #     connection, client = sqlitecloud_connection
-    #     blob = b"Hello, this is a test blob"
-
-    #     result = client.sendblob(blob, connection)
-
-    #     assert result.get_result() == True
-
-    # def test_send_empty_blob(self, sqlitecloud_connection):
-    #     connection, client = sqlitecloud_connection
-    #     blob = b""
-    #     result = client.sendblob(blob, connection)
-    #     assert result is not None
-    #
-
-    # def test_send_large_blob(self, sqlitecloud_connection):
-    #     connection, client = sqlitecloud_connection
-    #     blob = b"A" * 1024 * 1024  # 1MB blob
-    #     result = client.sendblob(blob, connection)
-    #     assert result is not None
-    #
-
-    # def test_send_blob_with_connection_closed(self, sqlitecloud_connection):
-    #     connection, client = sqlitecloud_connection
-    #     client.disconnect(connection)
-    #     blob = b"Hello, this is a test blob"
-    #     with pytest.raises(Exception):
-    #         client.sendblob(blob, connection)

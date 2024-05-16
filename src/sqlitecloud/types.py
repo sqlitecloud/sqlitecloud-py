@@ -56,42 +56,39 @@ class SQCloudRowsetSignature:
 
 
 class SqliteCloudAccount:
-    def __init__(self):
+    def __init__(
+        self,
+        username: Optional[str] = "",
+        password: Optional[str] = "",
+        hostname: Optional[str] = "",
+        dbname: Optional[str] = "",
+        port: Optional[int] = 8860,
+        apikey: Optional[str] = "",
+    ) -> None:
         # User name is required unless connectionstring is provided
-        self.username = ""
+        self.username = username
         # Password is required unless connection string is provided
-        self.password = ""
+        self.password = password
         # Password is hashed
         self.password_hashed = False
         # API key instead of username and password
-        self.apikey = ""
+        self.apikey = apikey
         # Name of database to open
-        self.database = ""
+        self.dbname = dbname
         # Like mynode.sqlitecloud.io
-        self.hostname = ""
-        self.port = 8860
+        self.hostname = hostname
+        self.port = port
 
 
 class SQCloudConnect:
+    """
+    Represents the connection information.
+    """
+
     def __init__(self):
-        self.hostname: str = ""
-        self.port: int = ""
-
         self.socket: any = None
-
         self.config: SQCloudConfig
-
         self.isblob: bool = False
-        self.config_to_free: bool  # todo: is this needed?
-
-        # pub/sub
-        # todo: check uuid type
-        self.uuid: str
-
-        # todo:
-        # pubsubfd: int
-
-        # callback: SQCloudPubSubCB
 
 
 class SQCloudConfig:

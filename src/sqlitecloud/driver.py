@@ -1,7 +1,6 @@
 import ssl
 from typing import Optional, Union
 import lz4.block
-from sqlitecloud.lz4_custom import lz4decode
 from sqlitecloud.resultset import SQCloudResult
 from sqlitecloud.types import (
     SQCLOUD_CMD,
@@ -48,6 +47,9 @@ class Driver:
                 context.load_cert_chain(
                     certfile=config.certificate, keyfile=config.certificate_key
                 )
+            if config.no_verify_certificate:
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
 
             sock = context.wrap_socket(sock, server_hostname=hostname)
 
@@ -103,10 +105,10 @@ class Driver:
             command = "HASH" if config.account.password_hashed else "PASSWORD"
             buffer += f"AUTH USER {config.account.username} {command} {config.account.password};"
 
-        if config.account.database:
+        if config.account.dbname:
             if config.create and not config.memory:
-                buffer += f"CREATE DATABASE {config.account.database} IF NOT EXISTS;"
-            buffer += f"USE DATABASE {config.account.database};"
+                buffer += f"CREATE DATABASE {config.account.dbname} IF NOT EXISTS;"
+            buffer += f"USE DATABASE {config.account.dbname};"
 
         if config.compression:
             buffer += "SET CLIENT KEY COMPRESSION TO 1;"

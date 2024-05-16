@@ -1,6 +1,4 @@
-import pytest
 from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.types import SQCloudException
 
 
 class TestClient:   
@@ -12,7 +10,7 @@ class TestClient:
         assert not client.config.account.password
         assert "host.com" == client.config.account.hostname
         assert 8860 == client.config.account.port
-        assert "dbname" == client.config.account.database
+        assert "dbname" == client.config.account.dbname
         assert "abc123" == client.config.account.apikey
         assert 10 == client.config.timeout
         assert True == client.config.compression
@@ -25,7 +23,7 @@ class TestClient:
         assert "pass" == client.config.account.password
         assert "host.com" == client.config.account.hostname
         assert 8860 == client.config.account.port
-        assert not client.config.account.database
+        assert not client.config.account.dbname
     
     def test_parse_connection_string_without_credentials(self):
         connection_string = "sqlitecloud://host.com"
@@ -43,7 +41,7 @@ class TestClient:
         
         assert "host.com" == client.config.account.hostname
         assert 8860 == client.config.account.port
-        assert "dbname" == client.config.account.database
+        assert "dbname" == client.config.account.dbname
         assert "abc123" == client.config.account.apikey
         assert True == client.config.compression
         assert True == client.config.zerotext

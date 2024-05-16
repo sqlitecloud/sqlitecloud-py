@@ -1,7 +1,7 @@
 """ Module to interact with remote SqliteCloud database
 
 """
-from typing import Any, List, Optional
+from typing import Optional
 from urllib import parse
 
 from sqlitecloud.driver import Driver
@@ -37,8 +37,6 @@ class SqliteCloudClient:
 
         self.config = SQCloudConfig()
 
-        # for pb in pub_subs:
-        #     self._pub_sub_cbs.append(("channel1", SQCloudPubSubCB(pb)))
         if connection_str:
             self.config = self._parse_connection_string(connection_str)
         elif cloud_account:
@@ -53,24 +51,16 @@ class SqliteCloudClient:
             SQCloudConnect: An instance of the SQCloudConnect class representing the connection to the SQCloud server.
 
         Raises:
-            Exception: If an error occurs while opening the connection.
+            SQCloudException: If an error occurs while opening the connection.
         """
         connection = self.driver.connect(
             self.config.account.hostname, self.config.account.port, self.config
         )
 
-        # SQCloudExec(connection, f"USE DATABASE {self.dbname};")
-
-        # for cb in self._pub_sub_cbs:
-        #     subscribe_pub_sub(connection, cb[0], cb[1])
-
         return connection
 
     def disconnect(self, conn: SQCloudConnect) -> None:
-        """Closes the connection to the database.
-
-        This method is used to close the connection to the database.
-        """
+        """Close the connection to the database."""
         self.driver.disconnect(conn)
 
     def exec_query(
@@ -146,7 +136,7 @@ class SqliteCloudClient:
             path = params.path
             database = path.strip("/")
             if database:
-                config.account.database = database
+                config.account.dbname = database
 
             config.account.hostname = params.hostname
             config.account.port = (
