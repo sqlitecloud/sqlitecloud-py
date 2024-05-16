@@ -78,7 +78,7 @@ class TestSqliteCloudResultSet:
         result = SQCloudResult(result=[1, 2, 3])
         result_set = SqliteCloudResultSet(result)
 
-        assert [1,2,3] == result_set.get_value(0, 0)
+        assert [1, 2, 3] == result_set.get_value(0, 0)
 
     def test_get_colname(self):
         result = SQCloudResult()

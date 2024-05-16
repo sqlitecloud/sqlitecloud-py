@@ -279,11 +279,15 @@ class Driver:
 
         # check for compressed result
         if cmd == SQCLOUD_CMD.COMPRESSED.value:
-            buffer = self._internal_uncompress_data(buffer, blen)
+            buffer = self._internal_uncompress_data(buffer)
             if buffer is None:
                 raise SQCloudException(
                     f"An error occurred while decompressing the input buffer of len {blen}."
                 )
+
+            # buffer after decompression
+            blen = len(buffer)
+            cmd = chr(buffer[0])
 
         # first character contains command type
         if cmd in [
@@ -338,7 +342,10 @@ class Driver:
 
         elif cmd in [SQCLOUD_CMD.ROWSET.value, SQCLOUD_CMD.ROWSET_CHUNK.value]:
             # CMD_ROWSET:          *LEN 0:VERSION ROWS COLS DATA
+            # - When decompressed, LEN for ROWSET is *0
+            #
             # CMD_ROWSET_CHUNK:    /LEN IDX:VERSION ROWS COLS DATA
+            #
             rowset_signature = self._internal_parse_rowset_signature(buffer)
             if rowset_signature.start < 0:
                 raise SQCloudException("Cannot parse rowset signature")
@@ -361,7 +368,7 @@ class Driver:
             # continue parsing next chunk in the buffer
             sign_len = rowset_signature.len
             buffer = buffer[sign_len + len(f"/{sign_len} ") :]
-            if buffer:
+            if cmd == SQCLOUD_CMD.ROWSET_CHUNK.value and buffer:
                 return self._internal_parse_buffer(connection, buffer, len(buffer))
 
             return rowset
@@ -387,7 +394,7 @@ class Driver:
         # TODO: exception here?
         return SQCloudResult(None)
 
-    def _internal_uncompress_data(self, buffer: bytes, blen: int) -> Optional[bytes]:
+    def _internal_uncompress_data(self, buffer: bytes) -> Optional[bytes]:
         """
         %LEN COMPRESSED UNCOMPRESSED BUFFER
 
@@ -398,51 +405,34 @@ class Driver:
         Returns:
             str: The uncompressed data.
         """
-        tlen = 0  # total length
-        clen = 0  # compressed length
-        ulen = 0  # uncompressed length
-        hlen = 0  # raw header length
-        seek1 = 0
+        space_index = buffer.index(b" ")
+        buffer = buffer[space_index + 1 :]
 
-        start = 1
-        counter = 0
-        for i in range(blen):
-            if chr(buffer[i]) != " ":
-                continue
-            counter += 1
+        # extract compressed size
+        space_index = buffer.index(b" ")
+        compressed_size = int(buffer[:space_index].decode("utf-8"))
+        buffer = buffer[space_index + 1 :]
 
-            data = buffer[start:i]
-            start = i + 1
+        # extract decompressed size
+        space_index = buffer.index(b" ")
+        uncompressed_size = int(buffer[:space_index].decode("utf-8"))
+        buffer = buffer[space_index + 1 :]
 
-            if counter == 1:
-                tlen = int(data)
-                seek1 = start
-            elif counter == 2:
-                clen = int(data)
-            elif counter == 3:
-                ulen = int(data)
-                break
+        # extract data header
+        header = buffer[:-compressed_size]
 
-        # sanity check header values
-        if tlen == 0 or clen == 0 or ulen == 0 or start == 1 or seek1 == 0:
-            return None
+        # extract compressed data
+        compressed_buffer = buffer[-compressed_size:]
 
-        # copy raw header
-        hlen = start - seek1
-        header = buffer[start : start + hlen]
-
-        # compute index of the first compressed byte
-        start += hlen
-
-        # perform real decompression
-        # clone = header + lz4.block.decompress(buffer[start:])
-        clone = lz4decode(buffer, start, header)
+        decompressed_buffer = header + lz4.block.decompress(
+            compressed_buffer, uncompressed_size
+        )
 
         # sanity check result
-        if len(clone) != ulen + hlen:
+        if len(decompressed_buffer) != uncompressed_size + len(header):
             return None
 
-        return clone
+        return decompressed_buffer
 
     def _internal_parse_array(self, buffer: bytes) -> list:
         start = 0

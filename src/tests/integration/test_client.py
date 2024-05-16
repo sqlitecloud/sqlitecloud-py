@@ -584,8 +584,7 @@ class TestClient:
         assert cursor.description[0][0] == "AlbumId"
         assert cursor.description[1][0] == "Title"
 
-    # TODO
-    def test_compression(self):
+    def test_compression_single_column(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.apikey = os.getenv("SQLITE_API_KEY")
@@ -595,12 +594,34 @@ class TestClient:
         client.config.compression = True
 
         # min compression size for rowset set by default to 20400 bytes
-        rowset = client.exec_query("SELECT '" + "a" * (1024 * 20) + "' AS DDD")
+        blob_size = 20 * 1024
+        # rowset = client.exec_query("SELECT * from albums inner join albums a2 on albums.AlbumId = a2.AlbumId")
+        rowset = client.exec_query(
+            f"SELECT hex(randomblob({blob_size})) AS 'someColumnName'"
+        )
 
         assert rowset.nrows == 1
         assert rowset.ncols == 1
-        assert rowset.get_value(0, 0).startswith("aaaaa")
-        assert len(rowset.get_value(0, 0)) == 100
+        assert rowset.get_name(0) == "someColumnName"
+        assert len(rowset.get_value(0, 0)) == blob_size * 2
+
+    def test_compression_multiple_columns(self):
+        account = SqliteCloudAccount()
+        account.hostname = os.getenv("SQLITE_HOST")
+        account.apikey = os.getenv("SQLITE_API_KEY")
+        account.database = os.getenv("SQLITE_DB")
+
+        client = SqliteCloudClient(cloud_account=account)
+        client.config.compression = True
+
+        # min compression size for rowset set by default to 20400 bytes
+        rowset = client.exec_query(
+            "SELECT * from albums inner join albums a2 on albums.AlbumId = a2.AlbumId"
+        )
+
+        assert rowset.nrows > 0
+        assert rowset.ncols > 0
+        assert rowset.get_name(0) == "AlbumId"
 
     # def test_send_blob(self, sqlitecloud_connection):
     #     connection, client = sqlitecloud_connection
@@ -615,14 +636,14 @@ class TestClient:
     #     blob = b""
     #     result = client.sendblob(blob, connection)
     #     assert result is not None
-    #     # Add additional assertions as needed
+    #
 
     # def test_send_large_blob(self, sqlitecloud_connection):
     #     connection, client = sqlitecloud_connection
     #     blob = b"A" * 1024 * 1024  # 1MB blob
     #     result = client.sendblob(blob, connection)
     #     assert result is not None
-    #     # Add additional assertions as needed
+    #
 
     # def test_send_blob_with_connection_closed(self, sqlitecloud_connection):
     #     connection, client = sqlitecloud_connection
@@ -630,4 +651,3 @@ class TestClient:
     #     blob = b"Hello, this is a test blob"
     #     with pytest.raises(Exception):
     #         client.sendblob(blob, connection)
-    # Add additional assertions as needed
