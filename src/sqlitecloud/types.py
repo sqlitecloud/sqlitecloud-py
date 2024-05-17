@@ -2,6 +2,10 @@ from enum import Enum
 from typing import Optional
 from enum import Enum
 
+class SQCLOUD_DEFAULT(Enum):
+    PORT = 8860
+    TIMEOUT = 12
+    UPLOAD_SIZE = 512*1024
 
 class SQCLOUD_CMD(Enum):
     STRING = "+"
@@ -62,7 +66,7 @@ class SqliteCloudAccount:
         password: Optional[str] = "",
         hostname: Optional[str] = "",
         dbname: Optional[str] = "",
-        port: Optional[int] = 8860,
+        port: Optional[int] = SQCLOUD_DEFAULT.PORT.value,
         apikey: Optional[str] = "",
     ) -> None:
         # User name is required unless connectionstring is provided
@@ -98,7 +102,7 @@ class SQCloudConfig:
         # Optional query timeout passed directly to TLS socket
         self.timeout = 0
         # Socket connection timeout
-        self.connect_timeout = 20
+        self.connect_timeout = SQCLOUD_DEFAULT.TIMEOUT.value
 
         # Enable compression
         self.compression = False
@@ -132,7 +136,7 @@ class SQCloudConfig:
 
 class SQCloudException(Exception):
     def __init__(
-        self, message: str, code: Optional[int] = -1, xerrcode: Optional[int] = 0
+        self, message: str, code: int = -1, xerrcode: int = 0
     ) -> None:
         self.errmsg = str(message)
         self.errcode = code

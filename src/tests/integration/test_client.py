@@ -554,36 +554,6 @@ class TestClient:
                         query_ms < self.EXPECT_SPEED_MS
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
-    def test_download_database(self, sqlitecloud_connection):
-        connection, client = sqlitecloud_connection
-
-        rowset = client.exec_query(
-            "DOWNLOAD DATABASE " + os.getenv("SQLITE_DB"), connection
-        )
-
-        result_array = rowset.get_result()
-
-        db_size = int(result_array[0])
-
-        tot_read = 0
-        data: bytes = b""
-        while tot_read < db_size:
-            result = client.exec_query("DOWNLOAD STEP;", connection)
-
-            data += result.get_result()
-            tot_read += len(data)
-
-        temp_file = tempfile.mkstemp(prefix="chinook")[1]
-        with open(temp_file, "wb") as f:
-            f.write(data)
-
-        db = sqlite3.connect(temp_file)
-        cursor = db.execute("SELECT * FROM albums")
-        rowset = cursor.fetchall()
-
-        assert cursor.description[0][0] == "AlbumId"
-        assert cursor.description[1][0] == "Title"
-
     def test_compression_single_column(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")

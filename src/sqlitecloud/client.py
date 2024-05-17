@@ -92,7 +92,7 @@ class SqliteCloudClient:
             blob (bytes): The blob to be sent to the database.
             conn (SQCloudConnect): The connection to the database.
         """
-        return self.driver.sendblob(blob, conn)
+        return self.driver.send_blob(blob, conn)
 
     def _parse_connection_string(self, connection_string) -> SQCloudConfig:
         # URL STRING FORMAT

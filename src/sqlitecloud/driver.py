@@ -1,9 +1,11 @@
+from io import BufferedReader, BufferedWriter
 import ssl
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 import lz4.block
 from sqlitecloud.resultset import SQCloudResult
 from sqlitecloud.types import (
     SQCLOUD_CMD,
+    SQCLOUD_DEFAULT,
     SQCLOUD_INTERNAL_ERRCODE,
     SQCLOUD_ROWSET,
     SQCloudConfig,
@@ -17,6 +19,8 @@ import socket
 
 
 class Driver:
+    SQCLOUD_DEFAULT_UPLOAD_SIZE = 512 * 1024
+
     def __init__(self) -> None:
         # Used while parsing chunked rowset
         self._rowset: SQCloudResult = None
@@ -77,7 +81,7 @@ class Driver:
     def execute(self, command: str, connection: SQCloudConnect) -> SQCloudResult:
         return self._internal_run_command(connection, command)
 
-    def sendblob(self, blob: bytes, conn: SQCloudConnect) -> SQCloudResult:
+    def send_blob(self, blob: bytes, conn: SQCloudConnect) -> SQCloudResult:
         try:
             conn.isblob = True
             return self._internal_run_command(conn, blob)
@@ -89,6 +93,113 @@ class Driver:
 
     def _internal_setup_pubsub(self, buffer: bytes) -> bool:
         return True
+
+    def upload_database(
+        self,
+        connection: SQCloudConnect,
+        dbname: str,
+        key: Optional[str],
+        is_file_transfer: bool,
+        snapshot_id: int,
+        is_internal_db: bool,
+        fd: BufferedReader,
+        dbsize: int,
+        xCallback: Callable[[BufferedReader, int, int, int], bytes],
+    ) -> None:
+        keyarg = "KEY " if key else ""
+        keyvalue = key if key else ""
+
+        # prepare command to execute
+        command = ""
+        if is_file_transfer:
+            internalarg = "INTERNAL" if is_internal_db else ""
+            command = f"TRANSFER DATABASE '{dbname}' {keyarg}{keyvalue} SNAPSHOT {snapshot_id} {internalarg}"
+        else:
+            command = f"UPLOAD DATABASE '{dbname}' {keyarg}{keyvalue}"
+
+        # execute command on server side
+        result = self._internal_run_command(connection, command)
+        if not result.data[0]:
+            raise SQCloudException(
+                "An error occurred while initializing the upload of the database."
+            )
+
+        buffer: bytes = b""
+        blen = 0
+        nprogress = 0
+        try:
+            while True:
+                # execute callback to read buffer
+                blen = SQCLOUD_DEFAULT.UPLOAD_SIZE.value
+                try:
+                    buffer = xCallback(fd, blen, dbsize, nprogress)
+                    blen = len(buffer)
+                except Exception as e:
+                    raise SQCloudException(
+                        "An error occurred while reading the file."
+                    ) from e
+
+                try:
+                    # send also the final confirmation blob of zero bytes
+                    self.send_blob(buffer, connection)
+                except Exception as e:
+                    raise SQCloudException(
+                        "An error occurred while uploading the file."
+                    ) from e
+
+                # update progress
+                nprogress += blen
+
+                if blen == 0:
+                    # Upload completed
+                    break
+        except Exception as e:
+            self._internal_run_command(connection, "UPLOAD ABORT")
+            raise e
+
+    def download_database(
+        self,
+        connection: SQCloudConnect,
+        dbname: str,
+        fd: BufferedWriter,
+        xCallback: Callable[[BufferedWriter, int, int, int], bytes],
+        if_exists: bool,
+    ) -> None:
+        exists_cmd = " IF EXISTS" if if_exists else ""
+        result = self._internal_run_command(
+            connection, f"DOWNLOAD DATABASE {dbname}{exists_cmd};"
+        )
+
+        if result.nrows == 0:
+            raise SQCloudException(
+                "An error occurred while initializing the download of the database."
+            )
+
+        # result is an ARRAY (database size, number of pages, raft_index)
+        download_info = result.data[0]
+        db_size = int(download_info[0])
+
+        # loop to download
+        progress_size = 0
+
+        try:
+            while progress_size < db_size:
+                result = self._internal_run_command(connection, "DOWNLOAD STEP")
+
+                # res is BLOB, decode it
+                data = result.data[0]
+                data_len = len(data)
+
+                # execute callback (with progress_size updated)
+                progress_size += data_len
+                xCallback(fd, data, data_len, db_size, progress_size)
+
+                # check exit condition
+                if data_len == 0:
+                    break
+        except Exception as e:
+            self._internal_run_command(connection, "DOWNLOAD ABORT")
+            raise e
 
     def _internal_config_apply(
         self, connection: SQCloudConnect, config: SQCloudConfig
@@ -136,7 +247,7 @@ class Driver:
 
     def _internal_run_command(
         self, connection: SQCloudConnect, command: Union[str, bytes]
-    ) -> None:
+    ) -> SQCloudResult:
         self._internal_socket_write(connection, command)
         return self._internal_socket_read(connection)
 
