@@ -6,28 +6,10 @@ import pytest
 
 from sqlitecloud import download
 from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.types import SQCloudConnect, SqliteCloudAccount
+from sqlitecloud.types import SQCLOUD_ERRCODE, SQCloudConnect, SQCloudException, SqliteCloudAccount
 
 
 class TestDownload:
-    @pytest.fixture()
-    def sqlitecloud_connection(self):
-        account = SqliteCloudAccount()
-        account.username = os.getenv("SQLITE_USER")
-        account.password = os.getenv("SQLITE_PASSWORD")
-        account.dbname = os.getenv("SQLITE_DB")
-        account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
-
-        client = SqliteCloudClient(cloud_account=account)
-
-        connection = client.open_connection()
-        assert isinstance(connection, SQCloudConnect)
-
-        yield (connection, client)
-
-        client.disconnect(connection)
-
     def test_download_database(self, sqlitecloud_connection):
         connection, _ = sqlitecloud_connection
 
@@ -39,3 +21,14 @@ class TestDownload:
 
         assert cursor.description[0][0] == "AlbumId"
         assert cursor.description[1][0] == "Title"
+
+    def test_download_missing_database(self, sqlitecloud_connection):
+        connection, _ = sqlitecloud_connection
+
+        temp_file = tempfile.mkstemp(prefix="missing")[1]
+
+        with pytest.raises(SQCloudException) as e:
+            download.download_db(connection, "missing.sqlite", temp_file)
+
+        assert e.value.errcode == SQCLOUD_ERRCODE.COMMAND.value
+        assert e.value.errmsg == "Database missing.sqlite does not exist."

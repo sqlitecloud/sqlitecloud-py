@@ -6,6 +6,18 @@ from sqlitecloud.types import SQCloudConnect
 import logging
 
 def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes:
+    """
+    Callback function used for uploading data.
+
+    Args:
+        fd (BufferedReader): The file descriptor to read data from.
+        blen (int): The length of the buffer to read.
+        ntot (int): The total number of bytes to be uploaded.
+        nprogress (int): The number of bytes already uploaded.
+
+    Returns:
+        bytes: The buffer containing the read data.
+    """
     buffer = fd.read(blen)
     nread = len(buffer)
 
@@ -19,7 +31,7 @@ def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes
 
 def upload_db(
     connection: SQCloudConnect, dbname: str, key: Optional[str], filename: str
-) -> bool:
+) -> None:
     """
     Uploads a SQLite database to the SQLite Cloud node using the provided connection.
 
@@ -29,8 +41,9 @@ def upload_db(
         key (Optional[str]): The encryption key for the database. If None, no encryption is used.
         filename (str): The path to the SQLite database file to be uploaded.
 
-    Returns:
-        bool: True if the upload is successful, SQCloudException in case of errors.
+    Raises:
+        SQCloudException: If an error occurs while uploading the database.
+
     """
     
     # Create a driver object
@@ -50,5 +63,3 @@ def upload_db(
             dbsize,
             xCallback,
         )
-
-    return True
