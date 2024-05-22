@@ -1,0 +1,6 @@
+# Configuration file to store build system requirements for Python projects
+# https://www.python.org/dev/peps/pep-0518/
+
+[tool.isort]
+# make the tools compatible to each other
+profile = "black"
