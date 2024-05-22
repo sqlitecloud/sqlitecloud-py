@@ -57,6 +57,6 @@ for row in result:
 
 ### _Close connection_
 
-```python 
+```python
 client.disconnect(conn)
 ```

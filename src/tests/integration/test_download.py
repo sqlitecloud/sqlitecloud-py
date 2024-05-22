@@ -4,10 +4,7 @@ import tempfile
 import pytest
 
 from sqlitecloud import download
-from sqlitecloud.types import (
-    SQCLOUD_ERRCODE,
-    SQCloudException,
-)
+from sqlitecloud.types import SQCLOUD_ERRCODE, SQCloudException
 
 
 class TestDownload:

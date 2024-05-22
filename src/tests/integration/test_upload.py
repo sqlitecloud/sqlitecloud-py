@@ -1,7 +1,6 @@
 import os
 import uuid
 
-
 from sqlitecloud.upload import upload_db
 
 
