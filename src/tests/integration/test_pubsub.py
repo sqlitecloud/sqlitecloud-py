@@ -1,5 +1,5 @@
-from time import sleep
 import time
+from time import sleep
 
 import pytest
 
@@ -88,7 +88,12 @@ class TestPubSub:
         assert not pubsub.is_connected(connection)
 
         pubsub.create_channel(connection, channel_name, if_not_exists=True)
-        pubsub.listen(connection, SQCLOUD_PUBSUB_SUBJECT.CHANNEL, channel_name, lambda conn, result, data: None)
+        pubsub.listen(
+            connection,
+            SQCLOUD_PUBSUB_SUBJECT.CHANNEL,
+            channel_name,
+            lambda conn, result, data: None,
+        )
 
         assert pubsub.is_connected(connection)
 
@@ -143,11 +148,13 @@ class TestPubSub:
 
         pubsub = SqliteCloudPubSub()
         type = SQCLOUD_PUBSUB_SUBJECT.TABLE
-        new_name = "Rock"+ str(int(time.time()))
+        new_name = "Rock" + str(int(time.time()))
 
         pubsub.listen(connection, type, "genres", assert_callback, ["somedata"])
 
-        client.exec_query(f"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;", connection)
+        client.exec_query(
+            f"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;", connection
+        )
 
         # wait for callback to be called
         sleep(1)

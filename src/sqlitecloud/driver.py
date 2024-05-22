@@ -1,10 +1,13 @@
-from io import BufferedReader, BufferedWriter
 import logging
 import select
+import socket
 import ssl
 import threading
+from io import BufferedReader, BufferedWriter
 from typing import Callable, Optional, Union
+
 import lz4.block
+
 from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
 from sqlitecloud.types import (
     SQCLOUD_CMD,
@@ -19,7 +22,6 @@ from sqlitecloud.types import (
     SQCloudRowsetSignature,
     SQCloudValue,
 )
-import socket
 
 
 class Driver:
@@ -131,7 +133,7 @@ class Driver:
         try:
             sock.connect((hostname, port))
         except Exception as e:
-            errmsg = f"An error occurred while initializing the socket."
+            errmsg = "An error occurred while initializing the socket."
             raise SQCloudException(errmsg) from e
 
         return sock

@@ -1,9 +1,7 @@
+import types
 from asyncio import AbstractEventLoop
 from enum import Enum
-from threading import Thread
-import types
 from typing import Callable, Optional
-from enum import Enum
 
 
 class SQCLOUD_DEFAULT(Enum):

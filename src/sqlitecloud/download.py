@@ -1,5 +1,5 @@
-from io import BufferedWriter
 import logging
+from io import BufferedWriter
 
 from sqlitecloud.driver import Driver
 from sqlitecloud.types import SQCloudConnect

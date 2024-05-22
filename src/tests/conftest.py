@@ -1,13 +1,16 @@
 import os
+
 import pytest
 from dotenv import load_dotenv
 
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import SQCloudConnect, SqliteCloudAccount
 
+
 @pytest.fixture(autouse=True)
 def load_env_vars():
     load_dotenv(".env")
+
 
 @pytest.fixture()
 def sqlitecloud_connection():
