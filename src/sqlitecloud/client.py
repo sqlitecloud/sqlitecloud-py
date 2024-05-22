@@ -25,15 +25,16 @@ class SqliteCloudClient:
         self,
         cloud_account: Optional[SqliteCloudAccount] = None,
         connection_str: Optional[str] = None,
-        # pub_subs: SQCloudPubSubCallback = [],
     ) -> None:
         """Initializes a new instance of the class with connection information.
 
         Args:
-            connection_str (str): The connection string for the database.
+            cloud_account (SqliteCloudAccount): The account information for the SQlite Cloud database.
+            connection_str (str): The connection string for the SQlite Cloud database.
+                Eg: sqlitecloud://user:pass@host.com:port/dbname?timeout=10&apikey=abcd123
 
         """
-        self.driver = Driver()
+        self._driver = Driver()
 
         self.config = SQCloudConfig()
 
@@ -53,7 +54,7 @@ class SqliteCloudClient:
         Raises:
             SQCloudException: If an error occurs while opening the connection.
         """
-        connection = self.driver.connect(
+        connection = self._driver.connect(
             self.config.account.hostname, self.config.account.port, self.config
         )
 
@@ -61,10 +62,21 @@ class SqliteCloudClient:
 
     def disconnect(self, conn: SQCloudConnect) -> None:
         """Close the connection to the database."""
-        self.driver.disconnect(conn)
+        self._driver.disconnect(conn)
+
+    def is_connected(self, conn: SQCloudConnect) -> bool:
+        """Check if the connection is still open.
+
+        Args:
+            conn (SQCloudConnect): The connection to the database.
+
+        Returns:
+            bool: True if the connection is open, False otherwise.
+        """
+        return self._driver.is_connected(conn)
 
     def exec_query(
-        self, query: str, conn: SQCloudConnect = None
+        self, query: str, conn: SQCloudConnect
     ) -> SqliteCloudResultSet:
         """Executes a SQL query on the SQLite Cloud database.
 
@@ -73,15 +85,11 @@ class SqliteCloudClient:
 
         Returns:
             SqliteCloudResultSet: The result set of the executed query.
+
+        Raises:
+            SQCloudException: If an error occurs while executing the query.
         """
-        provided_connection = conn is not None
-        if not provided_connection:
-            conn = self.open_connection()
-
-        result = self.driver.execute(query, conn)
-
-        if not provided_connection:
-            self.disconnect(conn)
+        result = self._driver.execute(query, conn)
 
         return SqliteCloudResultSet(result)
 
@@ -92,7 +100,7 @@ class SqliteCloudClient:
             blob (bytes): The blob to be sent to the database.
             conn (SQCloudConnect): The connection to the database.
         """
-        return self.driver.sendblob(blob, conn)
+        return self._driver.send_blob(blob, conn)
 
     def _parse_connection_string(self, connection_string) -> SQCloudConfig:
         # URL STRING FORMAT

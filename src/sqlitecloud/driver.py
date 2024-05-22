@@ -1,10 +1,16 @@
+from io import BufferedReader, BufferedWriter
+import logging
+import select
 import ssl
-from typing import Optional, Union
+import threading
+from typing import Callable, Optional, Union
 import lz4.block
-from sqlitecloud.resultset import SQCloudResult
+from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
 from sqlitecloud.types import (
     SQCLOUD_CMD,
+    SQCLOUD_DEFAULT,
     SQCLOUD_INTERNAL_ERRCODE,
+    SQCLOUD_RESULT_TYPE,
     SQCLOUD_ROWSET,
     SQCloudConfig,
     SQCloudConnect,
@@ -17,6 +23,8 @@ import socket
 
 
 class Driver:
+    SQCLOUD_DEFAULT_UPLOAD_SIZE = 512 * 1024
+
     def __init__(self) -> None:
         # Used while parsing chunked rowset
         self._rowset: SQCloudResult = None
@@ -25,7 +33,7 @@ class Driver:
         self, hostname: str, port: int, config: SQCloudConfig
     ) -> SQCloudConnect:
         """
-        Connects to the SQLite Cloud server.
+        Connect to the SQLite Cloud server.
 
         Args:
             hostname (str): The hostname of the server.
@@ -36,10 +44,77 @@ class Driver:
             SQCloudConnect: The connection object.
 
         Raises:
-            SQCloudException: If an error occurs while initializing the socket.
+            SQCloudException: If an error occurs while connecting the socket.
+        """
+        sock = self._internal_connect(hostname, port, config)
+
+        connection = SQCloudConnect()
+        connection.config = config
+        connection.socket = sock
+
+        self._internal_config_apply(connection, config)
+
+        return connection
+
+    def disconnect(self, conn: SQCloudConnect, only_main_socket: bool = False) -> None:
+        """
+        Disconnect from the SQLite Cloud server.
+        """
+        try:
+            if conn.socket:
+                conn.socket.close()
+            if not only_main_socket and conn.pubsub_socket:
+                conn.pubsub_socket.close()
+        except Exception:
+            pass
+        finally:
+            conn.socket = None
+            if not only_main_socket:
+                conn.pubsub_socket = None
+
+    def execute(self, command: str, connection: SQCloudConnect) -> SQCloudResult:
+        """
+        Execute a query on the SQLite Cloud server.
+        """
+        return self._internal_run_command(connection, command)
+
+    def send_blob(self, blob: bytes, conn: SQCloudConnect) -> SQCloudResult:
+        """
+        Send a blob to the SQLite Cloud server.
+        """
+        try:
+            conn.isblob = True
+            return self._internal_run_command(conn, blob)
+        finally:
+            conn.isblob = False
+
+    def is_connected(
+        self, connection: SQCloudConnect, main_socket: bool = True
+    ) -> bool:
+        """
+        Check if the connection is still open.
+        """
+        sock = connection.socket if main_socket else connection.pubsub_socket
+
+        if not sock:
+            return False
+        try:
+            sock.sendall(b"")
+        except OSError:
+            return False
+
+        return True
+
+    def _internal_connect(
+        self, hostname: str, port: int, config: SQCloudConfig
+    ) -> socket:
+        """
+        Create a socket connection to the SQLite Cloud server.
         """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(config.connect_timeout)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         if not config.insecure:
             context = ssl.create_default_context(cafile=config.root_certificate)
@@ -59,36 +134,243 @@ class Driver:
             errmsg = f"An error occurred while initializing the socket."
             raise SQCloudException(errmsg) from e
 
-        connection = SQCloudConnect()
-        connection.socket = sock
-        connection.config = config
-
-        self._internal_config_apply(connection, config)
-
-        return connection
-
-    def disconnect(self, conn: SQCloudConnect):
-        try:
-            if conn.socket:
-                conn.socket.close()
-        finally:
-            conn.socket = None
-
-    def execute(self, command: str, connection: SQCloudConnect) -> SQCloudResult:
-        return self._internal_run_command(connection, command)
-
-    def sendblob(self, blob: bytes, conn: SQCloudConnect) -> SQCloudResult:
-        try:
-            conn.isblob = True
-            return self._internal_run_command(conn, blob)
-        finally:
-            conn.isblob = False
+        return sock
 
     def _internal_reconnect(self, buffer: bytes) -> bool:
         return True
 
-    def _internal_setup_pubsub(self, buffer: bytes) -> bool:
+    def _internal_setup_pubsub(self, connection: SQCloudConnect, buffer: bytes) -> bool:
+        """
+        Prepare the connection for PubSub.
+        Opens a new specific socket and starts the thread to listen for incoming messages.
+        """
+        if self.is_connected(connection, False):
+            return True
+
+        if connection.pubsub_callback is None:
+            raise SQCloudException(
+                "A callback function must be provided to setup the PubSub connection."
+            )
+
+        connection.pubsub_socket = self._internal_connect(
+            connection.config.account.hostname,
+            connection.config.account.port,
+            connection.config,
+        )
+
+        self._internal_run_command(connection, buffer, False)
+        thread = threading.Thread(
+            target=self._internal_pubsub_thread, args=(connection,)
+        )
+        # kill the thread when the main one is terminated
+        thread.daemon = True
+        thread.start()
+        connection.pubsub_thread = thread
+
         return True
+
+    def _internal_pubsub_thread(self, connection: SQCloudConnect) -> None:
+        blen = 2048
+        buffer: bytes = b""
+
+        try:
+            while True:
+                tread = 0
+
+                try:
+                    if not connection.pubsub_socket:
+                        logging.info("PubSub socket dismissed.")
+                        break
+
+                    # wait for the socket to be readable (no timeout)
+                    ready_to_read, _, errors = select.select(
+                        [connection.pubsub_socket], [], []
+                    )
+                    # eg, no data to read
+                    if len(ready_to_read) == 0:
+                        continue
+                    # eg, if the socket is closed
+                    if len(errors) > 0:
+                        break
+
+                    data = connection.pubsub_socket.recv(blen)
+                    if not data:
+                        logging.info("PubSub connection closed.")
+                        break
+                except Exception as e:
+                    logging.error(
+                        f"An error occurred while reading data: {SQCLOUD_INTERNAL_ERRCODE.NETWORK.value} ({e})."
+                    )
+                    break
+
+                nread = len(data)
+                tread += nread
+                blen -= nread
+                buffer += data
+
+                sqcloud_number = self._internal_parse_number(buffer)
+                clen = sqcloud_number.value
+                if clen == 0:
+                    continue
+
+                # check if read is complete
+                # clen is the lenght parsed in the buffer
+                # cstart is the index of the first space
+                cstart = sqcloud_number.cstart
+                if clen + cstart != tread:
+                    continue
+
+                result = self._internal_parse_buffer(connection, buffer, tread)
+                if result.tag == SQCLOUD_RESULT_TYPE.RESULT_STRING:
+                    result.tag = SQCLOUD_RESULT_TYPE.RESULT_JSON
+
+                connection.pubsub_callback(
+                    connection, SqliteCloudResultSet(result), connection.pubsub_data
+                )
+        except Exception as e:
+            logging.error(f"An error occurred while parsing data: {e}.")
+
+        finally:
+            connection.pubsub_callback(connection, None, connection.pubsub_data)
+
+    def upload_database(
+        self,
+        connection: SQCloudConnect,
+        dbname: str,
+        key: Optional[str],
+        is_file_transfer: bool,
+        snapshot_id: int,
+        is_internal_db: bool,
+        fd: BufferedReader,
+        dbsize: int,
+        xCallback: Callable[[BufferedReader, int, int, int], bytes],
+    ) -> None:
+        """
+        Uploads a database to the server.
+
+        Args:
+            connection (SQCloudConnect): The connection object to the SQLite Cloud server.
+            dbname (str): The name of the database to upload.
+            key (Optional[str]): The encryption key for the database, if applicable.
+            is_file_transfer (bool): Indicates whether the database is being transferred as a file.
+            snapshot_id (int): The ID of the snapshot to upload.
+            is_internal_db (bool): Indicates whether the database is an internal database.
+            fd (BufferedReader): The file descriptor of the database file.
+            dbsize (int): The size of the database file.
+            xCallback (Callable[[BufferedReader, int, int, int], bytes]): The callback function to read the buffer.
+
+        Raises:
+            SQCloudException: If an error occurs during the upload process.
+
+        """
+        keyarg = "KEY " if key else ""
+        keyvalue = key if key else ""
+
+        # prepare command to execute
+        command = ""
+        if is_file_transfer:
+            internalarg = "INTERNAL" if is_internal_db else ""
+            command = f"TRANSFER DATABASE '{dbname}' {keyarg}{keyvalue} SNAPSHOT {snapshot_id} {internalarg}"
+        else:
+            command = f"UPLOAD DATABASE '{dbname}' {keyarg}{keyvalue}"
+
+        # execute command on server side
+        result = self._internal_run_command(connection, command)
+        if not result.data[0]:
+            raise SQCloudException(
+                "An error occurred while initializing the upload of the database."
+            )
+
+        buffer: bytes = b""
+        blen = 0
+        nprogress = 0
+        try:
+            while True:
+                # execute callback to read buffer
+                blen = SQCLOUD_DEFAULT.UPLOAD_SIZE.value
+                try:
+                    buffer = xCallback(fd, blen, dbsize, nprogress)
+                    blen = len(buffer)
+                except Exception as e:
+                    raise SQCloudException(
+                        "An error occurred while reading the file."
+                    ) from e
+
+                try:
+                    # send also the final confirmation blob of zero bytes
+                    self.send_blob(buffer, connection)
+                except Exception as e:
+                    raise SQCloudException(
+                        "An error occurred while uploading the file."
+                    ) from e
+
+                # update progress
+                nprogress += blen
+
+                if blen == 0:
+                    # Upload completed
+                    break
+        except Exception as e:
+            self._internal_run_command(connection, "UPLOAD ABORT")
+            raise e
+
+    def download_database(
+        self,
+        connection: SQCloudConnect,
+        dbname: str,
+        fd: BufferedWriter,
+        xCallback: Callable[[BufferedWriter, int, int, int], bytes],
+        if_exists: bool,
+    ) -> None:
+        """
+        Downloads a database from the SQLite Cloud service.
+
+        Args:
+            connection (SQCloudConnect): The connection object used to communicate with the SQLite Cloud service.
+            dbname (str): The name of the database to download.
+            fd (BufferedWriter): The file descriptor to write the downloaded data to.
+            xCallback (Callable[[BufferedWriter, int, int, int], bytes]): A callback function to write downloaded data with the download progress information.
+            if_exists (bool): If True, the download won't rise an exception if database is missing.
+
+        Raises:
+            SQCloudException: If an error occurs while downloading the database.
+
+        """
+        exists_cmd = " IF EXISTS" if if_exists else ""
+        result = self._internal_run_command(
+            connection, f"DOWNLOAD DATABASE {dbname}{exists_cmd};"
+        )
+
+        if result.nrows == 0:
+            raise SQCloudException(
+                "An error occurred while initializing the download of the database."
+            )
+
+        # result is an ARRAY (database size, number of pages, raft_index)
+        download_info = result.data[0]
+        db_size = int(download_info[0])
+
+        # loop to download
+        progress_size = 0
+
+        try:
+            while progress_size < db_size:
+                result = self._internal_run_command(connection, "DOWNLOAD STEP")
+
+                # res is BLOB, decode it
+                data = result.data[0]
+                data_len = len(data)
+
+                # execute callback (with progress_size updated)
+                progress_size += data_len
+                xCallback(fd, data, data_len, db_size, progress_size)
+
+                # check exit condition
+                if data_len == 0:
+                    break
+        except Exception as e:
+            self._internal_run_command(connection, "DOWNLOAD ABORT")
+            raise e
 
     def _internal_config_apply(
         self, connection: SQCloudConnect, config: SQCloudConfig
@@ -135,13 +417,19 @@ class Driver:
             self._internal_run_command(connection, buffer)
 
     def _internal_run_command(
-        self, connection: SQCloudConnect, command: Union[str, bytes]
-    ) -> None:
-        self._internal_socket_write(connection, command)
-        return self._internal_socket_read(connection)
+        self,
+        connection: SQCloudConnect,
+        command: Union[str, bytes],
+        main_socket: bool = True,
+    ) -> SQCloudResult:
+        self._internal_socket_write(connection, command, main_socket)
+        return self._internal_socket_read(connection, main_socket)
 
     def _internal_socket_write(
-        self, connection: SQCloudConnect, command: Union[str, bytes]
+        self,
+        connection: SQCloudConnect,
+        command: Union[str, bytes],
+        main_socket: bool = True,
     ) -> None:
         # compute header
         delimit = "$" if connection.isblob else "+"
@@ -149,27 +437,31 @@ class Driver:
         buffer_len = len(buffer)
         header = f"{delimit}{buffer_len} "
 
+        sock = connection.socket if main_socket else connection.pubsub_socket
+
         # write header
         try:
-            connection.socket.sendall(header.encode())
+            sock.sendall(header.encode())
         except Exception as exc:
             raise SQCloudException(
                 "An error occurred while writing header data.",
-                SQCLOUD_INTERNAL_ERRCODE.INTERNAL_ERRCODE_NETWORK,
+                SQCLOUD_INTERNAL_ERRCODE.NETWORK,
             ) from exc
 
         # write buffer
         if buffer_len == 0:
             return
         try:
-            connection.socket.sendall(buffer)
+            sock.sendall(buffer)
         except Exception as exc:
             raise SQCloudException(
                 "An error occurred while writing data.",
-                SQCLOUD_INTERNAL_ERRCODE.INTERNAL_ERRCODE_NETWORK,
+                SQCLOUD_INTERNAL_ERRCODE.NETWORK,
             ) from exc
 
-    def _internal_socket_read(self, connection: SQCloudConnect) -> SQCloudResult:
+    def _internal_socket_read(
+        self, connection: SQCloudConnect, main_socket: bool = True
+    ) -> SQCloudResult:
         """
         Read from the socket and parse the response.
 
@@ -182,15 +474,17 @@ class Driver:
         buffer_size = 8192
         nread = 0
 
+        sock = connection.socket if main_socket else connection.pubsub_socket
+
         while True:
             try:
-                data = connection.socket.recv(buffer_size)
+                data = sock.recv(buffer_size)
                 if not data:
                     raise SQCloudException("Incomplete response from server.")
             except Exception as exc:
                 raise SQCloudException(
                     "An error occurred while reading data from the socket.",
-                    SQCLOUD_INTERNAL_ERRCODE.INTERNAL_ERRCODE_NETWORK,
+                    SQCLOUD_INTERNAL_ERRCODE.NETWORK,
                 ) from exc
 
             # the expected data length to read
@@ -275,7 +569,7 @@ class Driver:
 
         # check OK value
         if buffer == b"+2 OK":
-            return SQCloudResult(True)
+            return SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_OK, True)
 
         cmd = chr(buffer[0])
 
@@ -306,7 +600,13 @@ class Driver:
             len_ = sqlite_number.value
             cstart = sqlite_number.cstart
             if len_ == 0:
-                return SQCloudResult("")
+                return SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_STRING, "")
+
+            tag = (
+                SQCLOUD_RESULT_TYPE.RESULT_JSON
+                if cmd == SQCLOUD_CMD.JSON.value
+                else SQCLOUD_RESULT_TYPE.RESULT_STRING
+            )
 
             if cmd == SQCLOUD_CMD.ZEROSTRING.value:
                 len_ -= 1
@@ -315,14 +615,23 @@ class Driver:
             if cmd == SQCLOUD_CMD.COMMAND.value:
                 return self._internal_run_command(connection, clone)
             elif cmd == SQCLOUD_CMD.PUBSUB.value:
-                return SQCloudResult(self._internal_setup_pubsub(clone))
+                return SQCloudResult(
+                    SQCLOUD_RESULT_TYPE.RESULT_OK,
+                    self._internal_setup_pubsub(connection, clone),
+                )
             elif cmd == SQCLOUD_CMD.RECONNECT.value:
-                return SQCloudResult(self._internal_reconnect(clone))
+                return SQCloudResult(
+                    SQCLOUD_RESULT_TYPE.RESULT_OK, self._internal_reconnect(clone)
+                )
             elif cmd == SQCLOUD_CMD.ARRAY.value:
-                return SQCloudResult(self._internal_parse_array(clone))
+                return SQCloudResult(
+                    SQCLOUD_RESULT_TYPE.RESULT_ARRAY, self._internal_parse_array(clone)
+                )
+            elif cmd == SQCLOUD_CMD.BLOB.value:
+                tag = SQCLOUD_RESULT_TYPE.RESULT_BLOB
 
             clone = clone.decode() if cmd != SQCLOUD_CMD.BLOB.value else clone
-            return SQCloudResult(clone)
+            return SQCloudResult(tag, clone)
 
         elif cmd == SQCLOUD_CMD.ERROR.value:
             # -LEN ERRCODE:EXTCODE ERRMSG
@@ -376,25 +685,29 @@ class Driver:
             return rowset
 
         elif cmd == SQCLOUD_CMD.NULL.value:
-            return None
+            return SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_NONE, None)
 
         elif cmd in [SQCLOUD_CMD.INT.value, SQCLOUD_CMD.FLOAT.value]:
             sqcloud_value = self._internal_parse_value(buffer)
             clone = sqcloud_value.value
 
+            tag = (
+                SQCLOUD_RESULT_TYPE.RESULT_INTEGER
+                if cmd == SQCLOUD_CMD.INT.value
+                else SQCLOUD_RESULT_TYPE.RESULT_FLOAT
+            )
+
             if clone is None:
-                return SQCloudResult(0)
+                return SQCloudResult(tag, 0)
 
             if cmd == SQCLOUD_CMD.INT.value:
-                return SQCloudResult(int(clone))
-            return SQCloudResult(float(clone))
+                return SQCloudResult(tag, int(clone))
+            return SQCloudResult(tag, float(clone))
 
         elif cmd == SQCLOUD_CMD.RAWJSON.value:
-            # TODO: isn't implemented in C?
-            return SQCloudResult(None)
+            return SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_NONE, None)
 
-        # TODO: exception here?
-        return SQCloudResult(None)
+        return SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_NONE, None)
 
     def _internal_uncompress_data(self, buffer: bytes) -> Optional[bytes]:
         """
@@ -545,7 +858,7 @@ class Driver:
         # idx == 1 means first chunk for chunked rowset
         first_chunk = (ischunk and idx == 1) or (not ischunk and idx == 0)
         if first_chunk:
-            rowset = SQCloudResult()
+            rowset = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
             rowset.nrows = nrows
             rowset.ncols = ncols
             rowset.version = version

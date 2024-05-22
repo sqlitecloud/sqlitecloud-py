@@ -1,8 +1,11 @@
 from typing import Any, Dict, List, Optional
 
+from sqlitecloud.types import SQCLOUD_RESULT_TYPE
+
 
 class SQCloudResult:
-    def __init__(self, result: Optional[any] = None) -> None:
+    def __init__(self, tag: SQCLOUD_RESULT_TYPE, result: Optional[any] = None) -> None:
+        self.tag: SQCLOUD_RESULT_TYPE = tag
         self.nrows: int = 0
         self.ncols: int = 0
         self.version: int = 0
@@ -34,7 +37,7 @@ class SqliteCloudResultSet:
         self._iter_row: int = 0
         self._result: SQCloudResult = result
 
-    def __getattr__(self, attr: str) -> Any:
+    def __getattr__(self, attr: str) -> Optional[Any]:
         return getattr(self._result, attr)
 
     def __iter__(self):

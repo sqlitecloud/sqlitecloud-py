@@ -1,6 +1,15 @@
+from asyncio import AbstractEventLoop
 from enum import Enum
-from typing import Optional
+from threading import Thread
+import types
+from typing import Callable, Optional
 from enum import Enum
+
+
+class SQCLOUD_DEFAULT(Enum):
+    PORT = 8860
+    TIMEOUT = 12
+    UPLOAD_SIZE = 512 * 1024
 
 
 class SQCLOUD_CMD(Enum):
@@ -27,18 +36,48 @@ class SQCLOUD_ROWSET(Enum):
 
 
 class SQCLOUD_INTERNAL_ERRCODE(Enum):
-    INTERNAL_ERRCODE_NONE = 0
-    INTERNAL_ERRCODE_NETWORK = 100005
+    """
+    Clients error codes.
+    """
+
+    NONE = 0
+    NETWORK = 100005
 
 
-class SQCLOUD_CLOUD_ERRCODE(Enum):
-    CLOUD_ERRCODE_MEM = 10000
-    CLOUD_ERRCODE_NOTFOUND = 10001
-    CLOUD_ERRCODE_COMMAND = 10002
-    CLOUD_ERRCODE_INTERNAL = 10003
-    CLOUD_ERRCODE_AUTH = 10004
-    CLOUD_ERRCODE_GENERIC = 10005
-    CLOUD_ERRCODE_RAFT = 10006
+class SQCLOUD_ERRCODE(Enum):
+    """
+    Error codes from Sqlite Cloud.
+    """
+
+    MEM = 10000
+    NOTFOUND = 10001
+    COMMAND = 10002
+    INTERNAL = 10003
+    AUTH = 10004
+    GENERIC = 10005
+    RAFT = 10006
+
+
+class SQCLOUD_RESULT_TYPE(Enum):
+    RESULT_OK = 0
+    RESULT_ERROR = 1
+    RESULT_STRING = 2
+    RESULT_INTEGER = 3
+    RESULT_FLOAT = 4
+    RESULT_ROWSET = 5
+    RESULT_ARRAY = 6
+    RESULT_NONE = 7
+    RESULT_JSON = 8
+    RESULT_BLOB = 9
+
+
+class SQCLOUD_PUBSUB_SUBJECT(Enum):
+    """
+    Subjects that can be subscribed to by PubSub.
+    """
+
+    TABLE = "TABLE"
+    CHANNEL = "CHANNEL"
 
 
 class SQCloudRowsetSignature:
@@ -62,7 +101,7 @@ class SqliteCloudAccount:
         password: Optional[str] = "",
         hostname: Optional[str] = "",
         dbname: Optional[str] = "",
-        port: Optional[int] = 8860,
+        port: Optional[int] = SQCLOUD_DEFAULT.PORT.value,
         apikey: Optional[str] = "",
     ) -> None:
         # User name is required unless connectionstring is provided
@@ -90,6 +129,13 @@ class SQCloudConnect:
         self.config: SQCloudConfig
         self.isblob: bool = False
 
+        self.pubsub_socket: any = None
+        self.pubsub_callback: Callable[
+            [SQCloudConnect, Optional[types.SqliteCloudResultSet], Optional[any]], None
+        ] = None
+        self.pubsub_data: any = None
+        self.pubsub_thread: AbstractEventLoop = None
+
 
 class SQCloudConfig:
     def __init__(self) -> None:
@@ -98,7 +144,7 @@ class SQCloudConfig:
         # Optional query timeout passed directly to TLS socket
         self.timeout = 0
         # Socket connection timeout
-        self.connect_timeout = 20
+        self.connect_timeout = SQCLOUD_DEFAULT.TIMEOUT.value
 
         # Enable compression
         self.compression = False
@@ -131,9 +177,7 @@ class SQCloudConfig:
 
 
 class SQCloudException(Exception):
-    def __init__(
-        self, message: str, code: Optional[int] = -1, xerrcode: Optional[int] = 0
-    ) -> None:
+    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
         self.errmsg = str(message)
         self.errcode = code
         self.xerrcode = xerrcode

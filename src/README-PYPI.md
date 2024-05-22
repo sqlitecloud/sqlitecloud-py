@@ -13,15 +13,12 @@ You can install SqliteCloud Package using Python Package Index (PYPI):
 $ pip install SqliteCloud
 ```
 
-- Follow the instructions reported here https://github.com/sqlitecloud/sdk/tree/master/C to build the driver.
-
-- Set SQLITECLOUD_DRIVER_PATH environment variable to the path of the driver file build.
-
 ## Usage
 <hr>
 
 ```python
-from sqlitecloud.client import SqliteCloudClient, SqliteCloudAccount
+from sqlitecloud.client import SqliteCloudClient
+from sqlitecloud.types import SqliteCloudAccount
 ```
 
 ### _Init a connection_
@@ -45,9 +42,8 @@ conn = client.open_connection()
 ### _Execute a query_
 You can bind values to parametric queries: you can pass parameters as positional values in an array
 ```python
-result = client.exec_statement(
-    "SELECT * FROM table_name WHERE id = ?",
-    [1],
+result = client.exec_query(
+    "SELECT * FROM table_name WHERE id = 1"
     conn=conn
 )
 ```

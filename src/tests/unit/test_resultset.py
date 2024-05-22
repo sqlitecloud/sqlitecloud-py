@@ -1,19 +1,19 @@
 import pytest
 from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
+from sqlitecloud.types import SQCLOUD_RESULT_TYPE
 
 
 class TestSqCloudResult:
     def test_init_data(self):
-        result = SQCloudResult()
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_INTEGER)
         result.init_data(42)
         assert 1 == result.nrows
         assert 1 == result.ncols
         assert [42] == result.data
         assert True is result.is_result
 
-    # TODO
     def test_init_data_with_array(self):
-        result = SQCloudResult()
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ARRAY)
         result.init_data([42, 43, 44])
 
         assert 1 == result.nrows
@@ -22,7 +22,8 @@ class TestSqCloudResult:
         assert True is result.is_result
 
     def test_init_as_dataset(self):
-        result = SQCloudResult()
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+
         assert False is result.is_result
         assert 0 == result.nrows
         assert 0 == result.ncols
@@ -31,7 +32,7 @@ class TestSqCloudResult:
 
 class TestSqliteCloudResultSet:
     def test_next(self):
-        result = SQCloudResult(result=42)
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_INTEGER, result=42)
         result_set = SqliteCloudResultSet(result)
 
         assert {"result": 42} == next(result_set)
@@ -39,13 +40,13 @@ class TestSqliteCloudResultSet:
             next(result_set)
 
     def test_iter_result(self):
-        result = SQCloudResult(result=42)
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_INTEGER, result=42)
         result_set = SqliteCloudResultSet(result)
         for row in result_set:
             assert {"result": 42} == row
 
     def test_iter_rowset(self):
-        rowset = SQCloudResult()
+        rowset = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
         rowset.nrows = 2
         rowset.ncols = 2
         rowset.colname = ["name", "age"]
@@ -62,7 +63,7 @@ class TestSqliteCloudResultSet:
         assert {"name": "Doe", "age": 24} == out[1]
 
     def test_get_value_with_rowset(self):
-        rowset = SQCloudResult()
+        rowset = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
         rowset.nrows = 2
         rowset.ncols = 2
         rowset.colname = ["name", "age"]
@@ -75,13 +76,13 @@ class TestSqliteCloudResultSet:
         assert None == result_set.get_value(2, 2)
 
     def test_get_value_array(self):
-        result = SQCloudResult(result=[1, 2, 3])
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ARRAY, result=[1, 2, 3])
         result_set = SqliteCloudResultSet(result)
 
         assert [1, 2, 3] == result_set.get_value(0, 0)
 
     def test_get_colname(self):
-        result = SQCloudResult()
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 2
         result.colname = ["name", "age"]
         result_set = SqliteCloudResultSet(result)
@@ -91,7 +92,7 @@ class TestSqliteCloudResultSet:
         assert None == result_set.get_name(2)
 
     def test_get_result_with_single_value(self):
-        result = SQCloudResult(result=42)
+        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_INTEGER, result=42)
         result_set = SqliteCloudResultSet(result)
 
         assert 42 == result_set.get_result()
