@@ -19,7 +19,7 @@ def sqlitecloud_connection():
     account.password = os.getenv("SQLITE_PASSWORD")
     account.dbname = os.getenv("SQLITE_DB")
     account.hostname = os.getenv("SQLITE_HOST")
-    account.port = 8860
+    account.port = int(os.getenv("SQLITE_PORT"))
 
     client = SqliteCloudClient(cloud_account=account)
 

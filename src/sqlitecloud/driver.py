@@ -67,8 +67,6 @@ class Driver:
                 conn.socket.close()
             if not only_main_socket and conn.pubsub_socket:
                 conn.pubsub_socket.close()
-        except Exception:
-            pass
         finally:
             conn.socket = None
             if not only_main_socket:

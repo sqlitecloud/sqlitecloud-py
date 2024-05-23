@@ -1,3 +1,6 @@
+#
+# Keep these versions requirements.txt versions aligned.
+#
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
@@ -11,10 +14,10 @@ repos:
     rev: 22.8.0
     hooks:
       - id: black
-        # It is recommended to specify the latest version of Python
-        # supported by your project here, or alternatively use
-        # pre-commit's default_language_version, see
-        # https://pre-commit.com/#top_level-default_language_version
+      # It is recommended to specify the latest version of Python
+      # supported by your project here, or alternatively use
+      # pre-commit's default_language_version, see
+      # https://pre-commit.com/#top_level-default_language_version
         language_version: python3.6
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
@@ -24,9 +27,30 @@ repos:
   - repo: https://github.com/PyCQA/autoflake
     rev: v1.4
     hooks:
-    -   id: autoflake
+      - id: autoflake
+        name: autoflake
+        args:
+          - "--in-place"
+          - "--expand-star-imports"
+          - "--remove-duplicate-keys"
+          - "--remove-unused-variables"
+          - "--remove-unused-variables"
   - repo: https://github.com/pycqa/flake8
     rev: 5.0.4
     hooks:
     -   id: flake8
-        stages: [push]
+        name: flake8
+        # stages: [push]
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.1
+    hooks:
+    -   id: bandit
+        name: bandit
+        entry: bandit
+        args:
+          - "-b"
+          - "bandit-baseline.json"
+          - "--configfile"
+          - "bandit.yaml"
+          - "-r"
+          - "src"

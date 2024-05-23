@@ -28,7 +28,7 @@ class TestClient:
         account.password = os.getenv("SQLITE_PASSWORD")
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
         conn = client.open_connection()
@@ -40,7 +40,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
         conn = client.open_connection()
@@ -52,7 +52,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 
@@ -83,7 +83,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 
@@ -97,7 +97,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 

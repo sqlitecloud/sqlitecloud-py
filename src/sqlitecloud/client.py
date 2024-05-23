@@ -7,6 +7,7 @@ from urllib import parse
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SqliteCloudResultSet
 from sqlitecloud.types import (
+    SQCLOUD_DEFAULT,
     SQCloudConfig,
     SQCloudConnect,
     SQCloudException,
@@ -18,8 +19,6 @@ class SqliteCloudClient:
     """
     Client to interact with Sqlite Cloud
     """
-
-    SQLITE_DEFAULT_PORT = 8860
 
     def __init__(
         self,
@@ -148,7 +147,7 @@ class SqliteCloudClient:
 
             config.account.hostname = params.hostname
             config.account.port = (
-                int(params.port) if params.port else self.SQLITE_DEFAULT_PORT
+                int(params.port) if params.port else SQCLOUD_DEFAULT.PORT.value
             )
 
             return config

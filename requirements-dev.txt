@@ -1,3 +1,4 @@
+# Latest versions that supports Py 3.6
 typing-extensions==4.1.1
 pytest==7.0.1
 pytest-mock==3.6.1
@@ -6,8 +7,8 @@ lz4==3.1.10
 bump2version==1.0.1
 black==22.8.0
 pylint==2.13.9
-mypy==0.971
 flake8==5.0.4
 isort==5.10.1
 autoflake==1.4
 pre-commit==2.17.0
+bandit==1.7.1

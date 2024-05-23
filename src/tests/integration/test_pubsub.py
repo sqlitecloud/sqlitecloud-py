@@ -1,5 +1,5 @@
-import time
-from time import sleep
+import threading
+import uuid
 
 import pytest
 
@@ -18,6 +18,7 @@ class TestPubSub:
         connection, _ = sqlitecloud_connection
 
         callback_called = False
+        flag = threading.Event()
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
@@ -26,10 +27,11 @@ class TestPubSub:
                 assert result.tag == SQCLOUD_RESULT_TYPE.RESULT_JSON
                 assert data == ["somedata"]
                 callback_called = True
+                flag.set()
 
         pubsub = SqliteCloudPubSub()
         type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
-        channel = "channel" + str(int(time.time()))
+        channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel)
         pubsub.listen(connection, type, channel, assert_callback, ["somedata"])
@@ -37,7 +39,7 @@ class TestPubSub:
         pubsub.notify_channel(connection, channel, "somedata2")
 
         # wait for callback to be called
-        sleep(1)
+        flag.wait(30)
 
         assert callback_called
 
@@ -46,7 +48,7 @@ class TestPubSub:
 
         pubsub = SqliteCloudPubSub()
         type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
-        channel_name = "channel" + str(int(time.time()))
+        channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name)
         pubsub.listen(connection, type, channel_name, lambda conn, result, data: None)
@@ -66,7 +68,7 @@ class TestPubSub:
         connection, _ = sqlitecloud_connection
 
         pubsub = SqliteCloudPubSub()
-        channel_name = "channel" + str(int(time.time()))
+        channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name, if_not_exists=True)
 
@@ -83,7 +85,7 @@ class TestPubSub:
         connection, _ = sqlitecloud_connection
 
         pubsub = SqliteCloudPubSub()
-        channel_name = "channel" + str(int(time.time()))
+        channel_name = "channel" + str(uuid.uuid4())
 
         assert not pubsub.is_connected(connection)
 
@@ -101,6 +103,7 @@ class TestPubSub:
         connection, client = sqlitecloud_connection
 
         callback_called = False
+        flag = threading.Event()
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
@@ -108,10 +111,11 @@ class TestPubSub:
             if isinstance(result, SqliteCloudResultSet):
                 assert result.get_result() is not None
                 callback_called = True
+                flag.set()
 
         pubsub = SqliteCloudPubSub()
         type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
-        channel = "channel" + str(int(time.time()))
+        channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel, if_not_exists=True)
         pubsub.listen(connection, type, channel, assert_callback)
@@ -126,7 +130,7 @@ class TestPubSub:
         pubsub2.notify_channel(connection2, channel, "message-in-a-bottle")
 
         # wait for callback to be called
-        sleep(2)
+        flag.wait(30)
 
         assert callback_called
 
@@ -136,6 +140,7 @@ class TestPubSub:
         connection, client = sqlitecloud_connection
 
         callback_called = False
+        flag = threading.Event()
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
@@ -145,10 +150,11 @@ class TestPubSub:
                 assert new_name in result.get_result()
                 assert data == ["somedata"]
                 callback_called = True
+                flag.set()
 
         pubsub = SqliteCloudPubSub()
         type = SQCLOUD_PUBSUB_SUBJECT.TABLE
-        new_name = "Rock" + str(int(time.time()))
+        new_name = "Rock" + str(uuid.uuid4())
 
         pubsub.listen(connection, type, "genres", assert_callback, ["somedata"])
 
@@ -157,6 +163,6 @@ class TestPubSub:
         )
 
         # wait for callback to be called
-        sleep(1)
+        flag.wait(30)
 
         assert callback_called

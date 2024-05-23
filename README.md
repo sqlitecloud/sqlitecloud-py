@@ -19,6 +19,7 @@ $ pip install SqliteCloud
 ```python
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import SqliteCloudAccount
+
 ```
 
 ### _Init a connection_
