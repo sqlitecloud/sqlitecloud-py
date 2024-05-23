@@ -1,66 +1,51 @@
-name: Deploy
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-on: 
-    push:
-      branches:
-      - 'main'
-      - 'develop'
-    pull_request:
-      branches:
-        - 'main'
-        - 'develop'
-    schedule:
-      - cron:  '30 1 * * *'
+name: Test and Release
 
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   tests:
     runs-on: ubuntu-latest
-    steps:
-      - name: check out lib
-        uses: actions/checkout@v4
-        with:
-          repository: 'sqlitecloud/sdk'
-          path: 'sdk'
-      - name: build lib
-        run: |
-          mkdir LibreSSL
-          cd LibreSSL
-          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.1.tar.gz
-          tar xzf libressl-3.8.1.tar.gz
-          cd libressl-3.8.1
-          sudo ./configure --prefix=/usr/local/ --with-openssldir=/usr/local/
-          sudo make install
-          echo "libre ssl COMPLETED"
-          ls -la /usr/local/lib/
-          cd ../..
-          cd sdk/C
-          sudo make libsqcloud.so
-      - uses: actions/checkout@v4
-        with:
-          path: 'pysqlcloud'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.6", "3.12"]
 
-      - name: Install dependencies
-        run: |
-            cd pysqlcloud
-            python -m pip install -r requirements.txt
-            python -m pip install -r requirements-dev.txt
-      - name: Linting and Testing
-        env:
-          TEST_CONNECTION_URL: ${{secrets.TEST_CONNECTION_URL}}
-          SQLITECLOUD_DRIVER_PATH: ${{github.workspace}}/sdk/C/libsqcloud.so
-          LD_LIBRARY_PATH: /usr/local/lib/
-        run: |
-              cd pysqlcloud
-              ls -la $SQLITECLOUD_DRIVER_PATH
-              export PYTHONPATH=$PYTHONPATH:$(pwd)/src
-              make lint
-              make test
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install -r requirements.txt
+        python -m pip install -r requirements-dev.txt
+    - name: Lint
+      run: |
+        flake8 . --count --exit-zero --show-source --statistics
+        isort --diff --check-only src
+    - name: Tests
+      env:
+        SQLITE_CONNECTION_STRING: ${{ secrets.SQLITE_CONNECTION_STRING }}
+        SQLITE_USER: ${{ secrets.SQLITE_USER }}
+        SQLITE_PASSWORD: ${{ secrets.SQLITE_PASSWORD }}
+        SQLITE_API_KEY: ${{ secrets.SQLITE_API_KEY }}
+        SQLITE_HOST: ${{ secrets.SQLITE_HOST }}
+        SQLITE_DB: ${{ secrets.SQLITE_DB }}
+        SQLITE_PORT: ${{ secrets.SQLITE_PORT }}
+      run: |
+        pytest -v src/tests
 
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs: tests
-    name: Release 
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
