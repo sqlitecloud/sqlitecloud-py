@@ -1,27 +1,17 @@
-import io
-import os
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
+# read the contents of your README file
 
-def read_file(filename):
-    base_path = os.path.abspath(os.path.dirname(__file__))
-    full_path = os.path.join(base_path, filename)
-    try:
-        with io.open(full_path, encoding="utf-8") as file:
-            return file.read()
-    except FileNotFoundError:
-        full_path = os.path.join(base_path, f"../{filename}")
-        with io.open(full_path, encoding="utf-8") as file:
-            return file.read()
-
+long_description = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="SqliteCloud",
     version="0.0.76",
     author="sqlitecloud.io",
     description="A Python package for working with SQLite databases in the cloud.",
-    long_description=read_file("README-PYPI.md"),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/sqlitecloud/python",
     packages=find_packages(),
