@@ -16,7 +16,7 @@ setup(
     url="https://github.com/sqlitecloud/python",
     packages=find_packages(),
     install_requires=[
-        "lz4 == 3.1.10",
+        "lz4 >= 3.1.10",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
