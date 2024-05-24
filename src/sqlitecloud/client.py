@@ -7,6 +7,7 @@ from urllib import parse
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SqliteCloudResultSet
 from sqlitecloud.types import (
+    SQCLOUD_DEFAULT,
     SQCloudConfig,
     SQCloudConnect,
     SQCloudException,
@@ -19,8 +20,6 @@ class SqliteCloudClient:
     Client to interact with Sqlite Cloud
     """
 
-    SQLITE_DEFAULT_PORT = 8860
-
     def __init__(
         self,
         cloud_account: Optional[SqliteCloudAccount] = None,
@@ -29,7 +28,8 @@ class SqliteCloudClient:
         """Initializes a new instance of the class with connection information.
 
         Args:
-            cloud_account (SqliteCloudAccount): The account information for the SQlite Cloud database.
+            cloud_account (SqliteCloudAccount): The account information for the
+                SQlite Cloud database.
             connection_str (str): The connection string for the SQlite Cloud database.
                 Eg: sqlitecloud://user:pass@host.com:port/dbname?timeout=10&apikey=abcd123
 
@@ -49,7 +49,8 @@ class SqliteCloudClient:
         """Opens a connection to the SQCloud server.
 
         Returns:
-            SQCloudConnect: An instance of the SQCloudConnect class representing the connection to the SQCloud server.
+            SQCloudConnect: An instance of the SQCloudConnect class representing
+                the connection to the SQCloud server.
 
         Raises:
             SQCloudException: If an error occurs while opening the connection.
@@ -75,9 +76,7 @@ class SqliteCloudClient:
         """
         return self._driver.is_connected(conn)
 
-    def exec_query(
-        self, query: str, conn: SQCloudConnect
-    ) -> SqliteCloudResultSet:
+    def exec_query(self, query: str, conn: SQCloudConnect) -> SqliteCloudResultSet:
         """Executes a SQL query on the SQLite Cloud database.
 
         Args:
@@ -148,7 +147,7 @@ class SqliteCloudClient:
 
             config.account.hostname = params.hostname
             config.account.port = (
-                int(params.port) if params.port else self.SQLITE_DEFAULT_PORT
+                int(params.port) if params.port else SQCLOUD_DEFAULT.PORT.value
             )
 
             return config

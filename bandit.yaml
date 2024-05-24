@@ -1,0 +1,2 @@
+# https://bndit.readthedocs.io/en/latest/config.html
+skips: ['B101']

@@ -1,12 +1,10 @@
-import os
 import sqlite3
 import tempfile
 
 import pytest
 
 from sqlitecloud import download
-from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.types import SQCLOUD_ERRCODE, SQCloudConnect, SQCloudException, SqliteCloudAccount
+from sqlitecloud.types import SQCLOUD_ERRCODE, SQCloudException
 
 
 class TestDownload:

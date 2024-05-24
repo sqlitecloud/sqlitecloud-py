@@ -1,9 +1,7 @@
+import types
 from asyncio import AbstractEventLoop
 from enum import Enum
-from threading import Thread
-import types
 from typing import Callable, Optional
-from enum import Enum
 
 
 class SQCLOUD_DEFAULT(Enum):
@@ -99,9 +97,9 @@ class SqliteCloudAccount:
         self,
         username: Optional[str] = "",
         password: Optional[str] = "",
-        hostname: Optional[str] = "",
+        hostname: str = "",
         dbname: Optional[str] = "",
-        port: Optional[int] = SQCLOUD_DEFAULT.PORT.value,
+        port: int = SQCLOUD_DEFAULT.PORT.value,
         apikey: Optional[str] = "",
     ) -> None:
         # User name is required unless connectionstring is provided

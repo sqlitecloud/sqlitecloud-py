@@ -1,6 +1,5 @@
-import socket
-from sqlite3 import connect
 from typing import Callable, Optional
+
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SqliteCloudResultSet
 from sqlitecloud.types import SQCLOUD_PUBSUB_SUBJECT, SQCloudConnect

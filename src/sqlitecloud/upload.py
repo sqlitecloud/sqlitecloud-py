@@ -1,9 +1,11 @@
-from io import BufferedReader
+import logging
 import os
+from io import BufferedReader
 from typing import Optional
+
 from sqlitecloud.driver import Driver
 from sqlitecloud.types import SQCloudConnect
-import logging
+
 
 def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes:
     """
@@ -45,11 +47,11 @@ def upload_db(
         SQCloudException: If an error occurs while uploading the database.
 
     """
-    
+
     # Create a driver object
     driver = Driver()
 
-    with open(filename, 'rb') as fd:
+    with open(filename, "rb") as fd:
         dbsize = os.path.getsize(filename)
 
         driver.upload_database(

@@ -1,11 +1,9 @@
 import json
-from multiprocessing import connection
 import os
-import sqlite3
-import tempfile
 import time
 
 import pytest
+
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import (
     SQCLOUD_ERRCODE,
@@ -30,7 +28,7 @@ class TestClient:
         account.password = os.getenv("SQLITE_PASSWORD")
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
         conn = client.open_connection()
@@ -42,7 +40,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
         conn = client.open_connection()
@@ -54,7 +52,7 @@ class TestClient:
         account = SqliteCloudAccount()
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 
@@ -85,29 +83,29 @@ class TestClient:
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 
         conn = client.open_connection()
-        assert client.is_connected(conn) == True
+        assert client.is_connected(conn)
 
         client.disconnect(conn)
-        assert client.is_connected(conn) == False
+        assert not client.is_connected(conn)
 
     def test_disconnect(self):
         account = SqliteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
-        account.port = 8860
+        account.port = int(os.getenv("SQLITE_PORT"))
 
         client = SqliteCloudClient(cloud_account=account)
 
         conn = client.open_connection()
-        assert client.is_connected(conn) == True
+        assert client.is_connected(conn)
 
         client.disconnect(conn)
-        assert client.is_connected(conn) == False
+        assert not client.is_connected(conn)
         assert conn.socket is None
         assert conn.pubsub_socket is None
 
@@ -119,7 +117,7 @@ class TestClient:
 
         result = client.exec_query("SELECT 'Hello'", connection)
 
-        assert False == result.is_result
+        assert not result.is_result
         assert 1 == result.nrows
         assert 1 == result.ncols
         assert "Hello" == result.get_value(0, 0)
@@ -239,7 +237,7 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST JSON", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_JSON == result.tag 
+        assert SQCLOUD_RESULT_TYPE.RESULT_JSON == result.tag
         assert {
             "msg-from": {"class": "soldier", "name": "Wixilav"},
             "msg-to": {"class": "supreme-commander", "name": "[Redacted]"},
@@ -293,7 +291,7 @@ class TestClient:
         result = client.exec_query("TEST ARRAY", connection)
 
         result_array = result.get_result()
-        
+
         assert SQCLOUD_RESULT_TYPE.RESULT_ARRAY == result.tag
         assert isinstance(result_array, list)
         assert len(result_array) == 5
@@ -332,7 +330,6 @@ class TestClient:
         # just expect everything is ok
         assert rowset.nrows > 100
 
-
     def test_max_rowset_option_to_fail_when_rowset_is_bigger(self):
         account = SqliteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
@@ -351,7 +348,6 @@ class TestClient:
 
         assert SQCLOUD_ERRCODE.INTERNAL.value == e.value.errcode
         assert "RowSet too big to be sent (limit set to 1024 bytes)." == e.value.errmsg
-
 
     def test_max_rowset_option_to_succeed_when_rowset_is_lighter(self):
         account = SqliteCloudAccount()
@@ -439,7 +435,7 @@ class TestClient:
                     LIMIT 10000000
                 )
                 SELECT i FROM r WHERE i = 1;""",
-                connection
+                connection,
             )
 
         client.disconnect(connection)
@@ -645,7 +641,8 @@ class TestClient:
 
         # min compression size for rowset set by default to 20400 bytes
         rowset = client.exec_query(
-            "SELECT * from albums inner join albums a2 on albums.AlbumId = a2.AlbumId", connection
+            "SELECT * from albums inner join albums a2 on albums.AlbumId = a2.AlbumId",
+            connection,
         )
 
         client.disconnect(connection)

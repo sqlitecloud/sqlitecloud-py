@@ -19,6 +19,7 @@ $ pip install SqliteCloud
 ```python
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import SqliteCloudAccount
+
 ```
 
 ### _Init a connection_
@@ -57,6 +58,6 @@ for row in result:
 
 ### _Close connection_
 
-```python 
+```python
 client.disconnect(conn)
 ```

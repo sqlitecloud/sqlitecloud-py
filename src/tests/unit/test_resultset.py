@@ -1,4 +1,5 @@
 import pytest
+
 from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
 from sqlitecloud.types import SQCLOUD_RESULT_TYPE
 
@@ -73,7 +74,7 @@ class TestSqliteCloudResultSet:
 
         assert "John" == result_set.get_value(0, 0)
         assert 24 == result_set.get_value(1, 1)
-        assert None == result_set.get_value(2, 2)
+        assert result_set.get_value(2, 2) is None
 
     def test_get_value_array(self):
         result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ARRAY, result=[1, 2, 3])
@@ -89,7 +90,7 @@ class TestSqliteCloudResultSet:
 
         assert "name" == result_set.get_name(0)
         assert "age" == result_set.get_name(1)
-        assert None == result_set.get_name(2)
+        assert result_set.get_name(2) is None
 
     def test_get_result_with_single_value(self):
         result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_INTEGER, result=42)

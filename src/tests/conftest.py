@@ -1,13 +1,16 @@
 import os
+
 import pytest
 from dotenv import load_dotenv
 
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import SQCloudConnect, SqliteCloudAccount
 
+
 @pytest.fixture(autouse=True)
 def load_env_vars():
     load_dotenv(".env")
+
 
 @pytest.fixture()
 def sqlitecloud_connection():
@@ -16,7 +19,7 @@ def sqlitecloud_connection():
     account.password = os.getenv("SQLITE_PASSWORD")
     account.dbname = os.getenv("SQLITE_DB")
     account.hostname = os.getenv("SQLITE_HOST")
-    account.port = 8860
+    account.port = int(os.getenv("SQLITE_PORT"))
 
     client = SqliteCloudClient(cloud_account=account)
 

@@ -1,8 +1,6 @@
 import os
 import uuid
-import pytest
-from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.types import SQCloudConnect, SqliteCloudAccount
+
 from sqlitecloud.upload import upload_db
 
 

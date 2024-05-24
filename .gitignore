@@ -7,6 +7,7 @@ main.dSYM/
 .env
 *.pyc
 *.pyo
+.coverage
 
 .DS_Store
 

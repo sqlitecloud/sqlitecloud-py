@@ -5,12 +5,11 @@ name: Test and Release
 
 on:
   push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -32,16 +31,19 @@ jobs:
         isort --diff --check-only src
     - name: Tests
       env:
-        SQLITE_CONNECTION_STRING: ${{ secrets.SQLITE_CONNECTION_STRING }}
+        SQLITE_CONNECTION_STRING: ${{ vars.SQLITE_CONNECTION_STRING }}
         SQLITE_USER: ${{ secrets.SQLITE_USER }}
         SQLITE_PASSWORD: ${{ secrets.SQLITE_PASSWORD }}
         SQLITE_API_KEY: ${{ secrets.SQLITE_API_KEY }}
-        SQLITE_HOST: ${{ secrets.SQLITE_HOST }}
-        SQLITE_DB: ${{ secrets.SQLITE_DB }}
-        SQLITE_PORT: ${{ secrets.SQLITE_PORT }}
+        SQLITE_HOST: ${{ vars.SQLITE_HOST }}
+        SQLITE_DB: ${{ vars.SQLITE_DB }}
+        SQLITE_PORT: ${{ vars.SQLITE_PORT }}
       run: |
-        pytest -v src/tests
-
+        pytest --cov -v src/tests
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs: tests

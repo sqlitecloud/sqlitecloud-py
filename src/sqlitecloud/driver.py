@@ -1,10 +1,13 @@
-from io import BufferedReader, BufferedWriter
 import logging
 import select
+import socket
 import ssl
 import threading
+from io import BufferedReader, BufferedWriter
 from typing import Callable, Optional, Union
+
 import lz4.block
+
 from sqlitecloud.resultset import SQCloudResult, SqliteCloudResultSet
 from sqlitecloud.types import (
     SQCLOUD_CMD,
@@ -19,7 +22,6 @@ from sqlitecloud.types import (
     SQCloudRowsetSignature,
     SQCloudValue,
 )
-import socket
 
 
 class Driver:
@@ -65,8 +67,6 @@ class Driver:
                 conn.socket.close()
             if not only_main_socket and conn.pubsub_socket:
                 conn.pubsub_socket.close()
-        except Exception:
-            pass
         finally:
             conn.socket = None
             if not only_main_socket:
@@ -131,7 +131,7 @@ class Driver:
         try:
             sock.connect((hostname, port))
         except Exception as e:
-            errmsg = f"An error occurred while initializing the socket."
+            errmsg = "An error occurred while initializing the socket."
             raise SQCloudException(errmsg) from e
 
         return sock
@@ -186,12 +186,12 @@ class Driver:
                     ready_to_read, _, errors = select.select(
                         [connection.pubsub_socket], [], []
                     )
-                    # eg, no data to read
-                    if len(ready_to_read) == 0:
-                        continue
                     # eg, if the socket is closed
                     if len(errors) > 0:
                         break
+                    # eg, no data to read
+                    if len(ready_to_read) == 0:
+                        continue
 
                     data = connection.pubsub_socket.recv(blen)
                     if not data:
