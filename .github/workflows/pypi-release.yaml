@@ -23,6 +23,9 @@ jobs:
     - name: Update version in setup.py
       run: >-
         sed -i "s/{{VERSION_PLACEHOLDER}}/${{ steps.tag.outputs.TAG_NAME }}/g" src/setup.py
+    - name: Include README in package
+      run: >-
+        cp README.md src/README.md
     - name: Build a binary wheel
       run: |
         cd src
