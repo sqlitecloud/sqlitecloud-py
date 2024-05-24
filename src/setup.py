@@ -8,7 +8,7 @@ long_description = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="SqliteCloud",
-    version="0.0.76",
+    version="0.0.77",
     author="sqlitecloud.io",
     description="A Python package for working with SQLite databases in the cloud.",
     long_description=long_description,
