@@ -22,6 +22,7 @@ class TestPubSub:
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
+            nonlocal flag
 
             if isinstance(result, SqliteCloudResultSet):
                 assert result.tag == SQCLOUD_RESULT_TYPE.RESULT_JSON
@@ -107,6 +108,7 @@ class TestPubSub:
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
+            nonlocal flag
 
             if isinstance(result, SqliteCloudResultSet):
                 assert result.get_result() is not None
@@ -129,12 +131,12 @@ class TestPubSub:
         pubsub2 = SqliteCloudPubSub()
         pubsub2.notify_channel(connection2, channel, "message-in-a-bottle")
 
+        client.disconnect(connection2)
+
         # wait for callback to be called
         flag.wait(30)
 
         assert callback_called
-
-        client.disconnect(connection2)
 
     def test_listen_table_for_update(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -144,6 +146,7 @@ class TestPubSub:
 
         def assert_callback(conn, result, data):
             nonlocal callback_called
+            nonlocal flag
 
             if isinstance(result, SqliteCloudResultSet):
                 assert result.tag == SQCLOUD_RESULT_TYPE.RESULT_JSON

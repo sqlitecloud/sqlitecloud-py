@@ -1,16 +1,28 @@
 # Python SDK for SQLite Cloud
 
-![Build Status](https://github.com/sqlitecloud/python/actions/workflows/deploy.yaml/badge.svg "Build Status") ![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=plastic&logo=jupyter&logoColor=white)
+<p align="center">
+  <img src="https://sqlitecloud.io/social/logo.png" height="300" alt="SQLite Cloud logo">
+</p>
 
-SQLiteCloud is a powerful Python package that allows you to interact with the SQLite Cloud backend server seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
+![Build Status](https://github.com/sqlitecloud/python/actions/workflows/deploy.yaml/badge.svg "Build Status")
+[![codecov](https://codecov.io/github/sqlitecloud/python/graph/badge.svg?token=38G6FGOWKP)](https://codecov.io/github/sqlitecloud/python)
+![PyPI - Version](https://img.shields.io/pypi/v/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
 
+
+[SQLiteCloud](https://sqlitecloud.io) is a powerful Python package that allows you to interact with the SQLite Cloud backend server seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
+
+- Site: [https://sqlitecloud.io](https://sqlitecloud.io/developers)
+- Documentation: https://..._coming!_
+- Source: [https://github.com/sqlitecloud/python](https://github.com/sqlitecloud/python)
 
 ## Installation
 
 You can install SqliteCloud Package using Python Package Index (PYPI):
 
 ```bash
-$ pip install SqliteCloud
+$ pip install sqlitecloud
 ```
 
 ## Usage
@@ -19,7 +31,6 @@ $ pip install SqliteCloud
 ```python
 from sqlitecloud.client import SqliteCloudClient
 from sqlitecloud.types import SqliteCloudAccount
-
 ```
 
 ### _Init a connection_
@@ -35,7 +46,7 @@ conn = client.open_connection()
 #### _Using string configuration_
 
 ```python
-account = SqliteCloudAccount("sqlitecloud://user:pass@host.com:port/dbname?timeout=10&key2=value2&key3=value3")
+account = SqliteCloudAccount("sqlitecloud://user:pass@host.com:port/dbname?apikey=myapikey")
 client = SqliteCloudClient(cloud_account=account)
 conn = client.open_connection()
 ```
@@ -54,6 +65,16 @@ result is an iterable object
 ```python
 for row in result:
     print(row)
+```
+
+### _Specific value_
+```python
+result.get_value(0, 0)
+```
+
+### _Column name_
+```python
+result.get_name(0)
 ```
 
 ### _Close connection_

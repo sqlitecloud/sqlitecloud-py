@@ -186,12 +186,12 @@ class Driver:
                     ready_to_read, _, errors = select.select(
                         [connection.pubsub_socket], [], []
                     )
-                    # eg, no data to read
-                    if len(ready_to_read) == 0:
-                        continue
                     # eg, if the socket is closed
                     if len(errors) > 0:
                         break
+                    # eg, no data to read
+                    if len(ready_to_read) == 0:
+                        continue
 
                     data = connection.pubsub_socket.recv(blen)
                     if not data:

@@ -5,7 +5,6 @@ name: Test and Release
 
 on:
   push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -40,7 +39,11 @@ jobs:
         SQLITE_DB: ${{ vars.SQLITE_DB }}
         SQLITE_PORT: ${{ vars.SQLITE_PORT }}
       run: |
-        pytest -v src/tests
+        pytest --cov -v src/tests
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs: tests

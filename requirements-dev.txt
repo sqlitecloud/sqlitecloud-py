@@ -2,6 +2,8 @@
 typing-extensions==4.1.1
 pytest==7.0.1
 pytest-mock==3.6.1
+pytest-cov==4.0.0
+coverage==6.2
 python-dotenv==0.20.0
 lz4==3.1.10
 bump2version==1.0.1
