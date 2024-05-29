@@ -1,10 +1,11 @@
+import json
 import logging
 import select
 import socket
 import ssl
 import threading
 from io import BufferedReader, BufferedWriter
-from typing import Callable, Optional, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 import lz4.block
 
@@ -21,6 +22,7 @@ from sqlitecloud.types import (
     SQCloudNumber,
     SQCloudRowsetSignature,
     SQCloudValue,
+    SQLiteCloudDataTypes,
 )
 
 
@@ -88,6 +90,27 @@ class Driver:
         finally:
             conn.isblob = False
 
+    def prepare_statement(
+        self,
+        query: str,
+        parameters: Union[
+            Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
+        ],
+    ) -> str:
+        # TODO: check for right exception is case of wrong number of parameters
+
+        # If parameters is a dictionary, replace the keys in the query with the values
+        if isinstance(parameters, dict):
+            for key, value in parameters.items():
+                query = query.replace(":" + str(key), self.escape_sql_parameter(value))
+
+        # If parameters is a tuple, replace each '?' in the query with a value from the tuple
+        elif isinstance(parameters, tuple):
+            for value in parameters:
+                query = query.replace("?", self.escape_sql_parameter(value), 1)
+
+        return query
+
     def is_connected(
         self, connection: SQCloudConnect, main_socket: bool = True
     ) -> bool:
@@ -104,6 +127,33 @@ class Driver:
             return False
 
         return True
+
+    def escape_sql_parameter(self, param):
+        if param is None or param is None:
+            return "NULL"
+
+        if isinstance(param, bool):
+            return "1" if param else "0"
+
+        if isinstance(param, str):
+            # replace single quote with two single quotes
+            param = param.replace("'", "''")
+            return f"'{param}'"
+
+        if isinstance(param, (int, float)):
+            return str(param)
+
+        # serialize buffer as X'...' hex encoded string
+        if isinstance(param, bytes):
+            return f"X'{param.hex()}'"
+
+        if isinstance(param, dict) or isinstance(param, list):
+            # serialize json then escape single quotes
+            json_string = json.dumps(param)
+            json_string = json_string.replace("'", "''")
+            return f"'{json_string}'"
+
+        raise SQCloudException(f"Unsupported parameter type: {type(param)}")
 
     def _internal_connect(
         self, hostname: str, port: int, config: SQCloudConfig
@@ -422,6 +472,12 @@ class Driver:
         command: Union[str, bytes],
         main_socket: bool = True,
     ) -> SQCloudResult:
+        if not self.is_connected(connection, main_socket):
+            raise SQCloudException(
+                "The connection is closed.",
+                SQCLOUD_INTERNAL_ERRCODE.NETWORK,
+            )
+
         self._internal_socket_write(connection, command, main_socket)
         return self._internal_socket_read(connection, main_socket)
 

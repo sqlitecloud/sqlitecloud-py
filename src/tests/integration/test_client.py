@@ -143,9 +143,9 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("SELECT * FROM albums", connection)
 
-        assert "1" == result.get_value(0, 0)
+        assert 1 == result.get_value(0, 0)
         assert "For Those About To Rock We Salute You" == result.get_value(0, 1)
-        assert "2" == result.get_value(1, 0)
+        assert 2 == result.get_value(1, 0)
 
     def test_select_utf8_value_and_column_name(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -650,3 +650,30 @@ class TestClient:
         assert rowset.nrows > 0
         assert rowset.ncols > 0
         assert rowset.get_name(0) == "AlbumId"
+
+    def test_exec_statement_with_named_placeholder(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        result = client.exec_statement(
+            "SELECT * FROM albums WHERE AlbumId = :id and Title = :title",
+            {"id": 1, "title": "For Those About To Rock We Salute You"},
+            connection,
+        )
+
+        assert result.nrows == 1
+        assert result.get_value(0, 0) == 1
+
+    def test_exec_statement_with_qmarks(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        result = client.exec_statement(
+            "SELECT * FROM albums WHERE AlbumId = ? and Title = ?",
+            (
+                1,
+                "For Those About To Rock We Salute You",
+            ),
+            connection,
+        )
+
+        assert result.nrows == 1
+        assert result.get_value(0, 0) == 1

@@ -1,7 +1,11 @@
 import types
 from asyncio import AbstractEventLoop
 from enum import Enum
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, Optional, Union
+from urllib import parse
+
+# Basic types supported by SQLiteCloud APIs
+SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, None]
 
 
 class SQCLOUD_DEFAULT(Enum):
@@ -31,6 +35,14 @@ class SQCLOUD_CMD(Enum):
 
 class SQCLOUD_ROWSET(Enum):
     CHUNKS_END = b"/6 0 0 0 "
+
+
+class SQCLOUD_VALUE_TYPE(Enum):
+    INTEGER = "INTEGER"
+    FLOAT = "FLOAT"
+    TEXT = "TEXT"
+    BLOB = "BLOB"
+    NULL = "NULL"
 
 
 class SQCLOUD_INTERNAL_ERRCODE(Enum):
@@ -136,7 +148,7 @@ class SQCloudConnect:
 
 
 class SQCloudConfig:
-    def __init__(self) -> None:
+    def __init__(self, connection_str: Optional[str] = None) -> None:
         self.account: SqliteCloudAccount = None
 
         # Optional query timeout passed directly to TLS socket
@@ -172,6 +184,61 @@ class SQCloudConfig:
         self.maxrows = 0
         # Server should limit total number of rows in a set to maxRowset
         self.maxrowset = 0
+
+        if connection_str is not None:
+            self._parse_connection_string(connection_str)
+
+    def _parse_connection_string(self, connection_string) -> None:
+        # URL STRING FORMAT
+        # sqlitecloud://user:pass@host.com:port/dbname?timeout=10&key2=value2&key3=value3
+        # or sqlitecloud://host.sqlite.cloud:8860/dbname?apikey=zIiAARzKm9XBVllbAzkB1wqrgijJ3Gx0X5z1A4m4xBA
+
+        self.account = SqliteCloudAccount()
+
+        try:
+            params = parse.urlparse(connection_string)
+
+            options = {}
+            query = params.query
+            options = parse.parse_qs(query)
+            for option, values in options.items():
+                opt = option.lower()
+                value = values.pop()
+
+                if value.lower() in ["true", "false"]:
+                    value = bool(value)
+                elif value.isdigit():
+                    value = int(value)
+                else:
+                    value = value
+
+                if hasattr(self, opt):
+                    setattr(self, opt, value)
+                elif hasattr(self.account, opt):
+                    setattr(self.account, opt, value)
+
+            # apikey or username/password is accepted
+            if not self.account.apikey:
+                self.account.username = (
+                    parse.unquote(params.username) if params.username else ""
+                )
+                self.account.password = (
+                    parse.unquote(params.password) if params.password else ""
+                )
+
+            path = params.path
+            database = path.strip("/")
+            if database:
+                self.account.dbname = database
+
+            self.account.hostname = params.hostname
+            self.account.port = (
+                int(params.port) if params.port else SQCLOUD_DEFAULT.PORT.value
+            )
+        except Exception as e:
+            raise SQCloudException(
+                f"Invalid connection string {connection_string}"
+            ) from e
 
 
 class SQCloudException(Exception):
