@@ -1,6 +1,8 @@
 import pytest
+from pytest_mock import MockerFixture
 
 from sqlitecloud.driver import Driver
+from sqlitecloud.types import SQCloudConfig, SqliteCloudAccount
 
 
 class TestDriver:
@@ -212,3 +214,46 @@ class TestDriver:
         driver.escape_sql_parameter(param)
 
         assert expected_result
+
+    def test_nonlinearizable_command_before_auth_with_account(
+        self, mocker: MockerFixture
+    ):
+        driver = Driver()
+
+        config = SQCloudConfig()
+        config.account = SqliteCloudAccount()
+        config.account.username = "pippo"
+        config.account.password = "pluto"
+        config.non_linearizable = True
+
+        mocker.patch.object(driver, "_internal_connect", return_value=None)
+        run_command_mock = mocker.patch.object(driver, "_internal_run_command")
+
+        driver.connect("myhost", 8860, config)
+
+        expected_buffer = (
+            "SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH USER pippo PASSWORD pluto;"
+        )
+
+        run_command_mock.assert_called_once()
+        assert run_command_mock.call_args[0][1] == expected_buffer
+
+    def test_nonlinearizable_command_before_auth_with_apikey(
+        self, mocker: MockerFixture
+    ):
+        driver = Driver()
+
+        config = SQCloudConfig()
+        config.account = SqliteCloudAccount()
+        config.account.apikey = "abc123"
+        config.non_linearizable = True
+
+        mocker.patch.object(driver, "_internal_connect", return_value=None)
+        run_command_mock = mocker.patch.object(driver, "_internal_run_command")
+
+        driver.connect("myhost", 8860, config)
+
+        expected_buffer = "SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH APIKEY abc123;"
+
+        run_command_mock.assert_called_once()
+        assert run_command_mock.call_args[0][1] == expected_buffer

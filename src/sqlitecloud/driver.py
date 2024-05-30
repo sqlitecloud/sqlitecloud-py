@@ -430,6 +430,10 @@ class Driver:
 
         buffer = ""
 
+        # it must be executed before authentication command
+        if config.non_linearizable:
+            buffer += "SET CLIENT KEY NONLINEARIZABLE TO 1;"
+
         if config.account.apikey:
             buffer += f"AUTH APIKEY {config.account.apikey};"
 
@@ -447,9 +451,6 @@ class Driver:
 
         if config.zerotext:
             buffer += "SET CLIENT KEY ZEROTEXT TO 1;"
-
-        if config.non_linearizable:
-            buffer += "SET CLIENT KEY NONLINEARIZABLE TO 1;"
 
         if config.noblob:
             buffer += "SET CLIENT KEY NOBLOB TO 1;"
