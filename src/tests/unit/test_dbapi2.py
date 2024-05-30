@@ -1,3 +1,4 @@
+import pytest
 from pytest_mock import MockerFixture
 
 import sqlitecloud
@@ -5,7 +6,12 @@ from sqlitecloud import Cursor
 from sqlitecloud.dbapi2 import Connection
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SQCloudResult
-from sqlitecloud.types import SQCLOUD_RESULT_TYPE, SQCloudConfig, SqliteCloudAccount
+from sqlitecloud.types import (
+    SQCLOUD_RESULT_TYPE,
+    SQCloudConfig,
+    SQCloudException,
+    SqliteCloudAccount,
+)
 
 
 def test_connect_with_account_and_config(mocker: MockerFixture):
@@ -288,7 +294,6 @@ class TestCursor:
         cursor._resultset = result
 
         assert list(cursor) == [("myname1",), ("myname2",)]
-        assert len(cursor) == 2
 
     def test_row_factory(self, mocker):
         conn = Connection(mocker.patch("sqlitecloud.types.SQCloudConnect"))
@@ -304,3 +309,26 @@ class TestCursor:
         cursor._resultset = result
 
         assert cursor.fetchone() == {"name": "myname1"}
+
+    @pytest.mark.parametrize(
+        "method, args",
+        [
+            ("execute", ("",)),
+            ("executemany", ("", [])),
+            ("fetchone", ()),
+            ("fetchmany", ()),
+            ("fetchall", ()),
+            ("close", ()),
+        ],
+    )
+    def test_close_raises_expected_exception_on_any_further_operation(
+        self, method, args, mocker
+    ):
+        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+
+        cursor.close()
+
+        with pytest.raises(SQCloudException) as e:
+            getattr(cursor, method)(*args)
+
+        assert e.value.args[0] == "The cursor is closed."

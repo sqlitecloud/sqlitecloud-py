@@ -39,7 +39,7 @@ class SQCLOUD_ROWSET(Enum):
 
 class SQCLOUD_VALUE_TYPE(Enum):
     INTEGER = "INTEGER"
-    FLOAT = "FLOAT"
+    FLOAT = "REAL"
     TEXT = "TEXT"
     BLOB = "BLOB"
     NULL = "NULL"

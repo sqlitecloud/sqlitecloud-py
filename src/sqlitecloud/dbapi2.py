@@ -22,6 +22,7 @@ from sqlitecloud.types import (
     SQCLOUD_RESULT_TYPE,
     SQCloudConfig,
     SQCloudConnect,
+    SQCloudException,
     SqliteCloudAccount,
     SQLiteCloudDataTypes,
 )
@@ -198,12 +199,12 @@ class Connection:
 
     def commit(self):
         """
-        This method is a no-op as SQLite Cloud is currently not supporting transactions.
+        Not implementied yet.
         """
 
     def rollback(self):
         """
-        This method is a no-op as SQLite Cloud is currently not supporting transactions.
+        Not implemented yet.
         """
 
     def cursor(self):
@@ -290,15 +291,21 @@ class Cursor(Iterator[Any]):
         """
         return self._resultset.nrows if self._is_result_rowset() else -1
 
+    @property
+    def lastrowid(self) -> Optional[int]:
+        """
+        Not implemented yet in the library.
+        """
+        return None
+
     def close(self) -> None:
         """
-        Closes the database connection use to create the cursor.
-
-        Note:
-            DB-API 2.0 interface does not manage the Sqlite Cloud PubSub feature.
-            Therefore, only the main socket is closed.
+        Just mark the cursors to be no more usable in SQLite Cloud database.
+        In sqlite the `close()` is used to free up resources: https://devpress.csdn.net/python/62fe355b7e668234661931d8.html
         """
-        self._driver.disconnect(self.connection.sqlcloud_connection, True)
+        self._ensure_connection()
+
+        self._connection = None
 
     def execute(
         self,
@@ -330,6 +337,8 @@ class Cursor(Iterator[Any]):
         Returns:
             Cursor: The cursor object.
         """
+        self._ensure_connection()
+
         prepared_statement = self._driver.prepare_statement(sql, parameters)
         result = self._driver.execute(
             prepared_statement, self.connection.sqlcloud_connection
@@ -361,6 +370,8 @@ class Cursor(Iterator[Any]):
         Returns:
             Cursor: The cursor object.
         """
+        self._ensure_connection()
+
         commands = ""
         for parameters in seq_of_parameters:
             prepared_statement = self._driver.prepare_statement(sql, parameters)
@@ -379,6 +390,8 @@ class Cursor(Iterator[Any]):
             The next row of the query result set as a tuple,
                 or None if no more rows are available.
         """
+        self._ensure_connection()
+
         if not self._is_result_rowset():
             return None
 
@@ -395,6 +408,8 @@ class Cursor(Iterator[Any]):
         Returns:
             List[Tuple]: A list of rows, where each row is represented as a tuple.
         """
+        self._ensure_connection()
+
         if not self._is_result_rowset():
             return []
 
@@ -417,6 +432,8 @@ class Cursor(Iterator[Any]):
         Returns:
             A list of rows, where each row is represented as a tuple.
         """
+        self._ensure_connection()
+
         if not self._is_result_rowset():
             return []
 
@@ -439,10 +456,22 @@ class Cursor(Iterator[Any]):
             self._resultset and self._resultset.tag == SQCLOUD_RESULT_TYPE.RESULT_ROWSET
         )
 
+    def _ensure_connection(self):
+        """
+        Ensure the cursor is usable or has been closed.
+
+        Raises:
+            SQCloudException: If the cursor is closed.
+        """
+        if not self._connection:
+            raise SQCloudException("The cursor is closed.")
+
     def __iter__(self) -> "Cursor":
         return self
 
     def __next__(self) -> Optional[Tuple[Any]]:
+        self._ensure_connection()
+
         if (
             not self._resultset.is_result
             and self._resultset.data
@@ -457,6 +486,3 @@ class Cursor(Iterator[Any]):
             return self._call_row_factory(out)
 
         raise StopIteration
-
-    def __len__(self) -> int:
-        return self.rowcount
