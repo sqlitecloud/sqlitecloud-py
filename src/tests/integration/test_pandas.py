@@ -22,21 +22,19 @@ class TestPanads:
             }
         )
 
-        conn.executemany(
-            "DROP TABLE IF EXISTS ?", [("CLOSING_PRICES",), ("TICKER_MAPPING",)]
-        )
+        conn.executemany("DROP TABLE IF EXISTS ?", [("PRICES",), ("TICKER_MAPPING",)])
 
         # arg if_exists="replace" raises the error
-        dfprices.to_sql("CLOSING_PRICES", conn, index=False)
+        dfprices.to_sql("PRICES", conn, index=False)
         dfmapping.to_sql("TICKER_MAPPING", conn, index=False)
 
         df_actual_tables = pd.read_sql(
             "SELECT name FROM sqlite_master WHERE type='table'", conn
         )
-        df_actual_prices = pd.read_sql("SELECT * FROM CLOSING_PRICES", conn)
+        df_actual_prices = pd.read_sql("SELECT * FROM PRICES", conn)
         df_actual_mapping = pd.read_sql("SELECT * FROM TICKER_MAPPING", conn)
 
-        assert "CLOSING_PRICES" in df_actual_tables["name"].to_list()
+        assert "PRICES" in df_actual_tables["name"].to_list()
         assert "TICKER_MAPPING" in df_actual_tables["name"].to_list()
         assert_frame_equal(
             df_actual_prices,
