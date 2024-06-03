@@ -30,10 +30,10 @@ jobs:
       run: |
         cd src
         python3 -m pip install --upgrade build && python3 -m build
-    - name: delete SqliteCloud.egg-info
+    - name: delete sqlitecloud.egg-info
       run: |
         echo "Current Directory: $(pwd)"
-        rm -r src/SqliteCloud.egg-info
+        rm -r src/sqlitecloud.egg-info
         ls src/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
