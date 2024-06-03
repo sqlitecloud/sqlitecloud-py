@@ -4,14 +4,14 @@ import time
 
 import pytest
 
-from sqlitecloud.client import SqliteCloudClient
+from sqlitecloud.client import SQLiteCloudClient
 from sqlitecloud.types import (
-    SQCLOUD_ERRCODE,
-    SQCLOUD_INTERNAL_ERRCODE,
-    SQCLOUD_RESULT_TYPE,
-    SQCloudConnect,
-    SQCloudException,
-    SqliteCloudAccount,
+    SQLITECLOUD_ERRCODE,
+    SQLITECLOUD_INTERNAL_ERRCODE,
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudAccount,
+    SQLiteCloudConnect,
+    SQLiteCloudException,
 )
 
 
@@ -23,69 +23,69 @@ class TestClient:
     EXPECT_SPEED_MS = 6 * 1000
 
     def test_connection_with_credentials(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.username = os.getenv("SQLITE_USER")
         account.password = os.getenv("SQLITE_PASSWORD")
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         conn = client.open_connection()
-        assert isinstance(conn, SQCloudConnect)
+        assert isinstance(conn, SQLiteCloudConnect)
 
         client.disconnect(conn)
 
     def test_connection_with_apikey(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         conn = client.open_connection()
-        assert isinstance(conn, SQCloudConnect)
+        assert isinstance(conn, SQLiteCloudConnect)
 
         client.disconnect(conn)
 
     def test_connection_without_credentials_and_apikey(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
 
-        with pytest.raises(SQCloudException):
+        with pytest.raises(SQLiteCloudException):
             client.open_connection()
 
     def test_connect_with_string(self):
         connection_string = os.getenv("SQLITE_CONNECTION_STRING")
 
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         conn = client.open_connection()
-        assert isinstance(conn, SQCloudConnect)
+        assert isinstance(conn, SQLiteCloudConnect)
 
         client.disconnect(conn)
 
     def test_connect_with_string_with_credentials(self):
         connection_string = f"sqlitecloud://{os.getenv('SQLITE_USER')}:{os.getenv('SQLITE_PASSWORD')}@{os.getenv('SQLITE_HOST')}/{os.getenv('SQLITE_DB')}"
 
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         conn = client.open_connection()
-        assert isinstance(conn, SQCloudConnect)
+        assert isinstance(conn, SQLiteCloudConnect)
 
         client.disconnect(conn)
 
     def test_is_connected(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
 
         conn = client.open_connection()
         assert client.is_connected(conn)
@@ -94,12 +94,12 @@ class TestClient:
         assert not client.is_connected(conn)
 
     def test_disconnect(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.username = os.getenv("SQLITE_API_KEY")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
 
         conn = client.open_connection()
         assert client.is_connected(conn)
@@ -124,7 +124,7 @@ class TestClient:
 
     def test_column_not_found(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             client.exec_query("SELECT not_a_column FROM albums", connection)
 
         assert e.value.errcode == 1
@@ -134,7 +134,7 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("SELECT AlbumId FROM albums LIMIT 2", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
         assert 2 == result.nrows
         assert 1 == result.ncols
         assert 2 == result.version
@@ -143,9 +143,9 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("SELECT * FROM albums", connection)
 
-        assert "1" == result.get_value(0, 0)
+        assert 1 == result.get_value(0, 0)
         assert "For Those About To Rock We Salute You" == result.get_value(0, 1)
-        assert "2" == result.get_value(1, 0)
+        assert 2 == result.get_value(1, 0)
 
     def test_select_utf8_value_and_column_name(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -194,28 +194,28 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST INTEGER", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_INTEGER == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_INTEGER == result.tag
         assert 123456 == result.get_result()
 
     def test_float(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST FLOAT", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_FLOAT == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_FLOAT == result.tag
         assert 3.1415926 == result.get_result()
 
     def test_string(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST STRING", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_STRING == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_STRING == result.tag
         assert result.get_result() == "Hello World, this is a test string."
 
     def test_zero_string(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST ZERO_STRING", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_STRING == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_STRING == result.tag
         assert (
             result.get_result() == "Hello World, this is a zero-terminated test string."
         )
@@ -224,7 +224,7 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST STRING0", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_STRING == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_STRING == result.tag
         assert result.get_result() == ""
 
     def test_command(self, sqlitecloud_connection):
@@ -237,7 +237,7 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST JSON", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_JSON == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_JSON == result.tag
         assert {
             "msg-from": {"class": "soldier", "name": "Wixilav"},
             "msg-to": {"class": "supreme-commander", "name": "[Redacted]"},
@@ -254,20 +254,20 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST BLOB", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_BLOB == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_BLOB == result.tag
         assert len(result.get_result()) == 1000
 
     def test_blob0(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST BLOB0", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_STRING == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_STRING == result.tag
         assert len(result.get_result()) == 0
 
     def test_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             client.exec_query("TEST ERROR", connection)
 
         assert e.value.errcode == 66666
@@ -276,7 +276,7 @@ class TestClient:
     def test_ext_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             client.exec_query("TEST EXTERROR", connection)
 
         assert e.value.errcode == 66666
@@ -292,7 +292,7 @@ class TestClient:
 
         result_array = result.get_result()
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_ARRAY == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ARRAY == result.tag
         assert isinstance(result_array, list)
         assert len(result_array) == 5
         assert result_array[0] == "Hello World"
@@ -304,7 +304,7 @@ class TestClient:
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST ROWSET", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
         assert result.nrows >= 30
         assert result.ncols == 2
         assert result.version in [1, 2]
@@ -312,12 +312,12 @@ class TestClient:
         assert result.get_name(1) == "value"
 
     def test_max_rows_option(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.maxrows = 1
 
         connection = client.open_connection()
@@ -331,31 +331,31 @@ class TestClient:
         assert rowset.nrows > 100
 
     def test_max_rowset_option_to_fail_when_rowset_is_bigger(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.maxrowset = 1024
 
         connection = client.open_connection()
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             client.exec_query("SELECT * FROM albums", connection)
 
         client.disconnect(connection)
 
-        assert SQCLOUD_ERRCODE.INTERNAL.value == e.value.errcode
+        assert SQLITECLOUD_ERRCODE.INTERNAL.value == e.value.errcode
         assert "RowSet too big to be sent (limit set to 1024 bytes)." == e.value.errmsg
 
     def test_max_rowset_option_to_succeed_when_rowset_is_lighter(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.maxrowset = 1024
 
         connection = client.open_connection()
@@ -371,7 +371,7 @@ class TestClient:
 
         rowset = client.exec_query("TEST ROWSET_CHUNK", connection)
 
-        assert SQCLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
         assert 147 == rowset.nrows
         assert 1 == rowset.ncols
         assert 147 == len(rowset.data)
@@ -413,18 +413,18 @@ class TestClient:
             assert rowset.version in [1, 2]
 
     def test_query_timeout(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.dbname = os.getenv("SQLITE_DB")
         account.apikey = os.getenv("SQLITE_API_KEY")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.timeout = 1  # 1 sec
 
         connection = client.open_connection()
 
         # this operation should take more than 1 sec
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             # just a long running query
             client.exec_query(
                 """
@@ -440,7 +440,7 @@ class TestClient:
 
         client.disconnect(connection)
 
-        assert e.value.errcode == SQCLOUD_INTERNAL_ERRCODE.NETWORK
+        assert e.value.errcode == SQLITECLOUD_INTERNAL_ERRCODE.NETWORK
         assert e.value.errmsg == "An error occurred while reading data from the socket."
 
     def test_XXL_query(self, sqlitecloud_connection):
@@ -508,12 +508,12 @@ class TestClient:
         assert len(rowset.get_value(0, 0)) == 1000
 
     def test_select_database(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.dbname = ""
         account.apikey = os.getenv("SQLITE_API_KEY")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
 
         connection = client.open_connection()
 
@@ -604,12 +604,12 @@ class TestClient:
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
     def test_compression_single_column(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.apikey = os.getenv("SQLITE_API_KEY")
         account.dbname = os.getenv("SQLITE_DB")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.compression = True
 
         connection = client.open_connection()
@@ -629,12 +629,12 @@ class TestClient:
         assert len(rowset.get_value(0, 0)) == blob_size * 2
 
     def test_compression_multiple_columns(self):
-        account = SqliteCloudAccount()
+        account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
         account.apikey = os.getenv("SQLITE_API_KEY")
         account.dbname = os.getenv("SQLITE_DB")
 
-        client = SqliteCloudClient(cloud_account=account)
+        client = SQLiteCloudClient(cloud_account=account)
         client.config.compression = True
 
         connection = client.open_connection()
@@ -650,3 +650,30 @@ class TestClient:
         assert rowset.nrows > 0
         assert rowset.ncols > 0
         assert rowset.get_name(0) == "AlbumId"
+
+    def test_exec_statement_with_named_placeholder(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        result = client.exec_statement(
+            "SELECT * FROM albums WHERE AlbumId = :id and Title = :title",
+            {"id": 1, "title": "For Those About To Rock We Salute You"},
+            connection,
+        )
+
+        assert result.nrows == 1
+        assert result.get_value(0, 0) == 1
+
+    def test_exec_statement_with_qmarks(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        result = client.exec_statement(
+            "SELECT * FROM albums WHERE AlbumId = ? and Title = ?",
+            (
+                1,
+                "For Those About To Rock We Salute You",
+            ),
+            connection,
+        )
+
+        assert result.nrows == 1
+        assert result.get_value(0, 0) == 1

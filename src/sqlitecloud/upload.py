@@ -4,7 +4,7 @@ from io import BufferedReader
 from typing import Optional
 
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQCloudConnect
+from sqlitecloud.types import SQLiteCloudConnect
 
 
 def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes:
@@ -32,19 +32,19 @@ def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes
 
 
 def upload_db(
-    connection: SQCloudConnect, dbname: str, key: Optional[str], filename: str
+    connection: SQLiteCloudConnect, dbname: str, key: Optional[str], filename: str
 ) -> None:
     """
     Uploads a SQLite database to the SQLite Cloud node using the provided connection.
 
     Args:
-        connection (SQCloudConnect): The connection object used to connect to the node.
+        connection (SQLiteCloudConnect): The connection object used to connect to the node.
         dbname (str): The name of the database in SQLite Cloud.
         key (Optional[str]): The encryption key for the database. If None, no encryption is used.
         filename (str): The path to the SQLite database file to be uploaded.
 
     Raises:
-        SQCloudException: If an error occurs while uploading the database.
+        SQLiteCloudException: If an error occurs while uploading the database.
 
     """
 

@@ -1,4 +1,4 @@
-# Python SDK for SQLite Cloud
+# Driver for SQLite Cloud
 
 <p align="center">
   <img src="https://sqlitecloud.io/social/logo.png" height="300" alt="SQLite Cloud logo">
@@ -11,74 +11,124 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
 
 
-[SQLiteCloud](https://sqlitecloud.io) is a powerful Python package that allows you to interact with the SQLite Cloud backend server seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
+- [Driver for SQLite Cloud](#driver-for-sqlite-cloud)
+- [Example](#example)
+- [SQLite Cloud loves sqlite3](#sqlite-cloud-loves-sqlite3)
+- [SQLite Cloud for Pandas DataFrame](#sqlite-cloud-for-pandas-dataframe)
 
-- Site: [https://sqlitecloud.io](https://sqlitecloud.io/developers)
-- Documentation: https://..._coming!_
+---
+
+[SQLiteCloud](https://sqlitecloud.io) is a powerful Python package that allows you to interact with the SQLite Cloud database seamlessly. It provides methods for various database operations. This package is designed to simplify database operations in Python applications, making it easier than ever to work with SQLite Cloud.
+
+
+#### Compatibility with sqlite3 API
+
+We aim for full compatibility with the Python built-in [sqlite3](https://docs.python.org/3.6/library/sqlite3.html) API (based on Python [PEP 249](https://peps.python.org/pep-0249)), with the primary distinction being that our driver connects to SQLite Cloud databases. This allows you to migrate your local SQLite databases to SQLite Cloud without needing to modify your existing Python code that uses the sqlite3 API.
+
+- Documentation: Our API closely follows the sqlite3 API. You can refer to the sqlite3 documentation for most functionality. The list of implemented features are documented [here](https://github.com/sqlitecloud/python/issues/8).
 - Source: [https://github.com/sqlitecloud/python](https://github.com/sqlitecloud/python)
+- Site: [https://sqlitecloud.io](https://sqlitecloud.io/developers)
 
-## Installation
-
-You can install SqliteCloud Package using Python Package Index (PYPI):
+## Example
 
 ```bash
 $ pip install sqlitecloud
 ```
 
-## Usage
-<hr>
-
 ```python
-from sqlitecloud.client import SqliteCloudClient
-from sqlitecloud.types import SqliteCloudAccount
+import sqlitecloud
+
+# Open the connection to SQLite Cloud
+conn = sqlitecloud.connect("sqlitecloud://myhost.sqlite.cloud:8860?apikey=myapikey")
+
+# You can autoselect the database during the connect call
+# by adding the database name as path of the SQLite Cloud
+# connection string, eg:
+# conn = sqlitecloud.connect("sqlitecloud://myhost.sqlite.cloud:8860/mydatabase?apikey=myapikey")
+db_name = "chinook.sqlite"
+conn.execute(f"USE DATABASE {db_name}")
+
+cursor = conn.execute("SELECT * FROM albums WHERE AlbumId = ?", (1, ))
+result = cursor.fetchone()
+
+print(result)
+
+conn.close()
 ```
 
-### _Init a connection_
+## sqlitecloud loves sqlite3
 
-#### Using explicit configuration
+Is your project based on the `sqlite3` library to interact with a SQLite database?
 
-```python
-account = SqliteCloudAccount(user, password, host, db_name, port)
-client = SqliteCloudClient(cloud_account=account)
-conn = client.open_connection()
-```
+Just install `sqlitecloud` package from `pip` and change the module name! That's it!
 
-#### _Using string configuration_
+Try it yourself:
 
 ```python
-account = SqliteCloudAccount("sqlitecloud://user:pass@host.com:port/dbname?apikey=myapikey")
-client = SqliteCloudClient(cloud_account=account)
-conn = client.open_connection()
-```
+# import sqlitecloud
+import sqlite3
 
-### _Execute a query_
-You can bind values to parametric queries: you can pass parameters as positional values in an array
-```python
-result = client.exec_query(
-    "SELECT * FROM table_name WHERE id = 1"
-    conn=conn
+# comment out the following line...
+conn = sqlite3.connect(":memory:")
+
+# ... and uncomment this line and import the sqlitecloud package
+# (add the database name like in this connection string)
+# conn = sqlitecloud.connect("sqlitecloud://myhost.sqlite.cloud:8860/mydatabase.sqlite?apikey=myapikey")
+
+conn.execute("CREATE TABLE IF NOT EXISTS producers (ProducerId INTEGER PRIMARY KEY, name TEXT, year INTEGER)")
+conn.executemany(
+    "INSERT INTO producers (name, year) VALUES (?, ?)",
+    [("Sony Music Entertainment", 2020), ("EMI Music Publishing", 2021)],
 )
-```
 
-### _Iterate result_
-result is an iterable object
-```python
-for row in result:
+cursor = conn.execute("SELECT * FROM cars")
+
+for row in cursor:
     print(row)
 ```
 
-### _Specific value_
-```python
-result.get_value(0, 0)
-```
+## SQLite Cloud for Pandas DataFrame
 
-### _Column name_
-```python
-result.get_name(0)
-```
+[Pandas](https://pypi.org/project/pandas/) is a Python package for data manipulation and analysis. It provides high-performance, easy-to-use data structures, such as DataFrame.
 
-### _Close connection_
+Use the connection to SQLite Cloud to:
+- Insert data from a DataFrame into a SQLite Cloud database.
+- Query SQLite Cloud and fetch the results into a DataFrame for further analysis.
+
+Example:
 
 ```python
-client.disconnect(conn)
+import io
+
+import pandas as pd
+
+import sqlitecloud
+
+dfprices = pd.read_csv(
+    io.StringIO(
+        """DATE,CURRENCY,PRICE
+    20230504,USD,201.23456
+    20230503,USD,12.34567
+    20230502,USD,23.45678
+    20230501,USD,34.56789"""
+    )
+)
+
+conn = sqlitecloud.connect("sqlitecloud://myhost.sqlite.cloud:8860/mydatabase.sqlite?apikey=myapikey")
+
+conn.executemany("DROP TABLE IF EXISTS ?", [("PRICES",)])
+
+# Write the dataframe to the SQLite Cloud database as a table PRICES
+dfprices.to_sql("PRICES", conn, index=False)
+
+# Create the dataframe from the table PRICES on the SQLite Cloud database
+df_actual_prices = pd.read_sql("SELECT * FROM PRICES", conn)
+
+# Inspect the dataframe
+print(df_actual_prices.head())
+
+# Perform a simple query on the dataframe
+query_result = df_actual_prices.query("PRICE > 50.00")
+
+print(query_result)
 ```

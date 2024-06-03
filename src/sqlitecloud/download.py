@@ -2,7 +2,7 @@ import logging
 from io import BufferedWriter
 
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQCloudConnect
+from sqlitecloud.types import SQLiteCloudConnect
 
 
 def xCallback(
@@ -28,12 +28,12 @@ def xCallback(
         logging.log(logging.DEBUG, f"{(nprogress + blen) / ntot * 100:.2f}%")
 
 
-def download_db(connection: SQCloudConnect, dbname: str, filename: str) -> None:
+def download_db(connection: SQLiteCloudConnect, dbname: str, filename: str) -> None:
     """
     Download a database from the server.
 
     Raises:
-        SQCloudException: If an error occurs while downloading the database.
+        SQLiteCloudException: If an error occurs while downloading the database.
     """
     driver = Driver()
 

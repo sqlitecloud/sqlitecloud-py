@@ -1,10 +1,10 @@
-from sqlitecloud.client import SqliteCloudClient
+from sqlitecloud.client import SQLiteCloudClient
 
 
 class TestClient:
     def test_parse_connection_string_with_apikey(self):
         connection_string = "sqlitecloud://user:pass@host.com:8860/dbname?apikey=abc123&timeout=10&compression=true"
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         assert not client.config.account.username
         assert not client.config.account.password
@@ -17,7 +17,7 @@ class TestClient:
 
     def test_parse_connection_string_with_credentials(self):
         connection_string = "sqlitecloud://user:pass@host.com:8860"
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         assert "user" == client.config.account.username
         assert "pass" == client.config.account.password
@@ -27,7 +27,7 @@ class TestClient:
 
     def test_parse_connection_string_without_credentials(self):
         connection_string = "sqlitecloud://host.com"
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         assert not client.config.account.username
         assert not client.config.account.password
@@ -36,7 +36,7 @@ class TestClient:
     def test_parse_connection_string_with_all_parameters(self):
         connection_string = "sqlitecloud://host.com:8860/dbname?apikey=abc123&compression=true&zerotext=true&memory=true&create=true&non_linearizable=true&insecure=true&no_verify_certificate=true&root_certificate=rootcert&certificate=cert&certificate_key=certkey&noblob=true&maxdata=10&maxrows=11&maxrowset=12"
 
-        client = SqliteCloudClient(connection_str=connection_string)
+        client = SQLiteCloudClient(connection_str=connection_string)
 
         assert "host.com" == client.config.account.hostname
         assert 8860 == client.config.account.port

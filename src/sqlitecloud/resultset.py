@@ -1,11 +1,13 @@
 from typing import Any, Dict, List, Optional
 
-from sqlitecloud.types import SQCLOUD_RESULT_TYPE
+from sqlitecloud.types import SQLITECLOUD_RESULT_TYPE, SQLITECLOUD_VALUE_TYPE
 
 
-class SQCloudResult:
-    def __init__(self, tag: SQCLOUD_RESULT_TYPE, result: Optional[any] = None) -> None:
-        self.tag: SQCLOUD_RESULT_TYPE = tag
+class SQLiteCloudResult:
+    def __init__(
+        self, tag: SQLITECLOUD_RESULT_TYPE, result: Optional[any] = None
+    ) -> None:
+        self.tag: SQLITECLOUD_RESULT_TYPE = tag
         self.nrows: int = 0
         self.ncols: int = 0
         self.version: int = 0
@@ -31,11 +33,48 @@ class SQCloudResult:
         self.data = [result]
         self.is_result = True
 
+    def _compute_index(self, row: int, col: int) -> int:
+        if row < 0 or row >= self.nrows:
+            return -1
+        if col < 0 or col >= self.ncols:
+            return -1
+        return row * self.ncols + col
 
-class SqliteCloudResultSet:
-    def __init__(self, result: SQCloudResult) -> None:
+    def get_value(self, row: int, col: int, convert: bool = True) -> Optional[any]:
+        index = self._compute_index(row, col)
+        if index < 0 or not self.data or index >= len(self.data):
+            return None
+
+        value = self.data[index]
+        return self._convert(value, col) if convert else value
+
+    def get_name(self, col: int) -> Optional[str]:
+        if col < 0 or col >= self.ncols:
+            return None
+        return self.colname[col]
+
+    def _convert(self, value: str, col: int) -> any:
+        if col < 0 or col >= len(self.decltype):
+            return value
+
+        decltype = self.decltype[col]
+        if decltype == SQLITECLOUD_VALUE_TYPE.INTEGER.value:
+            return int(value)
+        if decltype == SQLITECLOUD_VALUE_TYPE.FLOAT.value:
+            return float(value)
+        if decltype == SQLITECLOUD_VALUE_TYPE.BLOB.value:
+            # values are received as bytes before being strings
+            return bytes(value)
+        if decltype == SQLITECLOUD_VALUE_TYPE.NULL.value:
+            return None
+
+        return value
+
+
+class SQLiteCloudResultSet:
+    def __init__(self, result: SQLiteCloudResult) -> None:
         self._iter_row: int = 0
-        self._result: SQCloudResult = result
+        self._result: SQLiteCloudResult = result
 
     def __getattr__(self, attr: str) -> Optional[Any]:
         return getattr(self._result, attr)
@@ -59,23 +98,11 @@ class SqliteCloudResultSet:
 
         raise StopIteration
 
-    def _compute_index(self, row: int, col: int) -> int:
-        if row < 0 or row >= self._result.nrows:
-            return -1
-        if col < 0 or col >= self._result.ncols:
-            return -1
-        return row * self._result.ncols + col
-
     def get_value(self, row: int, col: int) -> Optional[any]:
-        index = self._compute_index(row, col)
-        if index < 0 or not self._result.data or index >= len(self._result.data):
-            return None
-        return self._result.data[index]
+        return self._result.get_value(row, col)
 
     def get_name(self, col: int) -> Optional[str]:
-        if col < 0 or col >= self._result.ncols:
-            return None
-        return self._result.colname[col]
+        return self._result.get_name(col)
 
     def get_result(self) -> Optional[any]:
         return self.get_value(0, 0)
