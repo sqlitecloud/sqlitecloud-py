@@ -114,8 +114,7 @@ class TestDriver:
 
         assert expected_result == result
 
-    # TODO: should rise exception
-    def test_prepare_statement_with_missing_parameters(self):
+    def test_prepare_statement_with_missing_parameters_does_not_raise_exception(self):
         driver = Driver()
 
         query = "UPDATE users SET name = :name, age = :age WHERE id = :id"

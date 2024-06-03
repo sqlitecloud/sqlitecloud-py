@@ -212,6 +212,10 @@ class SQCloudConfig:
                 else:
                     value = value
 
+                # alias
+                if opt == "nonlinearizable":
+                    opt = "non_linearizable"
+
                 if hasattr(self, opt):
                     setattr(self, opt, value)
                 elif hasattr(self.account, opt):

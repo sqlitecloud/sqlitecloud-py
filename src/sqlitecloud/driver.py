@@ -97,8 +97,6 @@ class Driver:
             Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
         ],
     ) -> str:
-        # TODO: check for right exception is case of wrong number of parameters
-
         # If parameters is a dictionary, replace the keys in the query with the values
         if isinstance(parameters, dict):
             for key, value in parameters.items():
