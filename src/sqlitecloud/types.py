@@ -4,17 +4,17 @@ from enum import Enum
 from typing import Any, Callable, Dict, Optional, Union
 from urllib import parse
 
-# Basic types supported by SQLiteCloud APIs
+# Basic types supported by SQLite Cloud APIs
 SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, None]
 
 
-class SQCLOUD_DEFAULT(Enum):
+class SQLITECLOUD_DEFAULT(Enum):
     PORT = 8860
     TIMEOUT = 12
     UPLOAD_SIZE = 512 * 1024
 
 
-class SQCLOUD_CMD(Enum):
+class SQLITECLOUD_CMD(Enum):
     STRING = "+"
     ZEROSTRING = "!"
     ERROR = "-"
@@ -33,11 +33,11 @@ class SQCLOUD_CMD(Enum):
     ARRAY = "="
 
 
-class SQCLOUD_ROWSET(Enum):
+class SQLITECLOUD_ROWSET(Enum):
     CHUNKS_END = b"/6 0 0 0 "
 
 
-class SQCLOUD_VALUE_TYPE(Enum):
+class SQLITECLOUD_VALUE_TYPE(Enum):
     INTEGER = "INTEGER"
     FLOAT = "REAL"
     TEXT = "TEXT"
@@ -45,7 +45,7 @@ class SQCLOUD_VALUE_TYPE(Enum):
     NULL = "NULL"
 
 
-class SQCLOUD_INTERNAL_ERRCODE(Enum):
+class SQLITECLOUD_INTERNAL_ERRCODE(Enum):
     """
     Clients error codes.
     """
@@ -54,7 +54,7 @@ class SQCLOUD_INTERNAL_ERRCODE(Enum):
     NETWORK = 100005
 
 
-class SQCLOUD_ERRCODE(Enum):
+class SQLITECLOUD_ERRCODE(Enum):
     """
     Error codes from Sqlite Cloud.
     """
@@ -68,7 +68,7 @@ class SQCLOUD_ERRCODE(Enum):
     RAFT = 10006
 
 
-class SQCLOUD_RESULT_TYPE(Enum):
+class SQLITECLOUD_RESULT_TYPE(Enum):
     RESULT_OK = 0
     RESULT_ERROR = 1
     RESULT_STRING = 2
@@ -81,7 +81,7 @@ class SQCLOUD_RESULT_TYPE(Enum):
     RESULT_BLOB = 9
 
 
-class SQCLOUD_PUBSUB_SUBJECT(Enum):
+class SQLITECLOUD_PUBSUB_SUBJECT(Enum):
     """
     Subjects that can be subscribed to by PubSub.
     """
@@ -90,7 +90,7 @@ class SQCLOUD_PUBSUB_SUBJECT(Enum):
     CHANNEL = "CHANNEL"
 
 
-class SQCloudRowsetSignature:
+class SQLiteCloudRowsetSignature:
     """
     Represents the parsed signature for a rowset.
     """
@@ -104,14 +104,14 @@ class SQCloudRowsetSignature:
         self.ncols: int = 0
 
 
-class SqliteCloudAccount:
+class SQLiteCloudAccount:
     def __init__(
         self,
         username: Optional[str] = "",
         password: Optional[str] = "",
         hostname: str = "",
         dbname: Optional[str] = "",
-        port: int = SQCLOUD_DEFAULT.PORT.value,
+        port: int = SQLITECLOUD_DEFAULT.PORT.value,
         apikey: Optional[str] = "",
     ) -> None:
         # User name is required unless connectionstring is provided
@@ -129,32 +129,33 @@ class SqliteCloudAccount:
         self.port = port
 
 
-class SQCloudConnect:
+class SQLiteCloudConnect:
     """
     Represents the connection information.
     """
 
     def __init__(self):
         self.socket: any = None
-        self.config: SQCloudConfig
+        self.config: SQLiteCloudConfig
         self.isblob: bool = False
 
         self.pubsub_socket: any = None
         self.pubsub_callback: Callable[
-            [SQCloudConnect, Optional[types.SqliteCloudResultSet], Optional[any]], None
+            [SQLiteCloudConnect, Optional[types.SqliteCloudResultSet], Optional[any]],
+            None,
         ] = None
         self.pubsub_data: any = None
         self.pubsub_thread: AbstractEventLoop = None
 
 
-class SQCloudConfig:
+class SQLiteCloudConfig:
     def __init__(self, connection_str: Optional[str] = None) -> None:
-        self.account: SqliteCloudAccount = None
+        self.account: SQLiteCloudAccount = None
 
         # Optional query timeout passed directly to TLS socket
         self.timeout = 0
         # Socket connection timeout
-        self.connect_timeout = SQCLOUD_DEFAULT.TIMEOUT.value
+        self.connect_timeout = SQLITECLOUD_DEFAULT.TIMEOUT.value
 
         # Enable compression
         self.compression = False
@@ -193,7 +194,7 @@ class SQCloudConfig:
         # sqlitecloud://user:pass@host.com:port/dbname?timeout=10&key2=value2&key3=value3
         # or sqlitecloud://host.sqlite.cloud:8860/dbname?apikey=zIiAARzKm9XBVllbAzkB1wqrgijJ3Gx0X5z1A4m4xBA
 
-        self.account = SqliteCloudAccount()
+        self.account = SQLiteCloudAccount()
 
         try:
             params = parse.urlparse(connection_string)
@@ -237,22 +238,22 @@ class SQCloudConfig:
 
             self.account.hostname = params.hostname
             self.account.port = (
-                int(params.port) if params.port else SQCLOUD_DEFAULT.PORT.value
+                int(params.port) if params.port else SQLITECLOUD_DEFAULT.PORT.value
             )
         except Exception as e:
-            raise SQCloudException(
+            raise SQLiteCloudException(
                 f"Invalid connection string {connection_string}"
             ) from e
 
 
-class SQCloudException(Exception):
+class SQLiteCloudException(Exception):
     def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
         self.errmsg = str(message)
         self.errcode = code
         self.xerrcode = xerrcode
 
 
-class SQCloudNumber:
+class SQLiteCloudNumber:
     """
     Represents the parsed number or the error code.
     """
@@ -263,7 +264,7 @@ class SQCloudNumber:
         self.extcode: int = None
 
 
-class SQCloudValue:
+class SQLiteCloudValue:
     """
     Represents the parse value.
     """

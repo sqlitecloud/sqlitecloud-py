@@ -5,23 +5,23 @@ import sqlitecloud
 from sqlitecloud import Cursor
 from sqlitecloud.dbapi2 import Connection
 from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQCloudResult
+from sqlitecloud.resultset import SQLiteCloudResult
 from sqlitecloud.types import (
-    SQCLOUD_RESULT_TYPE,
-    SQCloudConfig,
-    SQCloudException,
-    SqliteCloudAccount,
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudAccount,
+    SQLiteCloudConfig,
+    SQLiteCloudException,
 )
 
 
 def test_connect_with_account_and_config(mocker: MockerFixture):
     mock_connect = mocker.patch("sqlitecloud.driver.Driver.connect")
 
-    account = SqliteCloudAccount()
+    account = SQLiteCloudAccount()
     account.hostname = "myhost"
     account.port = 1234
 
-    config = SQCloudConfig()
+    config = SQLiteCloudConfig()
     config.timeout = 99
     config.memory = True
 
@@ -56,7 +56,7 @@ class TestCursor:
     def test_description_with_resultset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 1
         result.data = ["myname"]
@@ -68,7 +68,7 @@ class TestCursor:
     def test_description_with_resultset_multiple_rows(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 2
         result.nrows = 1
         result.data = ["myname"]
@@ -83,7 +83,7 @@ class TestCursor:
     def test_rowcount_with_rowset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 3
         result.data = ["myname1", "myname2", "myname3"]
@@ -95,7 +95,7 @@ class TestCursor:
     def test_rowcount_with_result(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_BLOB)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_BLOB)
         cursor._resultset = result
 
         assert cursor.rowcount == -1
@@ -152,7 +152,7 @@ class TestCursor:
     def test_fetchone_with_result(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_BLOB)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_BLOB)
         cursor._resultset = result
 
         assert cursor.fetchone() is None
@@ -160,7 +160,7 @@ class TestCursor:
     def test_fetchone_with_rowset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 1
         result.data = ["myname"]
@@ -172,7 +172,7 @@ class TestCursor:
     def test_fetchone_twice(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 1
         result.data = ["myname"]
@@ -190,7 +190,7 @@ class TestCursor:
     def test_fetchmany_with_result(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_BLOB)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_BLOB)
         cursor._resultset = result
 
         assert cursor.fetchmany() == []
@@ -198,7 +198,7 @@ class TestCursor:
     def test_fetchmany_with_rowset_and_default_size(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 3
         result.data = ["myname1", "myname2", "myname3"]
@@ -210,7 +210,7 @@ class TestCursor:
     def test_fetchmany_twice_to_retrieve_whole_rowset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 2
         result.data = ["myname1", "myname2"]
@@ -223,7 +223,7 @@ class TestCursor:
     def test_fetchmany_with_size_higher_than_rowcount(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 1
         result.data = ["myname1"]
@@ -240,7 +240,7 @@ class TestCursor:
     def test_fetchall_with_result(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_BLOB)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_BLOB)
         cursor._resultset = result
 
         assert cursor.fetchall() == []
@@ -248,7 +248,7 @@ class TestCursor:
     def test_fetchall_with_rowset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 3
         result.data = ["myname1", "myname2", "myname3"]
@@ -260,7 +260,7 @@ class TestCursor:
     def test_fetchall_twice_and_expect_empty_list(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 2
         result.data = ["myname1", "myname2"]
@@ -273,7 +273,7 @@ class TestCursor:
     def test_fetchall_to_return_remaining_rows(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 2
         result.data = ["myname1", "myname2"]
@@ -286,7 +286,7 @@ class TestCursor:
     def test_iterator(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 2
         result.data = ["myname1", "myname2"]
@@ -296,10 +296,10 @@ class TestCursor:
         assert list(cursor) == [("myname1",), ("myname2",)]
 
     def test_row_factory(self, mocker):
-        conn = Connection(mocker.patch("sqlitecloud.types.SQCloudConnect"))
+        conn = Connection(mocker.patch("sqlitecloud.types.SQLiteCloudConnect"))
         conn.row_factory = lambda x, y: {"name": y[0]}
 
-        result = SQCloudResult(SQCLOUD_RESULT_TYPE.RESULT_ROWSET)
+        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
         result.nrows = 2
         result.data = ["myname1", "myname2"]
@@ -328,7 +328,7 @@ class TestCursor:
 
         cursor.close()
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             getattr(cursor, method)(*args)
 
         assert e.value.args[0] == "The cursor is closed."

@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 
-from sqlitecloud.types import SQCloudException
+from sqlitecloud.types import SQLiteCloudException
 
 
 class TestSQLite3FeatureParity:
@@ -21,10 +21,10 @@ class TestSQLite3FeatureParity:
         sqlitecloud_connection.close()
         sqlite3_connection.close()
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             sqlitecloud_connection.execute("SELECT 1")
 
-        assert isinstance(e.value, SQCloudException)
+        assert isinstance(e.value, SQLiteCloudException)
 
         with pytest.raises(sqlite3.ProgrammingError) as e:
             sqlite3_connection.execute("SELECT 1")
@@ -127,10 +127,10 @@ class TestSQLite3FeatureParity:
         sqlitecloud_cursor.close()
         sqlite3_cursor.close()
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             sqlitecloud_cursor.fetchall()
 
-        assert isinstance(e.value, SQCloudException)
+        assert isinstance(e.value, SQLiteCloudException)
 
         with pytest.raises(sqlite3.ProgrammingError) as e:
             sqlite3_cursor.fetchall()

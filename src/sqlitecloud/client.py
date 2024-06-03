@@ -4,24 +4,24 @@
 from typing import Dict, Optional, Tuple, Union
 
 from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SqliteCloudResultSet
+from sqlitecloud.resultset import SQLiteCloudResultSet
 from sqlitecloud.types import (
-    SQCloudConfig,
-    SQCloudConnect,
-    SQCloudException,
-    SqliteCloudAccount,
+    SQLiteCloudAccount,
+    SQLiteCloudConfig,
+    SQLiteCloudConnect,
     SQLiteCloudDataTypes,
+    SQLiteCloudException,
 )
 
 
-class SqliteCloudClient:
+class SQLiteCloudClient:
     """
     Client to interact with Sqlite Cloud
     """
 
     def __init__(
         self,
-        cloud_account: Optional[SqliteCloudAccount] = None,
+        cloud_account: Optional[SQLiteCloudAccount] = None,
         connection_str: Optional[str] = None,
     ) -> None:
         """Initializes a new instance of the class with connection information.
@@ -35,25 +35,25 @@ class SqliteCloudClient:
         """
         self._driver = Driver()
 
-        self.config = SQCloudConfig()
+        self.config = SQLiteCloudConfig()
 
         if connection_str:
-            self.config = SQCloudConfig(connection_str)
+            self.config = SQLiteCloudConfig(connection_str)
         elif cloud_account:
             self.config.account = cloud_account
 
         if self.config.account is None:
-            raise SQCloudException("Missing connection parameters")
+            raise SQLiteCloudException("Missing connection parameters")
 
-    def open_connection(self) -> SQCloudConnect:
-        """Opens a connection to the SQCloud server.
+    def open_connection(self) -> SQLiteCloudConnect:
+        """Opens a connection to the SQLite Cloud server.
 
         Returns:
-            SQCloudConnect: An instance of the SQCloudConnect class representing
-                the connection to the SQCloud server.
+            SQLiteCloudConnect: An instance of the SQLiteCloudConnect class representing
+                the connection to the SQLite Cloud server.
 
         Raises:
-            SQCloudException: If an error occurs while opening the connection.
+            SQLiteCloudException: If an error occurs while opening the connection.
         """
         connection = self._driver.connect(
             self.config.account.hostname, self.config.account.port, self.config
@@ -61,22 +61,22 @@ class SqliteCloudClient:
 
         return connection
 
-    def disconnect(self, conn: SQCloudConnect) -> None:
+    def disconnect(self, conn: SQLiteCloudConnect) -> None:
         """Close the connection to the database."""
         self._driver.disconnect(conn)
 
-    def is_connected(self, conn: SQCloudConnect) -> bool:
+    def is_connected(self, conn: SQLiteCloudConnect) -> bool:
         """Check if the connection is still open.
 
         Args:
-            conn (SQCloudConnect): The connection to the database.
+            conn (SQLiteCloudConnect): The connection to the database.
 
         Returns:
             bool: True if the connection is open, False otherwise.
         """
         return self._driver.is_connected(conn)
 
-    def exec_query(self, query: str, conn: SQCloudConnect) -> SqliteCloudResultSet:
+    def exec_query(self, query: str, conn: SQLiteCloudConnect) -> SQLiteCloudResultSet:
         """Executes a SQL query on the SQLite Cloud database.
 
         Args:
@@ -86,11 +86,11 @@ class SqliteCloudClient:
             SqliteCloudResultSet: The result set of the executed query.
 
         Raises:
-            SQCloudException: If an error occurs while executing the query.
+            SQLiteCloudException: If an error occurs while executing the query.
         """
         result = self._driver.execute(query, conn)
 
-        return SqliteCloudResultSet(result)
+        return SQLiteCloudResultSet(result)
 
     def exec_statement(
         self,
@@ -98,8 +98,8 @@ class SqliteCloudClient:
         parameters: Union[
             Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
         ],
-        conn: SQCloudConnect,
-    ) -> SqliteCloudResultSet:
+        conn: SQLiteCloudConnect,
+    ) -> SQLiteCloudResultSet:
         """
         Prepare and execute a SQL statement (either a query or command) to the SQLite Cloud database.
         This function supports two styles of parameter markers:
@@ -116,7 +116,7 @@ class SqliteCloudClient:
             query (str): The SQL query to execute.
             parameters (Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]):
                 The parameters to be used in the query. It can be a tuple or a dictionary.
-            conn (SQCloudConnect): The connection object to use for executing the query.
+            conn (SQLiteCloudConnect): The connection object to use for executing the query.
 
         Returns:
             SqliteCloudResultSet: The result set obtained from executing the query.
@@ -125,13 +125,13 @@ class SqliteCloudClient:
 
         result = self._driver.execute(prepared_statement, conn)
 
-        return SqliteCloudResultSet(result)
+        return SQLiteCloudResultSet(result)
 
-    def sendblob(self, blob: bytes, conn: SQCloudConnect) -> SqliteCloudResultSet:
+    def sendblob(self, blob: bytes, conn: SQLiteCloudConnect) -> SQLiteCloudResultSet:
         """Sends a blob to the SQLite database.
 
         Args:
             blob (bytes): The blob to be sent to the database.
-            conn (SQCloudConnect): The connection to the database.
+            conn (SQLiteCloudConnect): The connection to the database.
         """
         return self._driver.send_blob(blob, conn)

@@ -1,9 +1,9 @@
 import pytest
 
-from sqlitecloud.types import SQCloudConfig
+from sqlitecloud.types import SQLiteCloudConfig
 
 
-class TestSQCloudConfig:
+class TestSQLiteCloudConfig:
     @pytest.mark.parametrize(
         "param, value",
         [
@@ -14,6 +14,6 @@ class TestSQCloudConfig:
     def test_parse_connection_string_with_nonlinarizable(self, param: str, value: any):
         connection_string = f"sqlitecloud://myhost.sqlitecloud.io?{param}={value}"
 
-        config = SQCloudConfig(connection_string)
+        config = SQLiteCloudConfig(connection_string)
 
         assert config.non_linearizable

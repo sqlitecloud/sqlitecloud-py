@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQCloudConfig, SqliteCloudAccount
+from sqlitecloud.types import SQLiteCloudAccount, SQLiteCloudConfig
 
 
 class TestDriver:
@@ -219,8 +219,8 @@ class TestDriver:
     ):
         driver = Driver()
 
-        config = SQCloudConfig()
-        config.account = SqliteCloudAccount()
+        config = SQLiteCloudConfig()
+        config.account = SQLiteCloudAccount()
         config.account.username = "pippo"
         config.account.password = "pluto"
         config.non_linearizable = True
@@ -242,8 +242,8 @@ class TestDriver:
     ):
         driver = Driver()
 
-        config = SQCloudConfig()
-        config.account = SqliteCloudAccount()
+        config = SQLiteCloudConfig()
+        config.account = SQLiteCloudAccount()
         config.account.apikey = "abc123"
         config.non_linearizable = True
 

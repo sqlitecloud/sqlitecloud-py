@@ -3,13 +3,13 @@ import uuid
 
 import pytest
 
-from sqlitecloud.pubsub import SqliteCloudPubSub
-from sqlitecloud.resultset import SqliteCloudResultSet
+from sqlitecloud.pubsub import SQLiteCloudPubSub
+from sqlitecloud.resultset import SQLiteCloudResultSet
 from sqlitecloud.types import (
-    SQCLOUD_ERRCODE,
-    SQCLOUD_PUBSUB_SUBJECT,
-    SQCLOUD_RESULT_TYPE,
-    SQCloudException,
+    SQLITECLOUD_ERRCODE,
+    SQLITECLOUD_PUBSUB_SUBJECT,
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudException,
 )
 
 
@@ -24,14 +24,14 @@ class TestPubSub:
             nonlocal callback_called
             nonlocal flag
 
-            if isinstance(result, SqliteCloudResultSet):
-                assert result.tag == SQCLOUD_RESULT_TYPE.RESULT_JSON
+            if isinstance(result, SQLiteCloudResultSet):
+                assert result.tag == SQLITECLOUD_RESULT_TYPE.RESULT_JSON
                 assert data == ["somedata"]
                 callback_called = True
                 flag.set()
 
-        pubsub = SqliteCloudPubSub()
-        type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
+        pubsub = SQLiteCloudPubSub()
+        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel)
@@ -47,8 +47,8 @@ class TestPubSub:
     def test_unlisten_channel(self, sqlitecloud_connection):
         connection, _ = sqlitecloud_connection
 
-        pubsub = SqliteCloudPubSub()
-        type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
+        pubsub = SQLiteCloudPubSub()
+        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name)
@@ -68,24 +68,24 @@ class TestPubSub:
     def test_create_channel_to_fail_if_exists(self, sqlitecloud_connection):
         connection, _ = sqlitecloud_connection
 
-        pubsub = SqliteCloudPubSub()
+        pubsub = SQLiteCloudPubSub()
         channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name, if_not_exists=True)
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             pubsub.create_channel(connection, channel_name, if_not_exists=False)
 
         assert (
             e.value.errmsg
             == f"Cannot create channel {channel_name} because it already exists."
         )
-        assert e.value.errcode == SQCLOUD_ERRCODE.GENERIC.value
+        assert e.value.errcode == SQLITECLOUD_ERRCODE.GENERIC.value
 
     def test_is_connected(self, sqlitecloud_connection):
         connection, _ = sqlitecloud_connection
 
-        pubsub = SqliteCloudPubSub()
+        pubsub = SQLiteCloudPubSub()
         channel_name = "channel" + str(uuid.uuid4())
 
         assert not pubsub.is_connected(connection)
@@ -93,7 +93,7 @@ class TestPubSub:
         pubsub.create_channel(connection, channel_name, if_not_exists=True)
         pubsub.listen(
             connection,
-            SQCLOUD_PUBSUB_SUBJECT.CHANNEL,
+            SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL,
             channel_name,
             lambda conn, result, data: None,
         )
@@ -110,13 +110,13 @@ class TestPubSub:
             nonlocal callback_called
             nonlocal flag
 
-            if isinstance(result, SqliteCloudResultSet):
+            if isinstance(result, SQLiteCloudResultSet):
                 assert result.get_result() is not None
                 callback_called = True
                 flag.set()
 
-        pubsub = SqliteCloudPubSub()
-        type = SQCLOUD_PUBSUB_SUBJECT.CHANNEL
+        pubsub = SQLiteCloudPubSub()
+        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel, if_not_exists=True)
@@ -128,7 +128,7 @@ class TestPubSub:
         assert pubsub.is_connected(connection)
 
         connection2 = client.open_connection()
-        pubsub2 = SqliteCloudPubSub()
+        pubsub2 = SQLiteCloudPubSub()
         pubsub2.notify_channel(connection2, channel, "message-in-a-bottle")
 
         client.disconnect(connection2)
@@ -148,15 +148,15 @@ class TestPubSub:
             nonlocal callback_called
             nonlocal flag
 
-            if isinstance(result, SqliteCloudResultSet):
-                assert result.tag == SQCLOUD_RESULT_TYPE.RESULT_JSON
+            if isinstance(result, SQLiteCloudResultSet):
+                assert result.tag == SQLITECLOUD_RESULT_TYPE.RESULT_JSON
                 assert new_name in result.get_result()
                 assert data == ["somedata"]
                 callback_called = True
                 flag.set()
 
-        pubsub = SqliteCloudPubSub()
-        type = SQCLOUD_PUBSUB_SUBJECT.TABLE
+        pubsub = SQLiteCloudPubSub()
+        type = SQLITECLOUD_PUBSUB_SUBJECT.TABLE
         new_name = "Rock" + str(uuid.uuid4())
 
         pubsub.listen(connection, type, "genres", assert_callback, ["somedata"])

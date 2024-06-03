@@ -1,11 +1,13 @@
 from typing import Any, Dict, List, Optional
 
-from sqlitecloud.types import SQCLOUD_RESULT_TYPE, SQCLOUD_VALUE_TYPE
+from sqlitecloud.types import SQLITECLOUD_RESULT_TYPE, SQLITECLOUD_VALUE_TYPE
 
 
-class SQCloudResult:
-    def __init__(self, tag: SQCLOUD_RESULT_TYPE, result: Optional[any] = None) -> None:
-        self.tag: SQCLOUD_RESULT_TYPE = tag
+class SQLiteCloudResult:
+    def __init__(
+        self, tag: SQLITECLOUD_RESULT_TYPE, result: Optional[any] = None
+    ) -> None:
+        self.tag: SQLITECLOUD_RESULT_TYPE = tag
         self.nrows: int = 0
         self.ncols: int = 0
         self.version: int = 0
@@ -56,23 +58,23 @@ class SQCloudResult:
             return value
 
         decltype = self.decltype[col]
-        if decltype == SQCLOUD_VALUE_TYPE.INTEGER.value:
+        if decltype == SQLITECLOUD_VALUE_TYPE.INTEGER.value:
             return int(value)
-        if decltype == SQCLOUD_VALUE_TYPE.FLOAT.value:
+        if decltype == SQLITECLOUD_VALUE_TYPE.FLOAT.value:
             return float(value)
-        if decltype == SQCLOUD_VALUE_TYPE.BLOB.value:
+        if decltype == SQLITECLOUD_VALUE_TYPE.BLOB.value:
             # values are received as bytes before being strings
             return bytes(value)
-        if decltype == SQCLOUD_VALUE_TYPE.NULL.value:
+        if decltype == SQLITECLOUD_VALUE_TYPE.NULL.value:
             return None
 
         return value
 
 
-class SqliteCloudResultSet:
-    def __init__(self, result: SQCloudResult) -> None:
+class SQLiteCloudResultSet:
+    def __init__(self, result: SQLiteCloudResult) -> None:
         self._iter_row: int = 0
-        self._result: SQCloudResult = result
+        self._result: SQLiteCloudResult = result
 
     def __getattr__(self, attr: str) -> Optional[Any]:
         return getattr(self._result, attr)

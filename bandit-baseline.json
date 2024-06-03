@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2024-05-23T09:59:11Z",
+  "generated_at": "2024-06-03T07:52:17Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 0.0,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 2.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 2096,
+      "loc": 3405,
       "nosec": 0
     },
     "src/setup.py": {
@@ -23,7 +23,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 39,
+      "loc": 29,
       "nosec": 0
     },
     "src/sqlitecloud/__init__.py": {
@@ -35,7 +35,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 1,
+      "loc": 3,
       "nosec": 0
     },
     "src/sqlitecloud/client.py": {
@@ -47,10 +47,10 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 119,
+      "loc": 104,
       "nosec": 0
     },
-    "src/sqlitecloud/conn_info.py": {
+    "src/sqlitecloud/dbapi2.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
@@ -59,7 +59,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 6,
+      "loc": 377,
       "nosec": 0
     },
     "src/sqlitecloud/download.py": {
@@ -83,7 +83,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 727,
+      "loc": 765,
       "nosec": 0
     },
     "src/sqlitecloud/pubsub.py": {
@@ -107,7 +107,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 62,
+      "loc": 80,
       "nosec": 0
     },
     "src/sqlitecloud/types.py": {
@@ -119,7 +119,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 143,
+      "loc": 194,
       "nosec": 0
     },
     "src/sqlitecloud/upload.py": {
@@ -155,7 +155,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 22,
+      "loc": 35,
       "nosec": 0
     },
     "src/tests/integration/__init__.py": {
@@ -179,7 +179,19 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 471,
+      "loc": 492,
+      "nosec": 0
+    },
+    "src/tests/integration/test_dbapi2.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 181,
       "nosec": 0
     },
     "src/tests/integration/test_download.py": {
@@ -206,6 +218,18 @@
       "loc": 18,
       "nosec": 0
     },
+    "src/tests/integration/test_pandas.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 50,
+      "nosec": 0
+    },
     "src/tests/integration/test_pubsub.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 1.0,
@@ -215,7 +239,19 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 1.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 109,
+      "loc": 118,
+      "nosec": 0
+    },
+    "src/tests/integration/test_sqlite3_parity.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 176,
       "nosec": 0
     },
     "src/tests/integration/test_upload.py": {
@@ -242,6 +278,18 @@
       "loc": 48,
       "nosec": 0
     },
+    "src/tests/unit/test_dbapi2.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 242,
+      "nosec": 0
+    },
     "src/tests/unit/test_driver.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 0.0,
@@ -251,7 +299,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 76,
+      "loc": 188,
       "nosec": 0
     },
     "src/tests/unit/test_resultset.py": {
@@ -263,32 +311,32 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 77,
+      "loc": 113,
+      "nosec": 0
+    },
+    "src/tests/unit/test_types.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 14,
       "nosec": 0
     }
   },
   "results": [
     {
-      "code": "95 class SqliteCloudAccount:\n96     def __init__(\n97         self,\n98         username: Optional[str] = \"\",\n99         password: Optional[str] = \"\",\n100         hostname: Optional[str] = \"\",\n101         dbname: Optional[str] = \"\",\n102         port: Optional[int] = SQCLOUD_DEFAULT.PORT.value,\n103         apikey: Optional[str] = \"\",\n104     ) -> None:\n105         # User name is required unless connectionstring is provided\n106         self.username = username\n107         # Password is required unless connection string is provided\n108         self.password = password\n109         # Password is hashed\n110         self.password_hashed = False\n111         # API key instead of username and password\n112         self.apikey = apikey\n113         # Name of database to open\n114         self.dbname = dbname\n115         # Like mynode.sqlitecloud.io\n116         self.hostname = hostname\n117         self.port = port\n118 \n",
+      "code": "107 class SQLiteCloudAccount:\n108     def __init__(\n109         self,\n110         username: Optional[str] = \"\",\n111         password: Optional[str] = \"\",\n112         hostname: str = \"\",\n113         dbname: Optional[str] = \"\",\n114         port: int = SQLITECLOUD_DEFAULT.PORT.value,\n115         apikey: Optional[str] = \"\",\n116     ) -> None:\n117         # User name is required unless connectionstring is provided\n118         self.username = username\n119         # Password is required unless connection string is provided\n120         self.password = password\n121         # Password is hashed\n122         self.password_hashed = False\n123         # API key instead of username and password\n124         self.apikey = apikey\n125         # Name of database to open\n126         self.dbname = dbname\n127         # Like mynode.sqlitecloud.io\n128         self.hostname = hostname\n129         self.port = port\n130 \n",
       "col_offset": 4,
       "filename": "src/sqlitecloud/types.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "LOW",
       "issue_text": "Possible hardcoded password: ''",
-      "line_number": 96,
+      "line_number": 108,
       "line_range": [
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
         108,
         109,
         110,
@@ -298,22 +346,34 @@
         114,
         115,
         116,
-        117
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b107_hardcoded_password_default.html",
       "test_id": "B107",
       "test_name": "hardcoded_password_default"
     },
     {
-      "code": "155         client.exec_query(\n156             f\"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;\", connection\n157         )\n",
+      "code": "164         client.exec_query(\n165             f\"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;\", connection\n166         )\n",
       "col_offset": 12,
       "filename": "src/tests/integration/test_pubsub.py",
       "issue_confidence": "LOW",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 156,
+      "line_number": 165,
       "line_range": [
-        156
+        165
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",

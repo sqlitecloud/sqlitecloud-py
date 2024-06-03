@@ -1,4 +1,4 @@
-# DB-API 2.0 interface to SQLiteCloud.
+# DB-API 2.0 interface to SQLite Cloud.
 #
 # PEP 249 – Python Database API Specification v2.0
 # https://peps.python.org/pep-0249/
@@ -17,14 +17,14 @@ from typing import (
 )
 
 from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQCloudResult
+from sqlitecloud.resultset import SQLiteCloudResult
 from sqlitecloud.types import (
-    SQCLOUD_RESULT_TYPE,
-    SQCloudConfig,
-    SQCloudConnect,
-    SQCloudException,
-    SqliteCloudAccount,
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudAccount,
+    SQLiteCloudConfig,
+    SQLiteCloudConnect,
     SQLiteCloudDataTypes,
+    SQLiteCloudException,
 )
 
 # Question mark style, e.g. ...WHERE name=?
@@ -45,41 +45,41 @@ def connect(connection_str: str) -> "Connection":
 
     Args:
         connection_str (str): The connection string for the database.
-            It may include SQCloudConfig'options like timeout, apikey, etc. in the url query string.
+            It may include SQLiteCloudConfig'options like timeout, apikey, etc. in the url query string.
             Eg: sqlitecloud://myhost.sqlitecloud.io:8860/mydb?apikey=abc123&compression=true&timeout=10
 
     Returns:
         Connection: A connection object representing the database connection.
 
     Raises:
-        SQCloudException: If an error occurs while establishing the connection.
+        SQLiteCloudException: If an error occurs while establishing the connection.
     """
     ...
 
 
 @overload
 def connect(
-    cloud_account: SqliteCloudAccount, config: Optional[SQCloudConfig] = None
+    cloud_account: SQLiteCloudAccount, config: Optional[SQLiteCloudConfig] = None
 ) -> "Connection":
     """
     Establishes a connection to the SQLite Cloud database using the provided cloud account and configuration.
 
     Args:
         cloud_account (SqliteCloudAccount): The cloud account used to authenticate and access the database.
-        config (Optional[SQCloudConfig]): Additional configuration options for the connection (default: None).
+        config (Optional[SQLiteCloudConfig]): Additional configuration options for the connection (default: None).
 
     Returns:
         Connection: A connection object representing the connection to the SQLite Cloud database.
 
     Raises:
-        SQCloudException: If an error occurs while establishing the connection.
+        SQLiteCloudException: If an error occurs while establishing the connection.
     """
     ...
 
 
 def connect(
-    connection_info: Union[str, SqliteCloudAccount],
-    config: Optional[SQCloudConfig] = None,
+    connection_info: Union[str, SQLiteCloudAccount],
+    config: Optional[SQLiteCloudConfig] = None,
 ) -> "Connection":
     """
     Establishes a connection to the SQLite Cloud database.
@@ -87,23 +87,23 @@ def connect(
     Args:
         connection_info (Union[str, SqliteCloudAccount]): The connection information.
             It can be either a connection string or a `SqliteCloudAccount` object.
-        config (Optional[SQCloudConfig]): The configuration options for the connection.
+        config (Optional[SQLiteCloudConfig]): The configuration options for the connection.
             Defaults to None.
 
     Returns:
         Connection: A DB-API 2.0 connection object representing the connection to the database.
 
     Raises:
-        SQCloudException: If an error occurs while establishing the connection.
+        SQLiteCloudException: If an error occurs while establishing the connection.
     """
     driver = Driver()
 
-    if isinstance(connection_info, SqliteCloudAccount):
+    if isinstance(connection_info, SQLiteCloudAccount):
         if not config:
-            config = SQCloudConfig()
+            config = SQLiteCloudConfig()
         config.account = connection_info
     else:
-        config = SQCloudConfig(connection_info)
+        config = SQLiteCloudConfig(connection_info)
 
     return Connection(
         driver.connect(config.account.hostname, config.account.port, config)
@@ -115,29 +115,29 @@ class Connection:
     Represents a DB-APi 2.0 connection to the SQLite Cloud database.
 
     Args:
-        sqcloud_connection (SQCloudConnect): The SQLiteCloud connection object.
+        SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
 
     Attributes:
         _driver (Driver): The driver object used for database operations.
-        sqcloud_connection (SQCloudConnect): The SQLiteCloud connection object.
+        SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
     """
 
     row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
 
-    def __init__(self, sqcloud_connection: SQCloudConnect) -> None:
+    def __init__(self, SQLiteCloud_connection: SQLiteCloudConnect) -> None:
         self._driver = Driver()
         self.row_factory = None
-        self.sqcloud_connection = sqcloud_connection
+        self.SQLiteCloud_connection = SQLiteCloud_connection
 
     @property
-    def sqlcloud_connection(self) -> SQCloudConnect:
+    def sqlcloud_connection(self) -> SQLiteCloudConnect:
         """
         Returns the SQLite Cloud connection object.
 
         Returns:
-            SQCloudConnect: The SQLiteCloud connection object.
+            SQLiteCloudConnect: The SQLite Cloud connection object.
         """
-        return self.sqcloud_connection
+        return self.SQLiteCloud_connection
 
     def execute(
         self,
@@ -154,7 +154,7 @@ class Connection:
             sql (str): The SQL query to execute.
             parameters (Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]):
                 The parameters to be used in the query. It can be a tuple or a dictionary. (Default ())
-            conn (SQCloudConnect): The connection object to use for executing the query.
+            conn (SQLiteCloudConnect): The connection object to use for executing the query.
 
         Returns:
             Cursor: The cursor object.
@@ -195,7 +195,7 @@ class Connection:
             DB-API 2.0 interface does not manage the Sqlite Cloud PubSub feature.
             Therefore, only the main socket is closed.
         """
-        self._driver.disconnect(self.sqcloud_connection, True)
+        self._driver.disconnect(self.SQLiteCloud_connection, True)
 
     def commit(self):
         """
@@ -240,7 +240,7 @@ class Cursor(Iterator[Any]):
         self.row_factory = None
         self._connection = connection
         self._iter_row: int = 0
-        self._resultset: SQCloudResult = None
+        self._resultset: SQLiteCloudResult = None
 
     @property
     def connection(self) -> Connection:
@@ -332,7 +332,7 @@ class Cursor(Iterator[Any]):
             sql (str): The SQL query to execute.
             parameters (Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]):
                 The parameters to be used in the query. It can be a tuple or a dictionary. (Default ())
-            conn (SQCloudConnect): The connection object to use for executing the query.
+            conn (SQLiteCloudConnect): The connection object to use for executing the query.
 
         Returns:
             Cursor: The cursor object.
@@ -453,7 +453,8 @@ class Cursor(Iterator[Any]):
 
     def _is_result_rowset(self) -> bool:
         return (
-            self._resultset and self._resultset.tag == SQCLOUD_RESULT_TYPE.RESULT_ROWSET
+            self._resultset
+            and self._resultset.tag == SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET
         )
 
     def _ensure_connection(self):
@@ -461,10 +462,10 @@ class Cursor(Iterator[Any]):
         Ensure the cursor is usable or has been closed.
 
         Raises:
-            SQCloudException: If the cursor is closed.
+            SQLiteCloudException: If the cursor is closed.
         """
         if not self._connection:
-            raise SQCloudException("The cursor is closed.")
+            raise SQLiteCloudException("The cursor is closed.")
 
     def __iter__(self) -> "Cursor":
         return self

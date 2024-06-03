@@ -5,15 +5,15 @@ import pytest
 
 import sqlitecloud
 from sqlitecloud.types import (
-    SQCLOUD_INTERNAL_ERRCODE,
-    SQCloudException,
-    SqliteCloudAccount,
+    SQLITECLOUD_INTERNAL_ERRCODE,
+    SQLiteCloudAccount,
+    SQLiteCloudException,
 )
 
 
 class TestDBAPI2:
     def test_connect_with_account(self):
-        account = SqliteCloudAccount(
+        account = SQLiteCloudAccount(
             os.getenv("SQLITE_USER"),
             os.getenv("SQLITE_PASSWORD"),
             os.getenv("SQLITE_HOST"),
@@ -35,7 +35,7 @@ class TestDBAPI2:
         assert isinstance(connection, sqlitecloud.Connection)
 
     def test_disconnect(self):
-        account = SqliteCloudAccount(
+        account = SQLiteCloudAccount(
             os.getenv("SQLITE_USER"),
             os.getenv("SQLITE_PASSWORD"),
             os.getenv("SQLITE_HOST"),
@@ -49,10 +49,10 @@ class TestDBAPI2:
 
         assert isinstance(connection, sqlitecloud.Connection)
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             connection.execute("SELECT 1")
 
-        assert e.value.errcode == SQCLOUD_INTERNAL_ERRCODE.NETWORK
+        assert e.value.errcode == SQLITECLOUD_INTERNAL_ERRCODE.NETWORK
         assert e.value.errmsg == "The connection is closed."
 
     def test_select(self, sqlitecloud_dbapi2_connection):
@@ -77,7 +77,7 @@ class TestDBAPI2:
     def test_column_not_found(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             connection.execute("SELECT not_a_column FROM albums")
 
         assert e.value.errcode == 1
@@ -126,7 +126,7 @@ class TestDBAPI2:
     def test_error(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
 
-        with pytest.raises(SQCloudException) as e:
+        with pytest.raises(SQLiteCloudException) as e:
             connection.execute("TEST ERROR")
 
         assert e.value.errcode == 66666
