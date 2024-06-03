@@ -13,7 +13,7 @@ setup(
     description="A Python package for working with SQLite databases in the cloud.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/sqlitecloud/python",
+    url="https://github.com/sqlitecloud/sqlitecloud-py",
     packages=find_packages(),
     install_requires=[
         "lz4 >= 3.1.10",
