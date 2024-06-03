@@ -4,7 +4,7 @@
   <img src="https://sqlitecloud.io/social/logo.png" height="300" alt="SQLite Cloud logo">
 </p>
 
-![Build Status](https://github.com/sqlitecloud/python/actions/workflows/deploy.yaml/badge.svg "Build Status")
+![Build Status](https://github.com/sqlitecloud/sqlitecloud-py/actions/workflows/deploy.yaml/badge.svg "Build Status")
 [![codecov](https://codecov.io/github/sqlitecloud/python/graph/badge.svg?token=38G6FGOWKP)](https://codecov.io/github/sqlitecloud/python)
 ![PyPI - Version](https://img.shields.io/pypi/v/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
@@ -25,8 +25,8 @@
 
 We aim for full compatibility with the Python built-in [sqlite3](https://docs.python.org/3.6/library/sqlite3.html) API (based on Python [PEP 249](https://peps.python.org/pep-0249)), with the primary distinction being that our driver connects to SQLite Cloud databases. This allows you to migrate your local SQLite databases to SQLite Cloud without needing to modify your existing Python code that uses the sqlite3 API.
 
-- Documentation: Our API closely follows the sqlite3 API. You can refer to the sqlite3 documentation for most functionality. The list of implemented features are documented [here](https://github.com/sqlitecloud/python/issues/8).
-- Source: [https://github.com/sqlitecloud/python](https://github.com/sqlitecloud/python)
+- Documentation: Our API closely follows the sqlite3 API. You can refer to the sqlite3 documentation for most functionality. The list of implemented features are documented [here](https://github.com/sqlitecloud/sqlitecloud-py/issues/8).
+- Source: [https://github.com/sqlitecloud/sqlitecloud-py](https://github.com/sqlitecloud/sqlitecloud-py)
 - Site: [https://sqlitecloud.io](https://sqlitecloud.io/developers)
 
 ## Example
