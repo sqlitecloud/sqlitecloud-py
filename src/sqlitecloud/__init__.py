@@ -6,4 +6,4 @@ from .dbapi2 import Connection, Cursor, connect
 
 __all__ = ["VERSION", "Connection", "Cursor", "connect"]
 
-VERSION = "0.0.78"
+VERSION = "0.0.79"
