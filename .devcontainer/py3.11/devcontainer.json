@@ -1,11 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Python 3",
+	"name": "Python 3.11",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"features": {
 		"ghcr.io/warrenbuckley/codespace-features/sqlite:1": {}
 	},
@@ -20,12 +18,6 @@
 	// "postCreateCommand": "pip3 install --user -r requirements.txt",
 
 	// Configure tool-specific properties.
-	// Py3.6 support (switch extensions to `pre-release` and `install another version`):
-	// Pylance v2022.6.30
-	// Python v2022.8.1
-	// Python Debugger v2023.1.XXX (pre-release version | debugpy v1.5.1)
-	// Black Formatter v2022.2.0
-	// Isort v2022.1.11601002 (pre-release)
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -35,7 +27,8 @@
 				"ms-python.python",
 				"ms-python.debugpy",
 				"ms-python.black-formatter",
-				"ms-python.isort"
+				"ms-python.isort",
+				"ms-toolsai.jupyter"
 			]
 		}
 	}
