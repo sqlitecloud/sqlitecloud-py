@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 import sqlitecloud
 from sqlitecloud.client import SQLiteCloudClient
-from sqlitecloud.types import SQLiteCloudAccount, SQLiteCloudConnect
+from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConnect
 
 
 @pytest.fixture(autouse=True)

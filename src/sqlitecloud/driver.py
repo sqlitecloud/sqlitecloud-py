@@ -9,12 +9,10 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 import lz4.block
 
-from sqlitecloud.resultset import SQLiteCloudResult, SQLiteCloudResultSet
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_CMD,
     SQLITECLOUD_DEFAULT,
     SQLITECLOUD_INTERNAL_ERRCODE,
-    SQLITECLOUD_RESULT_TYPE,
     SQLITECLOUD_ROWSET,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
@@ -24,11 +22,14 @@ from sqlitecloud.types import (
     SQLiteCloudRowsetSignature,
     SQLiteCloudValue,
 )
+from sqlitecloud.resultset import (
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudResult,
+    SQLiteCloudResultSet,
+)
 
 
 class Driver:
-    SQLiteCloud_DEFAULT_UPLOAD_SIZE = 512 * 1024
-
     def __init__(self) -> None:
         # Used while parsing chunked rowset
         self._rowset: SQLiteCloudResult = None
@@ -262,15 +263,15 @@ class Driver:
                 blen -= nread
                 buffer += data
 
-                SQLiteCloud_number = self._internal_parse_number(buffer)
-                clen = SQLiteCloud_number.value
+                sqlitecloud_number = self._internal_parse_number(buffer)
+                clen = sqlitecloud_number.value
                 if clen == 0:
                     continue
 
                 # check if read is complete
                 # clen is the lenght parsed in the buffer
                 # cstart is the index of the first space
-                cstart = SQLiteCloud_number.cstart
+                cstart = sqlitecloud_number.cstart
                 if clen + cstart != tread:
                     continue
 
@@ -532,61 +533,80 @@ class Driver:
         slicing the buffer into parts if there are special characters like "ò".
         """
         buffer = b""
-        buffer_size = 8192
+        command_type = ""
+        command_length_value = b""
         nread = 0
 
         sock = connection.socket if main_socket else connection.pubsub_socket
 
+        # read the lenght of the command, eg:
+        # ?LEN <command>, where `?` is any command type
+        # _ for null command
+        # :145 for integer command with value 145
         while True:
             try:
-                data = sock.recv(buffer_size)
+                data = sock.recv(1)
                 if not data:
-                    raise SQLiteCloudException("Incomplete response from server.")
+                    raise SQLiteCloudException(
+                        "Incomplete response from server. Cannot read the command length."
+                    )
             except Exception as exc:
                 raise SQLiteCloudException(
-                    "An error occurred while reading data from the socket.",
+                    "An error occurred while reading command length from the socket.",
                     SQLITECLOUD_INTERNAL_ERRCODE.NETWORK,
                 ) from exc
 
-            # the expected data length to read
-            # matches the string size before decoding it
             nread += len(data)
-            # update buffers
             buffer += data
 
-            c = chr(buffer[0])
+            # first character is the type of the message
+            if nread == 1:
+                command_type = data.decode()
+                continue
 
-            if (
-                c == SQLITECLOUD_CMD.INT.value
-                or c == SQLITECLOUD_CMD.FLOAT.value
-                or c == SQLITECLOUD_CMD.NULL.value
-            ):
-                if not buffer.endswith(b" "):
-                    continue
-            elif c == SQLITECLOUD_CMD.ROWSET_CHUNK.value:
-                isEndOfChunk = buffer.endswith(SQLITECLOUD_ROWSET.CHUNKS_END.value)
-                if not isEndOfChunk:
-                    continue
-            else:
-                SQLiteCloud_number = self._internal_parse_number(buffer)
-                n = SQLiteCloud_number.value
-                cstart = SQLiteCloud_number.cstart
+            # end of len value
+            if data == b" ":
+                break
 
-                can_be_zerolength = (
-                    c == SQLITECLOUD_CMD.BLOB.value or c == SQLITECLOUD_CMD.STRING.value
-                )
-                if n == 0 and not can_be_zerolength:
-                    continue
-                if n + cstart != nread:
-                    continue
+            command_length_value += data
 
+        if (
+            command_type == SQLITECLOUD_CMD.INT.value
+            or command_type == SQLITECLOUD_CMD.FLOAT.value
+            or command_type == SQLITECLOUD_CMD.NULL.value
+        ):
             return self._internal_parse_buffer(connection, buffer, len(buffer))
+
+        command_length = int(command_length_value)
+
+        # read the command
+        nread = 0
+
+        while nread < command_length:
+            buffer_size = min(command_length - nread, 8192)
+
+            try:
+                data = sock.recv(buffer_size)
+                if not data:
+                    raise SQLiteCloudException(
+                        "Incomplete response from server. Cannot read the command."
+                    )
+            except Exception as exc:
+                raise SQLiteCloudException(
+                    "An error occurred while reading the command from the socket.",
+                    SQLITECLOUD_INTERNAL_ERRCODE.NETWORK,
+                ) from exc
+
+            nread += len(data)
+            buffer += data
+
+        return self._internal_parse_buffer(connection, buffer, len(buffer))
 
     def _internal_parse_number(
         self, buffer: bytes, index: int = 1
     ) -> SQLiteCloudNumber:
-        SQLiteCloud_number = SQLiteCloudNumber()
-        SQLiteCloud_number.value = 0
+        sqlitecloud_number = SQLiteCloudNumber()
+        sqlitecloud_number.value = 0
         extvalue = 0
         isext = False
         blen = len(buffer)
@@ -602,9 +622,9 @@ class Driver:
 
             # check for end of value
             if c == " ":
-                SQLiteCloud_number.cstart = i + 1
-                SQLiteCloud_number.extcode = extvalue
-                return SQLiteCloud_number
+                sqlitecloud_number.cstart = i + 1
+                sqlitecloud_number.extcode = extvalue
+                return sqlitecloud_number
 
             val = int(c) if c.isdigit() else 0
 
@@ -612,10 +632,10 @@ class Driver:
             if isext:
                 extvalue = (extvalue * 10) + val
             else:
-                SQLiteCloud_number.value = (SQLiteCloud_number.value * 10) + val
+                sqlitecloud_number.value = (sqlitecloud_number.value * 10) + val
 
-        SQLiteCloud_number.value = 0
-        return SQLiteCloud_number
+        sqlitecloud_number.value = 0
+        return sqlitecloud_number
 
     def _internal_parse_buffer(
         self, connection: SQLiteCloudConnect, buffer: bytes, blen: int
@@ -665,11 +685,7 @@ class Driver:
             if len_ == 0:
                 return SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_STRING, "")
 
-            tag = (
-                SQLITECLOUD_RESULT_TYPE.RESULT_JSON
-                if cmd == SQLITECLOUD_CMD.JSON.value
-                else SQLITECLOUD_RESULT_TYPE.RESULT_STRING
-            )
+            tag = SQLITECLOUD_RESULT_TYPE.RESULT_STRING
 
             if cmd == SQLITECLOUD_CMD.ZEROSTRING.value:
                 len_ -= 1
@@ -693,6 +709,10 @@ class Driver:
                 )
             elif cmd == SQLITECLOUD_CMD.BLOB.value:
                 tag = SQLITECLOUD_RESULT_TYPE.RESULT_BLOB
+            elif cmd == SQLITECLOUD_CMD.JSON.value:
+                return SQLiteCloudResult(
+                    SQLITECLOUD_RESULT_TYPE.RESULT_JSON, json.loads(clone)
+                )
 
             clone = clone.decode() if cmd != SQLITECLOUD_CMD.BLOB.value else clone
             return SQLiteCloudResult(tag, clone)
@@ -740,11 +760,10 @@ class Driver:
                 rowset_signature.ncols,
             )
 
-            # continue parsing next chunk in the buffer
-            sign_len = rowset_signature.len
-            buffer = buffer[sign_len + len(f"/{sign_len} ") :]
-            if cmd == SQLITECLOUD_CMD.ROWSET_CHUNK.value and buffer:
-                return self._internal_parse_buffer(connection, buffer, len(buffer))
+            # continue reading from the socket
+            # until the end-of-chunk condition
+            if cmd == SQLITECLOUD_CMD.ROWSET_CHUNK.value:
+                return self._internal_socket_read(connection)
 
             return rowset
 
@@ -752,8 +771,8 @@ class Driver:
             return SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_NONE, None)
 
         elif cmd in [SQLITECLOUD_CMD.INT.value, SQLITECLOUD_CMD.FLOAT.value]:
-            SQLiteCloud_value = self._internal_parse_value(buffer)
-            clone = SQLiteCloud_value.value
+            sqlitecloud_value = self._internal_parse_value(buffer)
+            clone = sqlitecloud_value.value
 
             tag = (
                 SQLITECLOUD_RESULT_TYPE.RESULT_INTEGER
@@ -784,6 +803,10 @@ class Driver:
         Returns:
             str: The uncompressed data.
         """
+        # buffer may contain a sequence of compressed data
+        # eg, a compressed rowset split in chunks is a sequence of rowset chunks
+        # compressed individually, each one with its compressed header,
+        # rowset header and compressed data
         space_index = buffer.index(b" ")
         buffer = buffer[space_index + 1 :]
 
@@ -821,14 +844,14 @@ class Driver:
 
         r: str = []
         for i in range(n):
-            SQLiteCloud_value = self._internal_parse_value(buffer, start)
-            start += SQLiteCloud_value.cellsize
-            r.append(SQLiteCloud_value.value)
+            sqlitecloud_value = self._internal_parse_value(buffer, start)
+            start += sqlitecloud_value.cellsize
+            r.append(sqlitecloud_value.value)
 
         return r
 
     def _internal_parse_value(self, buffer: bytes, index: int = 0) -> SQLiteCloudValue:
-        SQLiteCloud_value = SQLiteCloudValue()
+        sqlitecloud_value = SQLiteCloudValue()
         len = 0
         cellsize = 0
 
@@ -839,14 +862,14 @@ class Driver:
             if cellsize is not None:
                 cellsize = 2
 
-            SQLiteCloud_value.len = len
-            SQLiteCloud_value.cellsize = cellsize
+            sqlitecloud_value.len = len
+            sqlitecloud_value.cellsize = cellsize
 
-            return SQLiteCloud_value
+            return sqlitecloud_value
 
-        SQLiteCloud_number = self._internal_parse_number(buffer, index + 1)
-        blen = SQLiteCloud_number.value
-        cstart = SQLiteCloud_number.cstart
+        sqlitecloud_number = self._internal_parse_number(buffer, index + 1)
+        blen = sqlitecloud_number.value
+        cstart = sqlitecloud_number.cstart
 
         # handle decimal/float cases
         if c == SQLITECLOUD_CMD.INT.value or c == SQLITECLOUD_CMD.FLOAT.value:
@@ -854,20 +877,20 @@ class Driver:
             len = nlen - 2
             cellsize = nlen
 
-            SQLiteCloud_value.value = (buffer[index + 1 : index + 1 + len]).decode()
-            SQLiteCloud_value.len
-            SQLiteCloud_value.cellsize = cellsize
+            sqlitecloud_value.value = (buffer[index + 1 : index + 1 + len]).decode()
+            sqlitecloud_value.len
+            sqlitecloud_value.cellsize = cellsize
 
-            return SQLiteCloud_value
+            return sqlitecloud_value
 
         len = blen - 1 if c == SQLITECLOUD_CMD.ZEROSTRING.value else blen
         cellsize = blen + cstart - index
 
-        SQLiteCloud_value.value = (buffer[cstart : cstart + len]).decode()
-        SQLiteCloud_value.len = len
-        SQLiteCloud_value.cellsize = cellsize
+        sqlitecloud_value.value = (buffer[cstart : cstart + len]).decode()
+        sqlitecloud_value.len = len
+        sqlitecloud_value.cellsize = cellsize
 
-        return SQLiteCloud_value
+        return sqlitecloud_value
 
     def _internal_parse_rowset_signature(
         self, buffer: bytes
@@ -951,9 +974,9 @@ class Driver:
         # parse column names
         rowset.colname = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            number_len = SQLiteCloud_number.value
-            cstart = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            number_len = sqlitecloud_number.value
+            cstart = sqlitecloud_number.cstart
             value = buffer[cstart : cstart + number_len]
             rowset.colname.append(value.decode())
             start = cstart + number_len
@@ -969,9 +992,9 @@ class Driver:
         # parse declared types
         rowset.decltype = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            number_len = SQLiteCloud_number.value
-            cstart = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            number_len = sqlitecloud_number.value
+            cstart = sqlitecloud_number.cstart
             value = buffer[cstart : cstart + number_len]
             rowset.decltype.append(value.decode())
             start = cstart + number_len
@@ -979,9 +1002,9 @@ class Driver:
         # parse database names
         rowset.dbname = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            number_len = SQLiteCloud_number.value
-            cstart = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            number_len = sqlitecloud_number.value
+            cstart = sqlitecloud_number.cstart
             value = buffer[cstart : cstart + number_len]
             rowset.dbname.append(value.decode())
             start = cstart + number_len
@@ -989,9 +1012,9 @@ class Driver:
         # parse table names
         rowset.tblname = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            number_len = SQLiteCloud_number.value
-            cstart = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            number_len = sqlitecloud_number.value
+            cstart = sqlitecloud_number.cstart
             value = buffer[cstart : cstart + number_len]
             rowset.tblname.append(value.decode())
             start = cstart + number_len
@@ -999,9 +1022,9 @@ class Driver:
         # parse column original names
         rowset.origname = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            number_len = SQLiteCloud_number.value
-            cstart = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            number_len = sqlitecloud_number.value
+            cstart = sqlitecloud_number.cstart
             value = buffer[cstart : cstart + number_len]
             rowset.origname.append(value.decode())
             start = cstart + number_len
@@ -1009,23 +1032,23 @@ class Driver:
         # parse not null flags
         rowset.notnull = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            rowset.notnull.append(SQLiteCloud_number.value)
-            start = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            rowset.notnull.append(sqlitecloud_number.value)
+            start = sqlitecloud_number.cstart
 
         # parse primary key flags
         rowset.prikey = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            rowset.prikey.append(SQLiteCloud_number.value)
-            start = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            rowset.prikey.append(sqlitecloud_number.value)
+            start = sqlitecloud_number.cstart
 
         # parse autoincrement flags
         rowset.autoinc = []
         for i in range(ncols):
-            SQLiteCloud_number = self._internal_parse_number(buffer, start)
-            rowset.autoinc.append(SQLiteCloud_number.value)
-            start = SQLiteCloud_number.cstart
+            sqlitecloud_number = self._internal_parse_number(buffer, start)
+            rowset.autoinc.append(sqlitecloud_number.value)
+            start = sqlitecloud_number.cstart
 
         return start
 
@@ -1034,6 +1057,6 @@ class Driver:
     ):
         # loop to parse each individual value
         for i in range(bound):
-            SQLiteCloud_value = self._internal_parse_value(buffer, start)
-            start += SQLiteCloud_value.cellsize
-            rowset.data.append(SQLiteCloud_value.value)
+            sqlitecloud_value = self._internal_parse_value(buffer, start)
+            start += sqlitecloud_value.cellsize
+            rowset.data.append(sqlitecloud_value.value)

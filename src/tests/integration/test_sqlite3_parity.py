@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 
-from sqlitecloud.types import SQLiteCloudException
+from sqlitecloud.datatypes import SQLiteCloudException
 
 
 class TestSQLite3FeatureParity:

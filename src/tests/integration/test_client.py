@@ -1,18 +1,17 @@
-import json
 import os
 import time
 
 import pytest
 
 from sqlitecloud.client import SQLiteCloudClient
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_ERRCODE,
     SQLITECLOUD_INTERNAL_ERRCODE,
-    SQLITECLOUD_RESULT_TYPE,
     SQLiteCloudAccount,
     SQLiteCloudConnect,
     SQLiteCloudException,
 )
+from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE
 
 
 class TestClient:
@@ -248,7 +247,7 @@ class TestClient:
                 "soldier: Well they don't seem to move anymore...",
                 "supreme-commander: Oh snap, I came here to see them twerk!",
             ],
-        } == json.loads(result.get_result())
+        } == result.get_result()
 
     def test_blob(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -257,7 +256,7 @@ class TestClient:
         assert SQLITECLOUD_RESULT_TYPE.RESULT_BLOB == result.tag
         assert len(result.get_result()) == 1000
 
-    def test_blob0(self, sqlitecloud_connection):
+    def test_blob_zero_length(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
         result = client.exec_query("TEST BLOB0", connection)
 
@@ -366,10 +365,21 @@ class TestClient:
 
         assert 1 == rowset.nrows
 
-    def test_chunked_rowset(self, sqlitecloud_connection):
+    def test_rowset_chunk(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
         rowset = client.exec_query("TEST ROWSET_CHUNK", connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
+        assert 147 == rowset.nrows
+        assert 1 == rowset.ncols
+        assert 147 == len(rowset.data)
+        assert "key" == rowset.get_name(0)
+
+    def test_rowset_nochunk(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        rowset = client.exec_query("TEST ROWSET_NOCHUNK", connection)
 
         assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
         assert 147 == rowset.nrows
@@ -441,7 +451,10 @@ class TestClient:
         client.disconnect(connection)
 
         assert e.value.errcode == SQLITECLOUD_INTERNAL_ERRCODE.NETWORK
-        assert e.value.errmsg == "An error occurred while reading data from the socket."
+        assert (
+            e.value.errmsg
+            == "An error occurred while reading command length from the socket."
+        )
 
     def test_XXL_query(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -603,6 +616,40 @@ class TestClient:
                         query_ms < self.EXPECT_SPEED_MS
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
+    def test_big_rowset(self):
+        account = SQLiteCloudAccount()
+        account.hostname = os.getenv("SQLITE_HOST")
+        account.apikey = os.getenv("SQLITE_API_KEY")
+        account.dbname = os.getenv("SQLITE_DB")
+
+        client = SQLiteCloudClient(cloud_account=account)
+
+        connection = client.open_connection()
+
+        try:
+            client.exec_query(
+                "CREATE TABLE IF NOT EXISTS TestCompress (id INTEGER PRIMARY KEY, name TEXT)",
+                connection,
+            )
+            client.exec_query("DELETE FROM TestCompress", connection)
+
+            nRows = 1000
+
+            sql = ""
+            for i in range(nRows):
+                sql += f"INSERT INTO TestCompress (name) VALUES ('Test {i}'); "
+
+            client.exec_query(sql, connection)
+
+            rowset = client.exec_query(
+                "SELECT * from TestCompress",
+                connection,
+            )
+
+            assert rowset.nrows == nRows
+        finally:
+            client.disconnect(connection)
+
     def test_compression_single_column(self):
         account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
@@ -650,6 +697,28 @@ class TestClient:
         assert rowset.nrows > 0
         assert rowset.ncols > 0
         assert rowset.get_name(0) == "AlbumId"
+
+    def test_rowset_nochunk_compressed(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        rowset = client.exec_query("TEST ROWSET_NOCHUNK_COMPRESSED", connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
+        assert 147 == rowset.nrows
+        assert 1 == rowset.ncols
+        assert 147 == len(rowset.data)
+        assert "key" == rowset.get_name(0)
+
+    def test_rowset_chunk_compressed(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        rowset = client.exec_query("TEST ROWSET_CHUNK_COMPRESSED", connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == rowset.tag
+        assert 147 == rowset.nrows
+        assert 1 == rowset.ncols
+        assert 147 == len(rowset.data)
+        assert "key" == rowset.get_name(0)
 
     def test_exec_statement_with_named_placeholder(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection

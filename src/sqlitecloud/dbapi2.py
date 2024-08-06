@@ -16,16 +16,15 @@ from typing import (
     overload,
 )
 
-from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQLiteCloudResult
-from sqlitecloud.types import (
-    SQLITECLOUD_RESULT_TYPE,
+from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
     SQLiteCloudDataTypes,
     SQLiteCloudException,
 )
+from sqlitecloud.driver import Driver
+from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
 
 # Question mark style, e.g. ...WHERE name=?
 # Module also supports Named style, e.g. ...WHERE name=:name
@@ -478,7 +477,7 @@ class Cursor(Iterator[Any]):
             and self._resultset.data
             and self._iter_row < self._resultset.nrows
         ):
-            out: tuple[Any] = ()
+            out: Tuple[Any] = ()
 
             for col in range(self._resultset.ncols):
                 out += (self._resultset.get_value(self._iter_row, col),)

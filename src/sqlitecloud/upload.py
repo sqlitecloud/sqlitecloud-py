@@ -3,8 +3,8 @@ import os
 from io import BufferedReader
 from typing import Optional
 
+from sqlitecloud.datatypes import SQLiteCloudConnect
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQLiteCloudConnect
 
 
 def xCallback(fd: BufferedReader, blen: int, ntot: int, nprogress: int) -> bytes:

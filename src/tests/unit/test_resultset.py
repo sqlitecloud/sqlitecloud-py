@@ -1,7 +1,11 @@
 import pytest
 
-from sqlitecloud.resultset import SQLiteCloudResult, SQLiteCloudResultSet
-from sqlitecloud.types import SQLITECLOUD_RESULT_TYPE, SQLITECLOUD_VALUE_TYPE
+from sqlitecloud.resultset import (
+    SQLITECLOUD_RESULT_TYPE,
+    SQLITECLOUD_VALUE_TYPE,
+    SQLiteCloudResult,
+    SQLiteCloudResultSet,
+)
 
 
 class TestSQLiteCloudResult:

@@ -3,15 +3,15 @@
 """
 from typing import Dict, Optional, Tuple, Union
 
-from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQLiteCloudResultSet
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
     SQLiteCloudDataTypes,
     SQLiteCloudException,
 )
+from sqlitecloud.driver import Driver
+from sqlitecloud.resultset import SQLiteCloudResultSet
 
 
 class SQLiteCloudClient:

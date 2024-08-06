@@ -1,8 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 
+from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConfig
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQLiteCloudAccount, SQLiteCloudConfig
 
 
 class TestDriver:
