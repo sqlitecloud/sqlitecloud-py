@@ -81,7 +81,7 @@ conn.executemany(
     [("Sony Music Entertainment", 2020), ("EMI Music Publishing", 2021)],
 )
 
-cursor = conn.execute("SELECT * FROM cars")
+cursor = conn.execute("SELECT * FROM producers")
 
 for row in cursor:
     print(row)
