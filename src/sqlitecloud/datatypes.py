@@ -137,8 +137,8 @@ class SQLiteCloudConfig:
         # Socket connection timeout
         self.connect_timeout = SQLITECLOUD_DEFAULT.TIMEOUT.value
 
-        # Enable compression
-        self.compression = False
+        # Compression enabled by default
+        self.compression = True
         # Tell the server to zero-terminate strings
         self.zerotext = False
         # Database will be created in memory
