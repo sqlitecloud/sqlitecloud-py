@@ -1,11 +1,34 @@
-name: Publish SqliteCloud 🐍 to PyPI 📦
+name: Publish SQLite Cloud to PyPI
 
 on:
     workflow_dispatch:
 
 jobs:
+  release:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    name: Bump version and tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - name: Set version
+        run: |
+              git config --local user.email "github-actions[bot]@users.noreply.github.com"
+              git config --local user.name "github-actions[bot]"
+              python -m pip install -r requirements-dev.txt
+              bump2version patch
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          force: true
+          tags: true
+
   build-n-publish:
-    name: Build and publish SqliteCloud 🐍 to PyPI 📦
+    if: ${{ github.ref == 'refs/heads/main' }}
+    name: Build and publish SQLite Cloud to PyPI
+    needs: release
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -35,7 +58,7 @@ jobs:
         echo "Current Directory: $(pwd)"
         rm -r src/sqlitecloud.egg-info
         ls src/
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         packages-dir: src/dist/
