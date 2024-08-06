@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 import sqlitecloud
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_INTERNAL_ERRCODE,
     SQLiteCloudAccount,
     SQLiteCloudException,

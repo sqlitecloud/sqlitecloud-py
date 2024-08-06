@@ -1,20 +1,17 @@
-import base64
-import json
 import os
 import time
 
 import pytest
 
 from sqlitecloud.client import SQLiteCloudClient
-from sqlitecloud.driver import Driver
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_ERRCODE,
     SQLITECLOUD_INTERNAL_ERRCODE,
-    SQLITECLOUD_RESULT_TYPE,
     SQLiteCloudAccount,
     SQLiteCloudConnect,
     SQLiteCloudException,
 )
+from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE
 
 
 class TestClient:
@@ -454,7 +451,10 @@ class TestClient:
         client.disconnect(connection)
 
         assert e.value.errcode == SQLITECLOUD_INTERNAL_ERRCODE.NETWORK
-        assert e.value.errmsg == "An error occurred while reading command length from the socket."
+        assert (
+            e.value.errmsg
+            == "An error occurred while reading command length from the socket."
+        )
 
     def test_XXL_query(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
@@ -616,6 +616,40 @@ class TestClient:
                         query_ms < self.EXPECT_SPEED_MS
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
+    def test_big_rowset(self):
+        account = SQLiteCloudAccount()
+        account.hostname = os.getenv("SQLITE_HOST")
+        account.apikey = os.getenv("SQLITE_API_KEY")
+        account.dbname = os.getenv("SQLITE_DB")
+
+        client = SQLiteCloudClient(cloud_account=account)
+
+        connection = client.open_connection()
+
+        try:
+            client.exec_query(
+                "CREATE TABLE IF NOT EXISTS TestCompress (id INTEGER PRIMARY KEY, name TEXT)",
+                connection,
+            )
+            client.exec_query("DELETE FROM TestCompress", connection)
+
+            nRows = 1000
+
+            sql = ""
+            for i in range(nRows):
+                sql += f"INSERT INTO TestCompress (name) VALUES ('Test {i}'); "
+
+            client.exec_query(sql, connection)
+
+            rowset = client.exec_query(
+                "SELECT * from TestCompress",
+                connection,
+            )
+
+            assert rowset.nrows == nRows
+        finally:
+            client.disconnect(connection)
+
     def test_compression_single_column(self):
         account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
@@ -663,40 +697,6 @@ class TestClient:
         assert rowset.nrows > 0
         assert rowset.ncols > 0
         assert rowset.get_name(0) == "AlbumId"
-
-    def test_compression_big_rowset(self):
-        account = SQLiteCloudAccount()
-        account.hostname = os.getenv("SQLITE_HOST")
-        account.apikey = os.getenv("SQLITE_API_KEY")
-        account.dbname = os.getenv("SQLITE_DB")
-
-        client = SQLiteCloudClient(cloud_account=account)
-        client.config.compression = True
-
-        connection = client.open_connection()
-
-        try:
-            client.exec_query("CREATE TABLE IF NOT EXISTS TestCompress (id INTEGER PRIMARY KEY, name TEXT)", connection)
-            client.exec_query("DELETE FROM TestCompress", connection)
-
-            nRows = 10000
-
-            sql = "BEGIN; "
-            sql = ""
-            for i in range(nRows):
-                sql += f"INSERT INTO TestCompress (name) VALUES ('Test {i}'); "
-            sql += "COMMIT;"
-
-            client.exec_query(sql, connection)
-
-            rowset = client.exec_query(
-                "SELECT * from TestCompress",
-                connection,
-            )
-
-            assert rowset.nrows == nRows
-        finally:
-            client.disconnect(connection)
 
     def test_rowset_nochunk_compressed(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection

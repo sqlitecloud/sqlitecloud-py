@@ -1,8 +1,9 @@
-import types
 from asyncio import AbstractEventLoop
 from enum import Enum
 from typing import Any, Callable, Dict, Optional, Union
 from urllib import parse
+
+from .resultset import SQLiteCloudResultSet
 
 # Basic types supported by SQLite Cloud APIs
 SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, None]
@@ -10,7 +11,7 @@ SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, 
 
 class SQLITECLOUD_DEFAULT(Enum):
     PORT = 8860
-    TIMEOUT = 12
+    TIMEOUT = 30
     UPLOAD_SIZE = 512 * 1024
 
 
@@ -37,14 +38,6 @@ class SQLITECLOUD_ROWSET(Enum):
     CHUNKS_END = b"/6 0 0 0 "
 
 
-class SQLITECLOUD_VALUE_TYPE(Enum):
-    INTEGER = "INTEGER"
-    FLOAT = "REAL"
-    TEXT = "TEXT"
-    BLOB = "BLOB"
-    NULL = "NULL"
-
-
 class SQLITECLOUD_INTERNAL_ERRCODE(Enum):
     """
     Clients error codes.
@@ -66,19 +59,6 @@ class SQLITECLOUD_ERRCODE(Enum):
     AUTH = 10004
     GENERIC = 10005
     RAFT = 10006
-
-
-class SQLITECLOUD_RESULT_TYPE(Enum):
-    RESULT_OK = 0
-    RESULT_ERROR = 1
-    RESULT_STRING = 2
-    RESULT_INTEGER = 3
-    RESULT_FLOAT = 4
-    RESULT_ROWSET = 5
-    RESULT_ARRAY = 6
-    RESULT_NONE = 7
-    RESULT_JSON = 8
-    RESULT_BLOB = 9
 
 
 class SQLITECLOUD_PUBSUB_SUBJECT(Enum):
@@ -141,7 +121,7 @@ class SQLiteCloudConnect:
 
         self.pubsub_socket: any = None
         self.pubsub_callback: Callable[
-            [SQLiteCloudConnect, Optional[types.SqliteCloudResultSet], Optional[any]],
+            [SQLiteCloudConnect, Optional[SQLiteCloudResultSet], Optional[any]],
             None,
         ] = None
         self.pubsub_data: any = None
@@ -210,8 +190,6 @@ class SQLiteCloudConfig:
                     value = bool(value)
                 elif value.isdigit():
                     value = int(value)
-                else:
-                    value = value
 
                 # alias
                 if opt == "nonlinearizable":
@@ -248,6 +226,7 @@ class SQLiteCloudConfig:
 
 class SQLiteCloudException(Exception):
     def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+        super().__init__(message)
         self.errmsg = str(message)
         self.errcode = code
         self.xerrcode = xerrcode

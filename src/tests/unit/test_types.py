@@ -1,6 +1,6 @@
 import pytest
 
-from sqlitecloud.types import SQLiteCloudConfig
+from sqlitecloud.datatypes import SQLiteCloudConfig
 
 
 class TestSQLiteCloudConfig:

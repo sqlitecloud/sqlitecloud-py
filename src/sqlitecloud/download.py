@@ -1,8 +1,8 @@
 import logging
 from io import BufferedWriter
 
+from sqlitecloud.datatypes import SQLiteCloudConnect
 from sqlitecloud.driver import Driver
-from sqlitecloud.types import SQLiteCloudConnect
 
 
 def xCallback(

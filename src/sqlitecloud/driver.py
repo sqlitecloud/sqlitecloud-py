@@ -9,12 +9,10 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 import lz4.block
 
-from sqlitecloud.resultset import SQLiteCloudResult, SQLiteCloudResultSet
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_CMD,
     SQLITECLOUD_DEFAULT,
     SQLITECLOUD_INTERNAL_ERRCODE,
-    SQLITECLOUD_RESULT_TYPE,
     SQLITECLOUD_ROWSET,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
@@ -24,11 +22,14 @@ from sqlitecloud.types import (
     SQLiteCloudRowsetSignature,
     SQLiteCloudValue,
 )
+from sqlitecloud.resultset import (
+    SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudResult,
+    SQLiteCloudResultSet,
+)
 
 
 class Driver:
-    SQLiteCloud_DEFAULT_UPLOAD_SIZE = 512 * 1024
-
     def __init__(self) -> None:
         # Used while parsing chunked rowset
         self._rowset: SQLiteCloudResult = None
@@ -759,7 +760,7 @@ class Driver:
                 rowset_signature.ncols,
             )
 
-            # continue reading from the socket 
+            # continue reading from the socket
             # until the end-of-chunk condition
             if cmd == SQLITECLOUD_CMD.ROWSET_CHUNK.value:
                 return self._internal_socket_read(connection)

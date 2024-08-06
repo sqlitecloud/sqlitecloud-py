@@ -1,6 +1,26 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from sqlitecloud.types import SQLITECLOUD_RESULT_TYPE, SQLITECLOUD_VALUE_TYPE
+
+class SQLITECLOUD_VALUE_TYPE(Enum):
+    INTEGER = "INTEGER"
+    FLOAT = "REAL"
+    TEXT = "TEXT"
+    BLOB = "BLOB"
+    NULL = "NULL"
+
+
+class SQLITECLOUD_RESULT_TYPE(Enum):
+    RESULT_OK = 0
+    RESULT_ERROR = 1
+    RESULT_STRING = 2
+    RESULT_INTEGER = 3
+    RESULT_FLOAT = 4
+    RESULT_ROWSET = 5
+    RESULT_ARRAY = 6
+    RESULT_NONE = 7
+    RESULT_JSON = 8
+    RESULT_BLOB = 9
 
 
 class SQLiteCloudResult:

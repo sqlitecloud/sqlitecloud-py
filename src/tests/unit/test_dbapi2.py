@@ -3,15 +3,14 @@ from pytest_mock import MockerFixture
 
 import sqlitecloud
 from sqlitecloud import Cursor
-from sqlitecloud.dbapi2 import Connection
-from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQLiteCloudResult
-from sqlitecloud.types import (
-    SQLITECLOUD_RESULT_TYPE,
+from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudException,
 )
+from sqlitecloud.dbapi2 import Connection
+from sqlitecloud.driver import Driver
+from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
 
 
 def test_connect_with_account_and_config(mocker: MockerFixture):
@@ -296,7 +295,7 @@ class TestCursor:
         assert list(cursor) == [("myname1",), ("myname2",)]
 
     def test_row_factory(self, mocker):
-        conn = Connection(mocker.patch("sqlitecloud.types.SQLiteCloudConnect"))
+        conn = Connection(mocker.patch("sqlitecloud.datatypes.SQLiteCloudConnect"))
         conn.row_factory = lambda x, y: {"name": y[0]}
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)

@@ -3,14 +3,13 @@ import uuid
 
 import pytest
 
-from sqlitecloud.pubsub import SQLiteCloudPubSub
-from sqlitecloud.resultset import SQLiteCloudResultSet
-from sqlitecloud.types import (
+from sqlitecloud.datatypes import (
     SQLITECLOUD_ERRCODE,
     SQLITECLOUD_PUBSUB_SUBJECT,
-    SQLITECLOUD_RESULT_TYPE,
     SQLiteCloudException,
 )
+from sqlitecloud.pubsub import SQLiteCloudPubSub
+from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResultSet
 
 
 class TestPubSub:
@@ -59,7 +58,9 @@ class TestPubSub:
         channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name)
-        pubsub.listen(connection, subject_type, channel_name, lambda conn, result, data: None)
+        pubsub.listen(
+            connection, subject_type, channel_name, lambda conn, result, data: None
+        )
 
         result = pubsub.list_connections(connection)
         assert channel_name in result.data
@@ -158,12 +159,12 @@ class TestPubSub:
             if isinstance(result, SQLiteCloudResultSet):
                 assert result.tag == SQLITECLOUD_RESULT_TYPE.RESULT_JSON
                 assert isinstance(result.get_result(), dict)
-                
+
                 content = result.get_result()
                 assert content["channel"] == "genres"
                 assert len(content["payload"]) > 0
                 assert content["payload"][0]["Name"] == new_name
-                assert content["payload"][0]["type"] == 'UPDATE'
+                assert content["payload"][0]["type"] == "UPDATE"
 
                 assert data == ["somedata"]
                 callback_called = True

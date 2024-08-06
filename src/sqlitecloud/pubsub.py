@@ -1,8 +1,8 @@
 from typing import Callable, Optional
 
+from sqlitecloud.datatypes import SQLITECLOUD_PUBSUB_SUBJECT, SQLiteCloudConnect
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SQLiteCloudResultSet
-from sqlitecloud.types import SQLITECLOUD_PUBSUB_SUBJECT, SQLiteCloudConnect
 
 
 class SQLiteCloudPubSub:
