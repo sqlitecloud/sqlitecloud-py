@@ -26,16 +26,23 @@ class TestPubSub:
 
             if isinstance(result, SQLiteCloudResultSet):
                 assert result.tag == SQLITECLOUD_RESULT_TYPE.RESULT_JSON
+                assert isinstance(result.get_result(), dict)
+
+                content = result.get_result()
+                assert content["channel"] == channel
+                assert len(content["payload"]) > 0
+                assert content["payload"] == "somedata2"
+
                 assert data == ["somedata"]
                 callback_called = True
                 flag.set()
 
         pubsub = SQLiteCloudPubSub()
-        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
+        subject_type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel)
-        pubsub.listen(connection, type, channel, assert_callback, ["somedata"])
+        pubsub.listen(connection, subject_type, channel, assert_callback, ["somedata"])
 
         pubsub.notify_channel(connection, channel, "somedata2")
 
@@ -48,16 +55,16 @@ class TestPubSub:
         connection, _ = sqlitecloud_connection
 
         pubsub = SQLiteCloudPubSub()
-        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
+        subject_type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel_name = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel_name)
-        pubsub.listen(connection, type, channel_name, lambda conn, result, data: None)
+        pubsub.listen(connection, subject_type, channel_name, lambda conn, result, data: None)
 
         result = pubsub.list_connections(connection)
         assert channel_name in result.data
 
-        pubsub.unlisten(connection, type, channel_name)
+        pubsub.unlisten(connection, subject_type, channel_name)
 
         result = pubsub.list_connections(connection)
 
@@ -116,11 +123,11 @@ class TestPubSub:
                 flag.set()
 
         pubsub = SQLiteCloudPubSub()
-        type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
+        subject_type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
         channel = "channel" + str(uuid.uuid4())
 
         pubsub.create_channel(connection, channel, if_not_exists=True)
-        pubsub.listen(connection, type, channel, assert_callback)
+        pubsub.listen(connection, subject_type, channel, assert_callback)
 
         pubsub.set_pubsub_only(connection)
 
@@ -150,16 +157,23 @@ class TestPubSub:
 
             if isinstance(result, SQLiteCloudResultSet):
                 assert result.tag == SQLITECLOUD_RESULT_TYPE.RESULT_JSON
-                assert new_name in result.get_result()
+                assert isinstance(result.get_result(), dict)
+                
+                content = result.get_result()
+                assert content["channel"] == "genres"
+                assert len(content["payload"]) > 0
+                assert content["payload"][0]["Name"] == new_name
+                assert content["payload"][0]["type"] == 'UPDATE'
+
                 assert data == ["somedata"]
                 callback_called = True
                 flag.set()
 
         pubsub = SQLiteCloudPubSub()
-        type = SQLITECLOUD_PUBSUB_SUBJECT.TABLE
+        subject_type = SQLITECLOUD_PUBSUB_SUBJECT.TABLE
         new_name = "Rock" + str(uuid.uuid4())
 
-        pubsub.listen(connection, type, "genres", assert_callback, ["somedata"])
+        pubsub.listen(connection, subject_type, "genres", assert_callback, ["somedata"])
 
         client.exec_query(
             f"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;", connection
