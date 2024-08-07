@@ -616,6 +616,7 @@ class TestClient:
                         query_ms < self.EXPECT_SPEED_MS
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
+    @pytest.mark.slow
     def test_big_rowset(self):
         account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
@@ -623,31 +624,33 @@ class TestClient:
         account.dbname = os.getenv("SQLITE_DB")
 
         client = SQLiteCloudClient(cloud_account=account)
+        client.config.timeout = 100
 
         connection = client.open_connection()
 
+        table_name = "TestCompress" + str(int(time.time()))
         try:
             client.exec_query(
-                "CREATE TABLE IF NOT EXISTS TestCompress (id INTEGER PRIMARY KEY, name TEXT)",
+                f"CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, name TEXT)",
                 connection,
             )
-            client.exec_query("DELETE FROM TestCompress", connection)
 
-            nRows = 1000
+            nRows = 5000
 
             sql = ""
             for i in range(nRows):
-                sql += f"INSERT INTO TestCompress (name) VALUES ('Test {i}'); "
+                sql += f"INSERT INTO {table_name} (name) VALUES ('Test-{i}'); "
 
             client.exec_query(sql, connection)
 
             rowset = client.exec_query(
-                "SELECT * from TestCompress",
+                f"SELECT * from {table_name}",
                 connection,
             )
 
             assert rowset.nrows == nRows
         finally:
+            client.exec_query(f"DROP TABLE {table_name}", connection)
             client.disconnect(connection)
 
     def test_compression_single_column(self):
