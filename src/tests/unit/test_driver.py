@@ -235,7 +235,7 @@ class TestDriver:
         )
 
         run_command_mock.assert_called_once()
-        assert run_command_mock.call_args[0][1] == expected_buffer
+        assert expected_buffer in run_command_mock.call_args[0][1]
 
     def test_nonlinearizable_command_before_auth_with_apikey(
         self, mocker: MockerFixture
@@ -255,4 +255,21 @@ class TestDriver:
         expected_buffer = "SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH APIKEY abc123;"
 
         run_command_mock.assert_called_once()
-        assert run_command_mock.call_args[0][1] == expected_buffer
+        assert expected_buffer in run_command_mock.call_args[0][1]
+
+    def test_compression_enabled_by_default(self, mocker: MockerFixture):
+        driver = Driver()
+
+        config = SQLiteCloudConfig()
+        config.account = SQLiteCloudAccount()
+        config.account.apikey = "abc123"
+
+        mocker.patch.object(driver, "_internal_connect", return_value=None)
+        run_command_mock = mocker.patch.object(driver, "_internal_run_command")
+
+        driver.connect("myhost", 8860, config)
+
+        expected_buffer = "SET CLIENT KEY COMPRESSION TO 1;"
+
+        run_command_mock.assert_called_once()
+        assert expected_buffer in run_command_mock.call_args[0][1]
