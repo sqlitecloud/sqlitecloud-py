@@ -1,16 +1,25 @@
 import os
 import sqlite3
+import time
 
 import pytest
 
+import sqlitecloud
 from sqlitecloud.datatypes import SQLiteCloudException
+from tests.conftest import get_sqlitecloud_dbapi2_connection
 
 
 class TestSQLite3FeatureParity:
     @pytest.fixture()
     def sqlite3_connection(self):
+        yield next(self.get_sqlite3_connection())
+
+    def get_sqlite3_connection(self):
+        # set isolation_level=None to enable autocommit
+        # and to be aligned with the behavior of SQLite Cloud
         connection = sqlite3.connect(
-            os.path.join(os.path.dirname(__file__), "../assets/chinook.sqlite")
+            os.path.join(os.path.dirname(__file__), "../assets/chinook.sqlite"),
+            isolation_level=None,
         )
         yield connection
         connection.close()
@@ -243,3 +252,73 @@ class TestSQLite3FeatureParity:
         assert sqlitecloud_results == sqlite3_results
         assert len(sqlitecloud_results) == 0
         assert len(sqlite3_results) == 0
+
+    def test_autocommit_mode_enabled_by_default(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        seed = str(int(time.time()))
+
+        connections = [
+            (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
+            (sqlite3_connection, next(self.get_sqlite3_connection())),
+        ]
+
+        for (connection, control_connection) in connections:
+            connection.execute(
+                "INSERT INTO albums (Title, ArtistId) VALUES (? , 1);",
+                (f"Test {seed}",),
+            )
+
+            cursor2 = control_connection.execute(
+                "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
+            )
+            assert cursor2.fetchone() is not None
+
+    def test_explicit_transaction_to_commit(
+        self,
+        sqlitecloud_dbapi2_connection: sqlitecloud.Connection,
+        sqlite3_connection: sqlite3.Connection,
+    ):
+        seed = str(int(time.time()))
+
+        connections = [
+            (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
+            (sqlite3_connection, next(self.get_sqlite3_connection())),
+        ]
+
+        for (connection, control_connection) in connections:
+            cursor1 = connection.execute("BEGIN;")
+            cursor1.execute(
+                "INSERT INTO albums (Title, ArtistId) VALUES (?, 1);", (f"Test {seed}",)
+            )
+
+            cursor2 = control_connection.execute(
+                "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
+            )
+            assert cursor2.fetchone() is None
+
+            connection.commit()
+
+            cursor2.execute("SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",))
+            assert cursor2.fetchone() is not None
+
+    def test_explicit_transaction_to_rollback(
+        self,
+        sqlitecloud_dbapi2_connection: sqlitecloud.Connection,
+        sqlite3_connection: sqlite3.Connection,
+    ):
+        seed = str(int(time.time()))
+
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            cursor1 = connection.execute("BEGIN;")
+            cursor1.execute(
+                "INSERT INTO albums (Title, ArtistId) VALUES (?, 1);", (f"Test {seed}",)
+            )
+
+            cursor1.execute("SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",))
+            assert cursor1.fetchone() is not None
+
+            connection.rollback()
+
+            cursor1.execute("SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",))
+            assert cursor1.fetchone() is None

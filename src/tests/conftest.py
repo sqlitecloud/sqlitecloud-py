@@ -35,6 +35,16 @@ def sqlitecloud_connection():
 
 @pytest.fixture()
 def sqlitecloud_dbapi2_connection():
+    # fixture and declaration are split to be able
+    # to create multiple instances of the connection
+    # when calling the getter function directly from
+    # the test.
+    # Fixtures are both cached and cannot be called
+    # directly whithin the test.
+    yield next(get_sqlitecloud_dbapi2_connection())
+
+
+def get_sqlitecloud_dbapi2_connection():
     account = SQLiteCloudAccount()
     account.username = os.getenv("SQLITE_USER")
     account.password = os.getenv("SQLITE_PASSWORD")

@@ -3,6 +3,7 @@
 # PEP 249 – Python Database API Specification v2.0
 # https://peps.python.org/pep-0249/
 #
+import logging
 from typing import (
     Any,
     Callable,
@@ -123,10 +124,10 @@ class Connection:
 
     row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
 
-    def __init__(self, SQLiteCloud_connection: SQLiteCloudConnect) -> None:
+    def __init__(self, sqlitecloud_connection: SQLiteCloudConnect) -> None:
         self._driver = Driver()
         self.row_factory = None
-        self.SQLiteCloud_connection = SQLiteCloud_connection
+        self.sqlitecloud_connection = sqlitecloud_connection
 
     @property
     def sqlcloud_connection(self) -> SQLiteCloudConnect:
@@ -136,7 +137,7 @@ class Connection:
         Returns:
             SQLiteCloudConnect: The SQLite Cloud connection object.
         """
-        return self.SQLiteCloud_connection
+        return self.sqlitecloud_connection
 
     def execute(
         self,
@@ -194,17 +195,42 @@ class Connection:
             DB-API 2.0 interface does not manage the Sqlite Cloud PubSub feature.
             Therefore, only the main socket is closed.
         """
-        self._driver.disconnect(self.SQLiteCloud_connection, True)
+        self._driver.disconnect(self.sqlitecloud_connection, True)
 
     def commit(self):
         """
-        Not implementied yet.
+        Commit any pending transactions on database.
         """
+        try:
+            self._driver.execute("COMMIT;", self.sqlitecloud_connection)
+        except SQLiteCloudException as e:
+            if (
+                e.errcode == 1
+                and e.xerrcode == 1
+                and "no transaction is active" in e.errmsg
+            ):
+                # compliance to sqlite3
+                logging.warning(e)
 
     def rollback(self):
         """
-        Not implemented yet.
+        Causes the database to roll back to the start of any pending transaction.
+        A transaction will also rool back if the database is closed or if an error occurs
+        and the roll back conflict resolution algorithm is specified.
+
+        See the documentation on the `ON CONFLICT <https://docs.sqlitecloud.io/docs/sqlite/lang_conflict>`
+        clause for additional information about the ROLLBACK conflict resolution algorithm.
         """
+        try:
+            self._driver.execute("ROLLBACK;", self.sqlitecloud_connection)
+        except SQLiteCloudException as e:
+            if (
+                e.errcode == 1
+                and e.xerrcode == 1
+                and "no transaction is active" in e.errmsg
+            ):
+                # compliance to sqlite3
+                logging.warning(e)
 
     def cursor(self):
         """
