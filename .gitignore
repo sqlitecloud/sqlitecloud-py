@@ -15,3 +15,6 @@ main.dSYM/
 SqliteCloud.egg-info
 
 playground.ipynb
+
+src/tests/assets/*-shm
+src/tests/assets/*-wal
