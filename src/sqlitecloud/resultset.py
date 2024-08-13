@@ -73,6 +73,12 @@ class SQLiteCloudResult:
             return None
         return self.colname[col]
 
+    def get_decltype(self, col: int) -> Optional[str]:
+        if col < 0 or col >= self.ncols or col >= len(self.decltype):
+            return None
+
+        return self.decltype[col]
+
     def _convert(self, value: str, col: int) -> any:
         if col < 0 or col >= len(self.decltype):
             return value

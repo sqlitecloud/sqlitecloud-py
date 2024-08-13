@@ -1,4 +1,5 @@
 import os
+import sqlite3
 
 import pytest
 from dotenv import load_dotenv
@@ -58,4 +59,15 @@ def get_sqlitecloud_dbapi2_connection():
 
     yield connection
 
+    connection.close()
+
+
+def get_sqlite3_connection():
+    # set isolation_level=None to enable autocommit
+    # and to be aligned with the behavior of SQLite Cloud
+    connection = sqlite3.connect(
+        os.path.join(os.path.dirname(__file__), "./assets/chinook.sqlite"),
+        isolation_level=None,
+    )
+    yield connection
     connection.close()

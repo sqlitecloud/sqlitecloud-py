@@ -246,21 +246,3 @@ class TestDBAPI2:
         assert row["AlbumId"] == 1
         assert row["Title"] == "For Those About To Rock We Salute You"
         assert row["ArtistId"] == 1
-
-    def test_commit_without_any_transaction_does_not_raise_exception(
-        self, sqlitecloud_dbapi2_connection
-    ):
-        connection = sqlitecloud_dbapi2_connection
-
-        connection.commit()
-
-        assert True
-
-    def test_rollback_without_any_transaction_does_not_raise_exception(
-        self, sqlitecloud_dbapi2_connection
-    ):
-        connection = sqlitecloud_dbapi2_connection
-
-        connection.rollback()
-
-        assert True

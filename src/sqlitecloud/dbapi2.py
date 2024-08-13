@@ -4,6 +4,7 @@
 # https://peps.python.org/pep-0249/
 #
 import logging
+from datetime import date, datetime
 from typing import (
     Any,
     Callable,
@@ -13,6 +14,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
     overload,
 )
@@ -25,7 +27,14 @@ from sqlitecloud.datatypes import (
     SQLiteCloudException,
 )
 from sqlitecloud.driver import Driver
-from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
+from sqlitecloud.resultset import (
+    SQLITECLOUD_RESULT_TYPE,
+    SQLITECLOUD_VALUE_TYPE,
+    SQLiteCloudResult,
+)
+
+# SQLite supported types
+SQLiteTypes = Union[int, float, str, bytes, None]
 
 # Question mark style, e.g. ...WHERE name=?
 # Module also supports Named style, e.g. ...WHERE name=:name
@@ -36,6 +45,14 @@ threadsafety = 1
 
 # DB API level
 apilevel = "2.0"
+
+# These constants are meant to be used with the detect_types
+# parameter of the connect() function
+PARSE_DECLTYPES = 1
+PARSE_COLNAMES = 2
+
+# Adapter registry to convert Python types to SQLite types
+adapters = {}
 
 
 @overload
@@ -80,6 +97,7 @@ def connect(
 def connect(
     connection_info: Union[str, SQLiteCloudAccount],
     config: Optional[SQLiteCloudConfig] = None,
+    detect_types: int = 0,
 ) -> "Connection":
     """
     Establishes a connection to the SQLite Cloud database.
@@ -110,6 +128,21 @@ def connect(
     )
 
 
+def register_adapter(
+    pytype: Type, adapter_callable: Callable[[object], SQLiteTypes]
+) -> None:
+    """
+    Registers a callable to convert the type into one of the supported SQLite types.
+
+    Args:
+        type (Type): The type to convert.
+        callable (Callable): The callable that converts the type into a supported
+            SQLite supported type.
+    """
+    global adapters
+    adapters[pytype] = adapter_callable
+
+
 class Connection:
     """
     Represents a DB-APi 2.0 connection to the SQLite Cloud database.
@@ -123,11 +156,13 @@ class Connection:
     """
 
     row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
+    text_factory: Union[Type[Union[str, bytes]], Callable[[bytes], object]] = str
 
     def __init__(self, sqlitecloud_connection: SQLiteCloudConnect) -> None:
         self._driver = Driver()
         self.row_factory = None
         self.sqlitecloud_connection = sqlitecloud_connection
+        self.detect_types = 0
 
     @property
     def sqlcloud_connection(self) -> SQLiteCloudConnect:
@@ -242,6 +277,21 @@ class Connection:
         cursor = Cursor(self)
         cursor.row_factory = self.row_factory
         return cursor
+
+    def _apply_adapter(self, value: object) -> SQLiteTypes:
+        """
+        Applies the adapter to convert the Python type into a SQLite supported type.
+
+        Args:
+            value (object): The Python type to convert.
+
+        Returns:
+            SQLiteTypes: The SQLite supported type.
+        """
+        if type(value) in adapters:
+            return adapters[type(value)](value)
+
+        return value
 
     def __del__(self) -> None:
         self.close()
@@ -363,6 +413,8 @@ class Cursor(Iterator[Any]):
             Cursor: The cursor object.
         """
         self._ensure_connection()
+
+        parameters = self._adapt_parameters(parameters)
 
         prepared_statement = self._driver.prepare_statement(sql, parameters)
         result = self._driver.execute(
@@ -492,12 +544,37 @@ class Cursor(Iterator[Any]):
         if not self._connection:
             raise SQLiteCloudException("The cursor is closed.")
 
+    def _adapt_parameters(self, parameters: Union[Dict, Tuple]) -> Union[Dict, Tuple]:
+        if isinstance(parameters, dict):
+            params = {}
+            for i in parameters.keys():
+                params[i] = self._connection._apply_adapter(parameters[i])
+            return params
+
+        return tuple(self._connection._apply_adapter(p) for p in parameters)
+
+    def _get_value(self, row: int, col: int) -> Optional[Any]:
+        if not self._is_result_rowset():
+            return None
+
+        # Convert TEXT type with text_factory
+        decltype = self._resultset.get_decltype(col)
+        if decltype is None or decltype == SQLITECLOUD_VALUE_TYPE.TEXT.value:
+            value = self._resultset.get_value(row, col, False)
+
+            if self._connection.text_factory is bytes:
+                return value.encode("utf-8")
+            if self._connection.text_factory is str:
+                return value
+            # callable
+            return self._connection.text_factory(value.encode("utf-8"))
+
+        return self._resultset.get_value(row, col)
+
     def __iter__(self) -> "Cursor":
         return self
 
     def __next__(self) -> Optional[Tuple[Any]]:
-        self._ensure_connection()
-
         if (
             not self._resultset.is_result
             and self._resultset.data
@@ -506,9 +583,49 @@ class Cursor(Iterator[Any]):
             out: Tuple[Any] = ()
 
             for col in range(self._resultset.ncols):
-                out += (self._resultset.get_value(self._iter_row, col),)
+                out += (self._get_value(self._iter_row, col),)
             self._iter_row += 1
 
             return self._call_row_factory(out)
 
         raise StopIteration
+
+
+def register_adapters_and_converters():
+    """
+    sqlite3 default adapters and converters.
+
+    This code is adapted from the Python standard library's sqlite3 module.
+    The Python standard library is licensed under the Python Software Foundation License.
+    Source: https://github.com/python/cpython/blob/3.6/Lib/sqlite3/dbapi2.py
+    """
+
+    def adapt_date(val):
+        return val.isoformat()
+
+    def adapt_datetime(val):
+        return val.isoformat(" ")
+
+    def convert_date(val):
+        return datetime.date(*map(int, val.split(b"-")))
+
+    def convert_timestamp(val):
+        datepart, timepart = val.split(b" ")
+        year, month, day = map(int, datepart.split(b"-"))
+        timepart_full = timepart.split(b".")
+        hours, minutes, seconds = map(int, timepart_full[0].split(b":"))
+        if len(timepart_full) == 2:
+            microseconds = int("{:0<6.6}".format(timepart_full[1].decode()))
+        else:
+            microseconds = 0
+
+        val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
+        return val
+
+    register_adapter(date, adapt_date)
+    register_adapter(datetime, adapt_datetime)
+    # register_converter("date", convert_date)
+    # register_converter("timestamp", convert_timestamp)
+
+
+register_adapters_and_converters()

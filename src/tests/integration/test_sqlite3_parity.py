@@ -1,28 +1,18 @@
-import os
 import sqlite3
 import time
+from datetime import date, datetime
 
 import pytest
 
 import sqlitecloud
 from sqlitecloud.datatypes import SQLiteCloudException
-from tests.conftest import get_sqlitecloud_dbapi2_connection
+from tests.conftest import get_sqlite3_connection, get_sqlitecloud_dbapi2_connection
 
 
 class TestSQLite3FeatureParity:
     @pytest.fixture()
     def sqlite3_connection(self):
-        yield next(self.get_sqlite3_connection())
-
-    def get_sqlite3_connection(self):
-        # set isolation_level=None to enable autocommit
-        # and to be aligned with the behavior of SQLite Cloud
-        connection = sqlite3.connect(
-            os.path.join(os.path.dirname(__file__), "../assets/chinook.sqlite"),
-            isolation_level=None,
-        )
-        yield connection
-        connection.close()
+        yield next(get_sqlite3_connection())
 
     def test_connection_close(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
@@ -253,6 +243,22 @@ class TestSQLite3FeatureParity:
         assert len(sqlitecloud_results) == 0
         assert len(sqlite3_results) == 0
 
+    def test_commit_without_any_transaction_does_not_raise_exception(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            connection.commit()
+
+            assert True
+
+    def test_rollback_without_any_transaction_does_not_raise_exception(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            connection.rollback()
+
+        assert True
+
     def test_autocommit_mode_enabled_by_default(
         self, sqlitecloud_dbapi2_connection, sqlite3_connection
     ):
@@ -322,3 +328,201 @@ class TestSQLite3FeatureParity:
 
             cursor1.execute("SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",))
             assert cursor1.fetchone() is None
+
+    def test_text_factory_with_default_string(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            # by default is string
+            # connection.text_factory = str
+
+            austria = "\xd6sterreich"
+
+            cursor = connection.execute("SELECT ?", (austria,))
+            result = cursor.fetchone()
+
+            assert result[0] == austria
+
+    def test_text_factory_with_bytes(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            connection.text_factory = bytes
+
+            austria = "\xd6sterreich"
+
+            cursor = connection.execute("SELECT ?", (austria,))
+            result = cursor.fetchone()
+
+            assert type(result[0]) is bytes
+            assert result[0] == austria.encode("utf-8")
+
+    def test_text_factory_with_callable(
+        self, sqlitecloud_dbapi2_connection, sqlite3_connection
+    ):
+        for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
+            connection.text_factory = lambda x: x.decode("utf-8") + "Foo"
+
+            cursor = connection.execute("SELECT ?", ("bar",))
+            result = cursor.fetchone()
+
+            assert result[0] == "barFoo"
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_register_adapter(self, connection, module, request):
+        connection = request.getfixturevalue(connection)
+
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+        def adapt_point(point):
+            return f"{point.x}, {point.y}"
+
+        module.register_adapter(Point, adapt_point)
+
+        p = Point(4.0, -3.2)
+
+        cursor = connection.execute("SELECT ?", (p,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == "4.0, -3.2"
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_register_adapter_on_dict_parameters(self, connection, module, request):
+        connection = request.getfixturevalue(connection)
+
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+        def adapt_point(point):
+            return f"{point.x}, {point.y}"
+
+        module.register_adapter(Point, adapt_point)
+
+        p = Point(4.0, -3.2)
+
+        cursor = connection.execute("SELECT :point", {"point": p})
+
+        result = cursor.fetchone()
+
+        assert result[0] == "4.0, -3.2"
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_adapter_date(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        today = date.today()
+        cursor = connection.execute("SELECT ?", (today,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == today.isoformat()
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_adapter_datetime(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        now = datetime.now()
+        cursor = connection.execute("SELECT ?", (now,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == now.isoformat(" ")
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_custom_adapter_datetime(self, connection, module, request):
+        connection = request.getfixturevalue(connection)
+
+        def adapt_datetime(ts):
+            return time.mktime(ts.timetuple())
+
+        module.register_adapter(datetime, adapt_datetime)
+
+        now = datetime.now()
+        cursor = connection.execute("SELECT ?", (now,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == adapt_datetime(now)
+
+    # def test_datatypes(self, sqlite3_connection):
+    #     class Point:
+    #         def __init__(self, x, y):
+    #             self.x, self.y = x, y
+
+    #         def __repr__(self):
+    #             return "(%f;%f)" % (self.x, self.y)
+
+    #     def adapt_point(point):
+    #         return ("%f;%f" % (point.x, point.y)).encode('ascii')
+
+    #     def convert_point(s):
+    #         x, y = list(map(float, s.split(b";")))
+    #         return Point(x, y)
+
+    #     # Register the adapter
+    #     sqlite3.register_adapter(Point, adapt_point)
+
+    #     # Register the converter
+    #     sqlite3.register_converter("point", convert_point)
+
+    #     p = Point(4.0, -3.2)
+
+    #     #########################
+    #     # 1) Using declared types
+    #     con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
+    #     cur = con.cursor()
+    #     cur.execute("create table test(p point)")
+
+    #     cur.execute("insert into test(p) values (?)", (p,))
+    #     cur.execute("select p from test")
+    #     r = cur.fetchone()
+    #     print("with declared types:", r[0])
+    #     cur.close()
+    #     con.close()
+
+    #     #######################
+    #     # 1) Using column names
+    #     con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_COLNAMES)
+    #     cur = con.cursor()
+    #     cur.execute("create table test(p)")
+
+    #     cur.execute("insert into test(p) values (?)", (p,))
+    #     cur.execute('select p as "p [point]" from test')
+    #     r = cur.fetchone()
+    #     print("with column names:", r[0])
+    #     cur.close()
+    #     con.close()
