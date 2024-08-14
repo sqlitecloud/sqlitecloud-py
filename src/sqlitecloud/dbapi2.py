@@ -275,16 +275,21 @@ class Connection:
 
     def _apply_adapter(self, value: object) -> SQLiteTypes:
         """
-        Applies the adapter to convert the Python type into a SQLite supported type.
+        Applies the registered adapter to convert the Python type into a SQLite supported type.
+        In the case there is no registered adapter, it calls the __conform__() method when the value object implements it.
 
         Args:
             value (object): The Python type to convert.
 
         Returns:
-            SQLiteTypes: The SQLite supported type.
+            SQLiteTypes: The SQLite supported type or the given value when no adapter is found.
         """
         if type(value) in adapters:
             return adapters[type(value)](value)
+
+        if hasattr(value, "__conform__"):
+            # we don't support sqlite3.PrepareProtocol
+            return value.__conform__(None)
 
         return value
 

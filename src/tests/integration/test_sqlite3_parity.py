@@ -477,6 +477,70 @@ class TestSQLite3FeatureParity:
 
         assert result[0] == adapt_datetime(now)
 
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_conform_object(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+            def __conform__(self, protocol):
+                if isinstance(connection, sqlitecloud.Connection):
+                    assert protocol is None
+                elif isinstance(connection, sqlite3.Connection):
+                    assert protocol is sqlite3.PrepareProtocol
+                else:
+                    pytest.fail("Unknown connection type")
+
+                return f"{self.x};{self.y}"
+
+        p = Point(4.0, -3.2)
+        cursor = connection.execute("SELECT ?", (p,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == "4.0;-3.2"
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_adapters_to_have_precedence_over_conform_object(
+        self, connection, module, request
+    ):
+        connection = request.getfixturevalue(connection)
+
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+            def __conform__(self, protocol):
+                # 4.0;1.1
+                return f"{self.x};{self.y}"
+
+        def adapt_point(point):
+            # 4.0, 1.1
+            return f"{point.x}, {point.y}"
+
+        module.register_adapter(Point, adapt_point)
+
+        p = Point(4.0, -3.2)
+        cursor = connection.execute("SELECT ?", (p,))
+
+        result = cursor.fetchone()
+
+        assert result[0] == "4.0, -3.2"
+
     # def test_datatypes(self, sqlite3_connection):
     #     class Point:
     #         def __init__(self, x, y):
