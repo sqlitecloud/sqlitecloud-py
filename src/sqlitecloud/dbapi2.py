@@ -4,6 +4,7 @@
 # https://peps.python.org/pep-0249/
 #
 import logging
+import re
 from datetime import date, datetime
 from typing import (
     Any,
@@ -24,6 +25,7 @@ from sqlitecloud.datatypes import (
     SQLiteCloudConfig,
     SQLiteCloudConnect,
     SQLiteCloudException,
+    SQLiteDataTypes,
 )
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import (
@@ -51,9 +53,9 @@ PARSE_DECLTYPES = 1
 PARSE_COLNAMES = 2
 
 # Adapters registry to convert Python types to SQLite types
-_adapters = {}
+adapters: Dict[Type[Any], Callable[[Any], SQLiteDataTypes]] = {}
 # Converters registry to convert SQLite types to Python types
-_converters = {}
+converters: Dict[str, Callable[[bytes], Any]] = {}
 
 
 @overload
@@ -148,8 +150,8 @@ def register_adapter(
         callable (Callable): The callable that converts the type into a supported
             SQLite supported type.
     """
-    global _adapters
-    _adapters[pytype] = adapter_callable
+    registry = _get_adapters_registry()
+    registry[pytype] = adapter_callable
 
 
 def register_converter(type_name: str, converter: Callable[[bytes], Any]) -> None:
@@ -161,8 +163,16 @@ def register_converter(type_name: str, converter: Callable[[bytes], Any]) -> Non
             The match with the name of the type in the query is case-insensitive.
         converter (Callable): The callable that converts the bytestring into the custom Python type.
     """
-    global _converters
-    _converters[type_name.lower()] = converter
+    registry = _get_converters_registry()
+    registry[type_name.lower()] = converter
+
+
+def _get_adapters_registry() -> dict:
+    return adapters
+
+
+def _get_converters_registry() -> dict:
+    return converters
 
 
 class Connection:
@@ -307,8 +317,8 @@ class Connection:
         Returns:
             SQLiteTypes: The SQLite supported type or the given value when no adapter is found.
         """
-        if type(value) in _adapters:
-            return _adapters[type(value)](value)
+        if type(value) in adapters:
+            return adapters[type(value)](value)
 
         if hasattr(value, "__conform__"):
             # we don't support sqlite3.PrepareProtocol
@@ -365,7 +375,7 @@ class Cursor(Iterator[Any]):
         for i in range(self._resultset.ncols):
             description += (
                 (
-                    self._resultset.colname[i],
+                    self._parse_colname(self._resultset.colname[i])[0],
                     None,
                     None,
                     None,
@@ -541,6 +551,28 @@ class Cursor(Iterator[Any]):
     def setoutputsize(self, size, column=None) -> None:
         pass
 
+    def _parse_colname(self, colname: str) -> Tuple[str, str]:
+        """
+        Parse the column name to extract the column name and the
+        declared type if present when it follows the syntax `colname [decltype]`.
+
+        Args:
+            colname (str): The column name with optional declared type.
+                Eg: "mycol [mytype]"
+
+        Returns:
+            Tuple[str, str]: The column name and the declared type.
+                Eg: ("mycol", "mytype")
+        """
+        # search for `[mytype]` in `mycol [mytype]`
+        pattern = r"\[(.*?)\]"
+
+        matches = re.findall(pattern, colname)
+        if not matches or len(matches) == 0:
+            return colname, None
+
+        return colname.replace(f"[{matches[0]}]", "").strip(), matches[0]
+
     def _call_row_factory(self, row: Tuple) -> object:
         if self.row_factory is None:
             return row
@@ -572,11 +604,26 @@ class Cursor(Iterator[Any]):
 
         return tuple(self._connection._apply_adapter(p) for p in parameters)
 
-    def _convert_value(self, value: Any, decltype: Optional[str]) -> Any:
-        # todo: parse columns first
+    def _convert_value(
+        self, value: Any, colname: Optional[str], decltype: Optional[str]
+    ) -> Any:
+        if (
+            colname
+            and (self.connection.detect_types & PARSE_COLNAMES) == PARSE_COLNAMES
+        ):
+            try:
+                return self._parse_colnames(value, colname)
+            except MissingDecltypeException:
+                pass
 
-        if (self.connection.detect_types & PARSE_DECLTYPES) == PARSE_DECLTYPES:
-            return self._parse_decltypes(value, decltype)
+        if (
+            decltype
+            and (self.connection.detect_types & PARSE_DECLTYPES) == PARSE_DECLTYPES
+        ):
+            try:
+                return self._parse_decltypes(value, decltype)
+            except MissingDecltypeException:
+                pass
 
         if decltype == SQLITECLOUD_VALUE_TYPE.TEXT.value or (
             decltype is None and isinstance(value, str)
@@ -585,16 +632,27 @@ class Cursor(Iterator[Any]):
 
         return value
 
-    def _parse_decltypes(self, value: Any, decltype: str) -> Any:
+    def _parse_colnames(self, value: Any, colname: str) -> Optional[Any]:
+        """Convert the value using the explicit type in the column name."""
+        _, decltype = self._parse_colname(colname)
+
+        if decltype:
+            return self._parse_decltypes(value, decltype)
+
+        raise MissingDecltypeException(f"No decltype declared for: {decltype}")
+
+    def _parse_decltypes(self, value: Any, decltype: str) -> Optional[Any]:
+        """Convert the value by calling the registered converter for the given decltype."""
         decltype = decltype.lower()
-        if decltype in _converters:
+        registry = _get_converters_registry()
+        if decltype in registry:
             # sqlite3 always passes value as bytes
             value = (
                 str(value).encode("utf-8") if not isinstance(value, bytes) else value
             )
-            return _converters[decltype](value)
+            return registry[decltype](value)
 
-        return value
+        raise MissingDecltypeException(f"No decltype registered for: {decltype}")
 
     def _apply_text_factory(self, value: Any) -> Any:
         """Use Connection.text_factory to convert value with TEXT column or
@@ -614,9 +672,10 @@ class Cursor(Iterator[Any]):
             return None
 
         value = self._resultset.get_value(row, col)
+        colname = self._resultset.get_name(col)
         decltype = self._resultset.get_decltype(col)
 
-        return self._convert_value(value, decltype)
+        return self._convert_value(value, colname, decltype)
 
     def __iter__(self) -> "Cursor":
         return self
@@ -636,6 +695,12 @@ class Cursor(Iterator[Any]):
             return self._call_row_factory(out)
 
         raise StopIteration
+
+
+class MissingDecltypeException(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
 
 def register_adapters_and_converters():

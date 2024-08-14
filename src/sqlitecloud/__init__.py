@@ -7,7 +7,9 @@ from .dbapi2 import (
     PARSE_DECLTYPES,
     Connection,
     Cursor,
+    adapters,
     connect,
+    converters,
     register_adapter,
     register_converter,
 )
@@ -21,6 +23,8 @@ __all__ = [
     "register_converter",
     "PARSE_DECLTYPES",
     "PARSE_COLNAMES",
+    "adapters",
+    "converters",
 ]
 
 VERSION = "0.0.79"
