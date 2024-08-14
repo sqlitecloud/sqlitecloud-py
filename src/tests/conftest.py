@@ -45,7 +45,7 @@ def sqlitecloud_dbapi2_connection():
     yield next(get_sqlitecloud_dbapi2_connection())
 
 
-def get_sqlitecloud_dbapi2_connection():
+def get_sqlitecloud_dbapi2_connection(detect_types: int = 0):
     account = SQLiteCloudAccount()
     account.username = os.getenv("SQLITE_USER")
     account.password = os.getenv("SQLITE_PASSWORD")
@@ -53,7 +53,7 @@ def get_sqlitecloud_dbapi2_connection():
     account.hostname = os.getenv("SQLITE_HOST")
     account.port = int(os.getenv("SQLITE_PORT"))
 
-    connection = sqlitecloud.connect(account)
+    connection = sqlitecloud.connect(account, detect_types=detect_types)
 
     assert isinstance(connection, sqlitecloud.Connection)
 
@@ -62,12 +62,13 @@ def get_sqlitecloud_dbapi2_connection():
     connection.close()
 
 
-def get_sqlite3_connection():
+def get_sqlite3_connection(detect_types: int = 0):
     # set isolation_level=None to enable autocommit
     # and to be aligned with the behavior of SQLite Cloud
     connection = sqlite3.connect(
         os.path.join(os.path.dirname(__file__), "./assets/chinook.sqlite"),
         isolation_level=None,
+        detect_types=detect_types,
     )
     yield connection
     connection.close()

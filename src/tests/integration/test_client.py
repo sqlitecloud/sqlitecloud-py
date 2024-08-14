@@ -1,4 +1,5 @@
 import os
+import random
 import time
 
 import pytest
@@ -641,10 +642,10 @@ class TestClient:
 
         connection = client.open_connection()
 
-        table_name = "TestCompress" + str(int(time.time()))
+        table_name = "TestCompress" + str(random.randint(0, 99999))
         try:
             client.exec_query(
-                f"CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, name TEXT)",
+                f"CREATE TABLE {table_name} (id INTEGER PRIMARY KEY, name TEXT)",
                 connection,
             )
 
@@ -663,7 +664,7 @@ class TestClient:
 
             assert rowset.nrows == nRows
         finally:
-            client.exec_query(f"DROP TABLE {table_name}", connection)
+            client.exec_query(f"DROP TABLE IF EXISTS {table_name}", connection)
             client.disconnect(connection)
 
     def test_compression_single_column(self):

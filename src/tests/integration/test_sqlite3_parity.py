@@ -1,3 +1,4 @@
+import random
 import sqlite3
 import time
 from datetime import date, datetime
@@ -368,6 +369,63 @@ class TestSQLite3FeatureParity:
             assert result[0] == "barFoo"
 
     @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_apply_text_factory_to_int_value_with_text_decltype(
+        self, connection, request
+    ):
+        """Expect the text_factory to be applied when the inserted
+        value is an integer but the declared type for the column is TEXT."""
+        connection = request.getfixturevalue(connection)
+        connection.text_factory = bytes
+
+        tableName = "TestTextFactory" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p TEXT)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (15,))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert result[0] == b"15"
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_not_apply_text_factory_to_string_value_without_text_decltype(
+        self, connection, request
+    ):
+        """Expect the text_factory to be not applied when the inserted
+        value is a string but the declared type for the column is not TEXT."""
+
+        connection = request.getfixturevalue(connection)
+        connection.text_factory = bytes
+
+        tableName = "TestTextFactory" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p INTEGER)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", ("15",))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert result[0] == 15
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
         "connection, module",
         [
             ("sqlitecloud_dbapi2_connection", sqlitecloud),
@@ -393,6 +451,42 @@ class TestSQLite3FeatureParity:
         result = cursor.fetchone()
 
         assert result[0] == "4.0, -3.2"
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_register_adapter_and_executemany(self, connection, module, request):
+        connection = request.getfixturevalue(connection)
+
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+        def adapt_point(point):
+            return f"{point.x}, {point.y}"
+
+        module.register_adapter(Point, adapt_point)
+
+        p1 = Point(4.0, -3.2)
+        p2 = Point(2.1, 1.9)
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p)")
+
+            cursor.executemany(f"INSERT INTO {tableName}(p) VALUES (?)", [(p1,), (p2,)])
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchall()
+
+            assert result[0][0] == "4.0, -3.2"
+            assert result[1][0] == "2.1, 1.9"
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -541,51 +635,213 @@ class TestSQLite3FeatureParity:
 
         assert result[0] == "4.0, -3.2"
 
-    # def test_datatypes(self, sqlite3_connection):
-    #     class Point:
-    #         def __init__(self, x, y):
-    #             self.x, self.y = x, y
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (
+                next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+                sqlitecloud,
+            ),
+            (next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)), sqlite3),
+        ],
+    )
+    def test_parse_decltype(self, connection, module):
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
 
-    #         def __repr__(self):
-    #             return "(%f;%f)" % (self.x, self.y)
+            def __repr__(self):
+                return f"{self.x};{self.y}"
 
-    #     def adapt_point(point):
-    #         return ("%f;%f" % (point.x, point.y)).encode('ascii')
+        def convert_point(s):
+            x, y = list(map(float, s.split(b";")))
+            return Point(x, y)
 
-    #     def convert_point(s):
-    #         x, y = list(map(float, s.split(b";")))
-    #         return Point(x, y)
+        module.register_converter("point", convert_point)
 
-    #     # Register the adapter
-    #     sqlite3.register_adapter(Point, adapt_point)
+        p = Point(4.0, -3.2)
 
-    #     # Register the converter
-    #     sqlite3.register_converter("point", convert_point)
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p point)")
 
-    #     p = Point(4.0, -3.2)
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (str(p),))
+            cursor.execute(f"SELECT p FROM {tableName}")
 
-    #     #########################
-    #     # 1) Using declared types
-    #     con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
-    #     cur = con.cursor()
-    #     cur.execute("create table test(p point)")
+            result = cursor.fetchone()
 
-    #     cur.execute("insert into test(p) values (?)", (p,))
-    #     cur.execute("select p from test")
-    #     r = cur.fetchone()
-    #     print("with declared types:", r[0])
-    #     cur.close()
-    #     con.close()
+            assert isinstance(result[0], Point)
+            assert result[0].x == p.x
+            assert result[0].y == p.y
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
 
-    #     #######################
-    #     # 1) Using column names
-    #     con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_COLNAMES)
-    #     cur = con.cursor()
-    #     cur.execute("create table test(p)")
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (
+                next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+                sqlitecloud,
+            ),
+            (next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)), sqlite3),
+        ],
+    )
+    def test_register_converter_case_insensitive(self, connection, module):
+        module.register_converter("integer", lambda x: int(x.decode("utf-8")) + 7)
 
-    #     cur.execute("insert into test(p) values (?)", (p,))
-    #     cur.execute('select p as "p [point]" from test')
-    #     r = cur.fetchone()
-    #     print("with column names:", r[0])
-    #     cur.close()
-    #     con.close()
+        mynumber = 10
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p INTEGER)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (mynumber,))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert result[0] == 17
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (
+                next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+                sqlitecloud,
+            ),
+            (next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)), sqlite3),
+        ],
+    )
+    def test_registered_converter_on_text_decltype_replaces_text_factory(
+        self, connection, module
+    ):
+        """Expect the registered converter to the TEXT decltype to be used in place of the text_factory."""
+
+        module.register_converter("TEXT", lambda x: x.decode("utf-8") + "Foo")
+        connection.text_factory = bytes
+
+        pippo = "Pippo"
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p TEXT)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (pippo,))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert result[0] == pippo + "Foo"
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (
+                next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+                sqlitecloud,
+            ),
+            (next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)), sqlite3),
+        ],
+    )
+    def test_parse_native_decltype(self, connection, module):
+        module.register_converter("INTEGER", lambda x: int(x.decode("utf-8")) + 10)
+
+        mynumber = 10
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.execute(f"CREATE TABLE {tableName}(p INTEGER)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (mynumber,))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert result[0] == 20
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+            next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)),
+        ],
+    )
+    def test_register_adapters_and_converters_for_date_and_datetime_by_default(
+        self, connection
+    ):
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            today = date.today()
+            now = datetime.now()
+
+            cursor = connection.execute(
+                f"CREATE TABLE {tableName}(d DATE, t timestamp)"
+            )
+
+            cursor.execute(
+                f"INSERT INTO {tableName}(d, t) VALUES (:date, :timestamp)",
+                {"date": today, "timestamp": now},
+            )
+            cursor.execute(f"SELECT d, t FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert isinstance(result[0], date)
+            assert isinstance(result[1], datetime)
+            assert result[0] == today
+            assert result[1] == now
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (
+                next(get_sqlitecloud_dbapi2_connection(sqlitecloud.PARSE_DECLTYPES)),
+                sqlitecloud,
+            ),
+            (next(get_sqlite3_connection(sqlite3.PARSE_DECLTYPES)), sqlite3),
+        ],
+    )
+    def test_adapt_and_convert_custom_decltype(self, connection, module):
+        class Point:
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+            def __repr__(self):
+                return f"({self.x};{self.y})"
+
+        def adapt_point(point):
+            return f"{point.x};{point.y}".encode("ascii")
+
+        def convert_point(s):
+            x, y = list(map(float, s.split(b";")))
+            return Point(x, y)
+
+        module.register_adapter(Point, adapt_point)
+        module.register_converter("point", convert_point)
+
+        p = Point(4.0, -3.2)
+
+        tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
+        try:
+            cursor = connection.cursor()
+            cursor.execute(f"CREATE TABLE {tableName}(p point)")
+
+            cursor.execute(f"INSERT INTO {tableName}(p) VALUES (?)", (p,))
+            cursor.execute(f"SELECT p FROM {tableName}")
+
+            result = cursor.fetchone()
+
+            assert isinstance(result[0], Point)
+            assert result[0].x == p.x
+            assert result[0].y == p.y
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {tableName}")

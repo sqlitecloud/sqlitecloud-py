@@ -60,13 +60,12 @@ class SQLiteCloudResult:
             return -1
         return row * self.ncols + col
 
-    def get_value(self, row: int, col: int, convert: bool = True) -> Optional[any]:
+    def get_value(self, row: int, col: int) -> Optional[any]:
         index = self._compute_index(row, col)
         if index < 0 or not self.data or index >= len(self.data):
             return None
 
-        value = self.data[index]
-        return self._convert(value, col) if convert else value
+        return self.data[index]
 
     def get_name(self, col: int) -> Optional[str]:
         if col < 0 or col >= self.ncols:
@@ -78,23 +77,6 @@ class SQLiteCloudResult:
             return None
 
         return self.decltype[col]
-
-    def _convert(self, value: str, col: int) -> any:
-        if col < 0 or col >= len(self.decltype):
-            return value
-
-        decltype = self.decltype[col]
-        if decltype == SQLITECLOUD_VALUE_TYPE.INTEGER.value:
-            return int(value)
-        if decltype == SQLITECLOUD_VALUE_TYPE.FLOAT.value:
-            return float(value)
-        if decltype == SQLITECLOUD_VALUE_TYPE.BLOB.value:
-            # values are received as bytes before being strings
-            return bytes(value)
-        if decltype == SQLITECLOUD_VALUE_TYPE.NULL.value:
-            return None
-
-        return value
 
 
 class SQLiteCloudResultSet:

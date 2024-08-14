@@ -105,16 +105,15 @@ class TestCursor:
         assert cursor.rowcount == -1
 
     def test_execute_escaped(self, mocker: MockerFixture):
-        connection = mocker.patch("sqlitecloud.Connection")
-        apply_adapter_mock = mocker.patch.object(connection, "_apply_adapter")
-        apply_adapter_mock.return_value = "John's"
+        parameters = ("John's",)
 
         execute_mock = mocker.patch.object(Driver, "execute")
 
-        cursor = Cursor(connection)
+        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
+        apply_adapter_mock.return_value = parameters
 
         sql = "SELECT * FROM users WHERE name = ?"
-        parameters = ("John's",)
 
         cursor.execute(sql, parameters)
 
@@ -123,11 +122,14 @@ class TestCursor:
         )
 
     def test_executemany(self, mocker):
+        seq_of_parameters = [("John", 25), ("Jane", 30), ("Bob", 40)]
+
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
         execute_mock = mocker.patch.object(cursor, "execute")
+        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
+        apply_adapter_mock.side_effect = seq_of_parameters
 
         sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-        seq_of_parameters = [("John", 25), ("Jane", 30), ("Bob", 40)]
 
         cursor.executemany(sql, seq_of_parameters)
 
@@ -136,11 +138,14 @@ class TestCursor:
         )
 
     def test_executemany_escaped(self, mocker):
+        seq_of_parameters = [("O'Conner", 25)]
+
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
         execute_mock = mocker.patch.object(cursor, "execute")
+        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
+        apply_adapter_mock.side_effect = seq_of_parameters
 
         sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-        seq_of_parameters = [("O'Conner", 25)]
 
         cursor.executemany(sql, seq_of_parameters)
 

@@ -2,8 +2,25 @@
 # the classes and functions from the dbapi2 module.
 # eg:  sqlite3.connect() -> sqlitecloud.connect()
 #
-from .dbapi2 import Connection, Cursor, connect, register_adapter
+from .dbapi2 import (
+    PARSE_COLNAMES,
+    PARSE_DECLTYPES,
+    Connection,
+    Cursor,
+    connect,
+    register_adapter,
+    register_converter,
+)
 
-__all__ = ["VERSION", "Connection", "Cursor", "connect", "register_adapter"]
+__all__ = [
+    "VERSION",
+    "Connection",
+    "Cursor",
+    "connect",
+    "register_adapter",
+    "register_converter",
+    "PARSE_DECLTYPES",
+    "PARSE_COLNAMES",
+]
 
 VERSION = "0.0.79"

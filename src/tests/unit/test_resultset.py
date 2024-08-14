@@ -2,7 +2,6 @@ import pytest
 
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
-    SQLITECLOUD_VALUE_TYPE,
     SQLiteCloudResult,
     SQLiteCloudResultSet,
 )
@@ -83,30 +82,8 @@ class TestSQLiteCloudResult:
         result.data = ["John", "42"]
         result.decltype = ["TEXT", "INTEGER"]
 
-        assert "John" == result.get_value(0, 0, convert=False)
-        assert "42" == result.get_value(0, 1, convert=False)
-
-    @pytest.mark.parametrize(
-        "value_type, value, expected_value",
-        [
-            (SQLITECLOUD_VALUE_TYPE.INTEGER.value, "24", 24),
-            (SQLITECLOUD_VALUE_TYPE.FLOAT.value, "3.14", 3.14),
-            (SQLITECLOUD_VALUE_TYPE.TEXT.value, "John", "John"),
-            (SQLITECLOUD_VALUE_TYPE.BLOB.value, b"hello", b"hello"),
-            (SQLITECLOUD_VALUE_TYPE.NULL.value, "NULL", None),
-        ],
-    )
-    def test_get_value_to_convert_text(self, value_type, value, expected_value):
-        result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
-        result.nrows = 1
-        result.ncols = 1
-        result.colname = ["mycol"]
-        result.data = [value]
-        result.decltype = [value_type]
-
-        result_set = SQLiteCloudResultSet(result)
-
-        assert expected_value == result_set.get_value(0, 0)
+        assert "John" == result.get_value(0, 0)
+        assert "42" == result.get_value(0, 1)
 
 
 class TestSqliteCloudResultSet:

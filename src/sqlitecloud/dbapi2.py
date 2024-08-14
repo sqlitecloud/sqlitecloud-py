@@ -50,8 +50,10 @@ apilevel = "2.0"
 PARSE_DECLTYPES = 1
 PARSE_COLNAMES = 2
 
-# Adapter registry to convert Python types to SQLite types
-adapters = {}
+# Adapters registry to convert Python types to SQLite types
+_adapters = {}
+# Converters registry to convert SQLite types to Python types
+_converters = {}
 
 
 @overload
@@ -106,6 +108,11 @@ def connect(
             It can be either a connection string or a `SqliteCloudAccount` object.
         config (Optional[SQLiteCloudConfig]): The configuration options for the connection.
             Defaults to None.
+        detect_types (int): Default (0), disabled. How data types not natively supported
+            by SQLite are looked up to be converted to Python types, using the converters
+            registered with register_converter().
+            Accepts any combination (using |, bitwise or) of PARSE_DECLTYPES and PARSE_COLNAMES.
+            Column names takes precedence over declared types if both flags are set.
 
     Returns:
         Connection: A DB-API 2.0 connection object representing the connection to the database.
@@ -122,13 +129,16 @@ def connect(
     else:
         config = SQLiteCloudConfig(connection_info)
 
-    return Connection(
-        driver.connect(config.account.hostname, config.account.port, config)
+    connection = Connection(
+        driver.connect(config.account.hostname, config.account.port, config),
+        detect_types=detect_types,
     )
+
+    return connection
 
 
 def register_adapter(
-    pytype: Type, adapter_callable: Callable[[object], SQLiteTypes]
+    pytype: Type, adapter_callable: Callable[[Any], SQLiteTypes]
 ) -> None:
     """
     Registers a callable to convert the type into one of the supported SQLite types.
@@ -138,8 +148,21 @@ def register_adapter(
         callable (Callable): The callable that converts the type into a supported
             SQLite supported type.
     """
-    global adapters
-    adapters[pytype] = adapter_callable
+    global _adapters
+    _adapters[pytype] = adapter_callable
+
+
+def register_converter(type_name: str, converter: Callable[[bytes], Any]) -> None:
+    """
+    Registers a callable to convert a bytestring from the database into a custom Python type.
+
+    Args:
+        type_name (str): The name of the type to convert.
+            The match with the name of the type in the query is case-insensitive.
+        converter (Callable): The callable that converts the bytestring into the custom Python type.
+    """
+    global _converters
+    _converters[type_name.lower()] = converter
 
 
 class Connection:
@@ -154,16 +177,16 @@ class Connection:
         SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
     """
 
-    def __init__(self, sqlitecloud_connection: SQLiteCloudConnect) -> None:
+    def __init__(
+        self, sqlitecloud_connection: SQLiteCloudConnect, detect_types: int = 0
+    ) -> None:
         self._driver = Driver()
         self.sqlitecloud_connection = sqlitecloud_connection
 
         self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
-        self.text_factory: Union[
-            Type[Union[str, bytes]], Callable[[bytes], object]
-        ] = str
+        self.text_factory: Union[Type[Union[str, bytes]], Callable[[bytes], Any]] = str
 
-        self.detect_types = 0
+        self.detect_types = detect_types
 
     @property
     def sqlcloud_connection(self) -> SQLiteCloudConnect:
@@ -273,19 +296,19 @@ class Connection:
         cursor.row_factory = self.row_factory
         return cursor
 
-    def _apply_adapter(self, value: object) -> SQLiteTypes:
+    def _apply_adapter(self, value: Any) -> SQLiteTypes:
         """
         Applies the registered adapter to convert the Python type into a SQLite supported type.
         In the case there is no registered adapter, it calls the __conform__() method when the value object implements it.
 
         Args:
-            value (object): The Python type to convert.
+            value (Any): The Python type to convert.
 
         Returns:
             SQLiteTypes: The SQLite supported type or the given value when no adapter is found.
         """
-        if type(value) in adapters:
-            return adapters[type(value)](value)
+        if type(value) in _adapters:
+            return _adapters[type(value)](value)
 
         if hasattr(value, "__conform__"):
             # we don't support sqlite3.PrepareProtocol
@@ -445,6 +468,8 @@ class Cursor(Iterator[Any]):
 
         commands = ""
         for parameters in seq_of_parameters:
+            parameters = self._adapt_parameters(parameters)
+
             prepared_statement = self._driver.prepare_statement(sql, parameters)
             commands += prepared_statement + ";"
 
@@ -547,24 +572,51 @@ class Cursor(Iterator[Any]):
 
         return tuple(self._connection._apply_adapter(p) for p in parameters)
 
+    def _convert_value(self, value: Any, decltype: Optional[str]) -> Any:
+        # todo: parse columns first
+
+        if (self.connection.detect_types & PARSE_DECLTYPES) == PARSE_DECLTYPES:
+            return self._parse_decltypes(value, decltype)
+
+        if decltype == SQLITECLOUD_VALUE_TYPE.TEXT.value or (
+            decltype is None and isinstance(value, str)
+        ):
+            return self._apply_text_factory(value)
+
+        return value
+
+    def _parse_decltypes(self, value: Any, decltype: str) -> Any:
+        decltype = decltype.lower()
+        if decltype in _converters:
+            # sqlite3 always passes value as bytes
+            value = (
+                str(value).encode("utf-8") if not isinstance(value, bytes) else value
+            )
+            return _converters[decltype](value)
+
+        return value
+
+    def _apply_text_factory(self, value: Any) -> Any:
+        """Use Connection.text_factory to convert value with TEXT column or
+        string value with undleclared column type."""
+
+        if self._connection.text_factory is bytes:
+            return value.encode("utf-8")
+        if self._connection.text_factory is not str and callable(
+            self._connection.text_factory
+        ):
+            return self._connection.text_factory(value.encode("utf-8"))
+
+        return value
+
     def _get_value(self, row: int, col: int) -> Optional[Any]:
         if not self._is_result_rowset():
             return None
 
-        # Convert TEXT type with text_factory
+        value = self._resultset.get_value(row, col)
         decltype = self._resultset.get_decltype(col)
-        if decltype is None or decltype == SQLITECLOUD_VALUE_TYPE.TEXT.value:
-            value = self._resultset.get_value(row, col, False)
 
-            if self._connection.text_factory is bytes:
-                return value.encode("utf-8")
-            if self._connection.text_factory is not str and callable(
-                self._connection.text_factory
-            ):
-                return self._connection.text_factory(value.encode("utf-8"))
-            return value
-
-        return self._resultset.get_value(row, col)
+        return self._convert_value(value, decltype)
 
     def __iter__(self) -> "Cursor":
         return self
@@ -602,7 +654,7 @@ def register_adapters_and_converters():
         return val.isoformat(" ")
 
     def convert_date(val):
-        return datetime.date(*map(int, val.split(b"-")))
+        return date(*map(int, val.split(b"-")))
 
     def convert_timestamp(val):
         datepart, timepart = val.split(b" ")
@@ -614,13 +666,13 @@ def register_adapters_and_converters():
         else:
             microseconds = 0
 
-        val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
+        val = datetime(year, month, day, hours, minutes, seconds, microseconds)
         return val
 
     register_adapter(date, adapt_date)
     register_adapter(datetime, adapt_datetime)
-    # register_converter("date", convert_date)
-    # register_converter("timestamp", convert_timestamp)
+    register_converter("date", convert_date)
+    register_converter("timestamp", convert_timestamp)
 
 
 register_adapters_and_converters()
