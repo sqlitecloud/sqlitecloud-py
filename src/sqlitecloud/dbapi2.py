@@ -23,7 +23,6 @@ from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
-    SQLiteCloudDataTypes,
     SQLiteCloudException,
 )
 from sqlitecloud.driver import Driver
@@ -145,7 +144,7 @@ def register_adapter(
 
 class Connection:
     """
-    Represents a DB-APi 2.0 connection to the SQLite Cloud database.
+    Represents a DB-API 2.0 connection to the SQLite Cloud database.
 
     Args:
         SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
@@ -155,13 +154,15 @@ class Connection:
         SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
     """
 
-    row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
-    text_factory: Union[Type[Union[str, bytes]], Callable[[bytes], object]] = str
-
     def __init__(self, sqlitecloud_connection: SQLiteCloudConnect) -> None:
         self._driver = Driver()
-        self.row_factory = None
         self.sqlitecloud_connection = sqlitecloud_connection
+
+        self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
+        self.text_factory: Union[
+            Type[Union[str, bytes]], Callable[[bytes], object]
+        ] = str
+
         self.detect_types = 0
 
     @property
@@ -177,9 +178,7 @@ class Connection:
     def execute(
         self,
         sql: str,
-        parameters: Union[
-            Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
-        ] = (),
+        parameters: Union[Tuple[any], Dict[Union[str, int], any]] = (),
     ) -> "Cursor":
         """
         Shortcut for cursor.execute().
@@ -187,7 +186,7 @@ class Connection:
 
         Args:
             sql (str): The SQL query to execute.
-            parameters (Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]):
+            parameters (Union[Tuple[any], Dict[Union[str, int], any]]):
                 The parameters to be used in the query. It can be a tuple or a dictionary. (Default ())
             conn (SQLiteCloudConnect): The connection object to use for executing the query.
 
@@ -200,11 +199,7 @@ class Connection:
     def executemany(
         self,
         sql: str,
-        seq_of_parameters: Iterable[
-            Union[
-                Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
-            ]
-        ],
+        seq_of_parameters: Iterable[Union[Tuple[any], Dict[Union[str, int], any]]],
     ) -> "Cursor":
         """
         Shortcut for cursor.executemany().
@@ -212,7 +207,7 @@ class Connection:
 
         Args:
             sql (str): The SQL statement to execute.
-            seq_of_parameters (Iterable[Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]]):
+            seq_of_parameters (Iterable[Union[Tuple[any], Dict[Union[str, int], any]]]):
                 The sequence of parameter sets to bind to the SQL statement.
 
         Returns:
@@ -385,9 +380,7 @@ class Cursor(Iterator[Any]):
     def execute(
         self,
         sql: str,
-        parameters: Union[
-            Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
-        ] = (),
+        parameters: Union[Tuple[any], Dict[Union[str, int], any]] = (),
     ) -> "Cursor":
         """
         Prepare and execute a SQL statement (either a query or command) to the SQLite Cloud database.
@@ -405,7 +398,7 @@ class Cursor(Iterator[Any]):
 
         Args:
             sql (str): The SQL query to execute.
-            parameters (Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]):
+            parameters (Union[Tuple[any], Dict[Union[str, int], any]]):
                 The parameters to be used in the query. It can be a tuple or a dictionary. (Default ())
             conn (SQLiteCloudConnect): The connection object to use for executing the query.
 
@@ -428,11 +421,7 @@ class Cursor(Iterator[Any]):
     def executemany(
         self,
         sql: str,
-        seq_of_parameters: Iterable[
-            Union[
-                Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
-            ]
-        ],
+        seq_of_parameters: Iterable[Union[Tuple[any], Dict[Union[str, int], any]]],
     ) -> "Cursor":
         """
         Executes a SQL statement multiple times, each with a different set of parameters.
@@ -441,7 +430,7 @@ class Cursor(Iterator[Any]):
 
         Args:
             sql (str): The SQL statement to execute.
-            seq_of_parameters (Iterable[Union[Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]]]):
+            seq_of_parameters (Iterable[Union[Tuple[any], Dict[Union[str, int], any]]]):
                 The sequence of parameter sets to bind to the SQL statement.
 
         Returns:
@@ -564,10 +553,11 @@ class Cursor(Iterator[Any]):
 
             if self._connection.text_factory is bytes:
                 return value.encode("utf-8")
-            if self._connection.text_factory is str:
-                return value
-            # callable
-            return self._connection.text_factory(value.encode("utf-8"))
+            if self._connection.text_factory is not str and callable(
+                self._connection.text_factory
+            ):
+                return self._connection.text_factory(value.encode("utf-8"))
+            return value
 
         return self._resultset.get_value(row, col)
 

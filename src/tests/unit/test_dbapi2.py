@@ -105,8 +105,13 @@ class TestCursor:
         assert cursor.rowcount == -1
 
     def test_execute_escaped(self, mocker: MockerFixture):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        apply_adapter_mock = mocker.patch.object(connection, "_apply_adapter")
+        apply_adapter_mock.return_value = "John's"
+
         execute_mock = mocker.patch.object(Driver, "execute")
+
+        cursor = Cursor(connection)
 
         sql = "SELECT * FROM users WHERE name = ?"
         parameters = ("John's",)
@@ -157,7 +162,10 @@ class TestCursor:
         assert cursor.fetchone() is None
 
     def test_fetchone_with_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -195,7 +203,10 @@ class TestCursor:
         assert cursor.fetchmany() == []
 
     def test_fetchmany_with_rowset_and_default_size(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -207,7 +218,10 @@ class TestCursor:
         assert cursor.fetchmany(None) == [("myname1",)]
 
     def test_fetchmany_twice_to_retrieve_whole_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -220,7 +234,10 @@ class TestCursor:
         assert cursor.fetchmany() == []
 
     def test_fetchmany_with_size_higher_than_rowcount(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -245,7 +262,10 @@ class TestCursor:
         assert cursor.fetchall() == []
 
     def test_fetchall_with_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -257,7 +277,10 @@ class TestCursor:
         assert cursor.fetchall() == [("myname1",), ("myname2",), ("myname3",)]
 
     def test_fetchall_twice_and_expect_empty_list(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -270,7 +293,10 @@ class TestCursor:
         assert cursor.fetchall() == []
 
     def test_fetchall_to_return_remaining_rows(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -283,7 +309,10 @@ class TestCursor:
         assert cursor.fetchall() == [("myname2",)]
 
     def test_iterator(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1

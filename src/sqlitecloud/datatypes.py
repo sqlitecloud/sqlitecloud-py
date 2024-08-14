@@ -5,6 +5,10 @@ from urllib import parse
 
 from .resultset import SQLiteCloudResultSet
 
+# SQLite supported data types
+SQLiteDataTypes = Union[str, int, float, bytes, None]
+
+
 # Basic types supported by SQLite Cloud APIs
 SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, None]
 
@@ -249,6 +253,6 @@ class SQLiteCloudValue:
     """
 
     def __init__(self) -> None:
-        self.value: Optional[str] = None
+        self.value: Optional[SQLiteCloudDataTypes] = None
         self.len: int = 0
         self.cellsize: int = 0

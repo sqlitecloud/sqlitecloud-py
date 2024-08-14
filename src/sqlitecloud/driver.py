@@ -862,6 +862,7 @@ class Driver:
             if cellsize is not None:
                 cellsize = 2
 
+            sqlitecloud_value.value = None
             sqlitecloud_value.len = len
             sqlitecloud_value.cellsize = cellsize
 
@@ -877,7 +878,11 @@ class Driver:
             len = nlen - 2
             cellsize = nlen
 
-            sqlitecloud_value.value = (buffer[index + 1 : index + 1 + len]).decode()
+            value = (buffer[index + 1 : index + 1 + len]).decode()
+
+            sqlitecloud_value.value = (
+                int(value) if c == SQLITECLOUD_CMD.INT.value else float(value)
+            )
             sqlitecloud_value.len
             sqlitecloud_value.cellsize = cellsize
 
@@ -886,7 +891,12 @@ class Driver:
         len = blen - 1 if c == SQLITECLOUD_CMD.ZEROSTRING.value else blen
         cellsize = blen + cstart - index
 
-        sqlitecloud_value.value = (buffer[cstart : cstart + len]).decode()
+        value = buffer[cstart : cstart + len]
+
+        if c == SQLITECLOUD_CMD.STRING.value or c == SQLITECLOUD_CMD.ZEROSTRING.value:
+            value = value.decode()
+
+        sqlitecloud_value.value = value
         sqlitecloud_value.len = len
         sqlitecloud_value.cellsize = cellsize
 

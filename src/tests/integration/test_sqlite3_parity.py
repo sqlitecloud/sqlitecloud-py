@@ -266,7 +266,7 @@ class TestSQLite3FeatureParity:
 
         connections = [
             (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
-            (sqlite3_connection, next(self.get_sqlite3_connection())),
+            (sqlite3_connection, next(get_sqlite3_connection())),
         ]
 
         for (connection, control_connection) in connections:
@@ -289,7 +289,7 @@ class TestSQLite3FeatureParity:
 
         connections = [
             (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
-            (sqlite3_connection, next(self.get_sqlite3_connection())),
+            (sqlite3_connection, next(get_sqlite3_connection())),
         ]
 
         for (connection, control_connection) in connections:
@@ -333,8 +333,7 @@ class TestSQLite3FeatureParity:
         self, sqlitecloud_dbapi2_connection, sqlite3_connection
     ):
         for connection in [sqlitecloud_dbapi2_connection, sqlite3_connection]:
-            # by default is string
-            # connection.text_factory = str
+            # by default is string: connection.text_factory = str
 
             austria = "\xd6sterreich"
 

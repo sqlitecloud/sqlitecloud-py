@@ -37,11 +37,11 @@ class TestDriver:
             ("+11 Hello World", "Hello World", 11, 15),
             ("!6 Hello0", "Hello", 5, 9),
             ("+0 ", "", 0, 3),
-            (":5678 ", "5678", 0, 6),
-            (":0 ", "0", 0, 3),
-            (",3.14 ", "3.14", 0, 6),
-            (",0 ", "0", 0, 3),
-            (",0.0 ", "0.0", 0, 5),
+            (":5678 ", 5678, 0, 6),
+            (":0 ", 0, 0, 3),
+            (",3.14 ", 3.14, 0, 6),
+            (",0 ", 0, 0, 3),
+            (",0.0 ", 0.0, 0, 5),
             ("_ ", None, 0, 2),
         ],
         ids=[
@@ -73,7 +73,7 @@ class TestDriver:
     def test_parse_array(self):
         driver = Driver()
         buffer = b"=5 +11 Hello World:123456 ,3.1415 _ $10 0123456789"
-        expected_list = ["Hello World", "123456", "3.1415", None, "0123456789"]
+        expected_list = ["Hello World", 123456, 3.1415, None, b"0123456789"]
 
         result = driver._internal_parse_array(buffer)
 

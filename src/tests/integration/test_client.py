@@ -295,8 +295,8 @@ class TestClient:
         assert isinstance(result_array, list)
         assert len(result_array) == 5
         assert result_array[0] == "Hello World"
-        assert result_array[1] == "123456"
-        assert result_array[2] == "3.1415"
+        assert result_array[1] == 123456
+        assert result_array[2] == 3.1415
         assert result_array[3] is None
 
     def test_rowset(self, sqlitecloud_connection):
@@ -309,6 +309,19 @@ class TestClient:
         assert result.version in [1, 2]
         assert result.get_name(0) == "key"
         assert result.get_name(1) == "value"
+
+    def test_rowset_data_types(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        bindings = ("hello world", 15175, 3.14, b"bytes world", None)
+        result = client.exec_statement("SELECT ?, ?, ?, ?, ?", bindings, connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
+        assert result.get_value(0, 0) == "hello world"
+        assert result.get_value(0, 1) == 15175
+        assert result.get_value(0, 2) == 3.14
+        assert result.get_value(0, 3) == b"bytes world"
+        assert result.get_value(0, 4) is None
 
     def test_max_rows_option(self):
         account = SQLiteCloudAccount()
@@ -419,7 +432,7 @@ class TestClient:
             assert 2 == rowset.ncols
             assert "count" == rowset.get_name(0)
             assert "string" == rowset.get_name(1)
-            assert str(i) == rowset.get_value(0, 0)
+            assert i == rowset.get_value(0, 0)
             assert rowset.version in [1, 2]
 
     def test_query_timeout(self):
@@ -504,7 +517,7 @@ class TestClient:
         assert rowset.ncols == 2
         assert rowset.get_name(0) == "42"
         assert rowset.get_name(1) == "'hello'"
-        assert rowset.get_value(0, 0) == "42"
+        assert rowset.get_value(0, 0) == 42
         assert rowset.get_value(0, 1) == "hello"
 
     def test_select_long_formatted_string(self, sqlitecloud_connection):
