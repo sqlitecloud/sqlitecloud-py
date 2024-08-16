@@ -5,6 +5,7 @@
 #
 import logging
 import re
+import sys
 from datetime import date, datetime
 from typing import (
     Any,
@@ -370,11 +371,23 @@ class Cursor(Iterator[Any]):
         if not self._is_result_rowset():
             return None
 
+        # Since py3.7:
+        # bpo-39652: The column name found in sqlite3.Cursor.description is
+        # now truncated on the first ‘[’ only if the PARSE_COLNAMES option is set.
+        # https://github.com/python/cpython/issues/83833
+        parse_colname = (
+            self.connection.detect_types & PARSE_COLNAMES
+        ) == PARSE_COLNAMES
+        if sys.version_info < (3, 7):
+            parse_colname = True
+
         description = ()
         for i in range(self._resultset.ncols):
+            colname = self._resultset.colname[i]
+
             description += (
                 (
-                    self._parse_colname(self._resultset.colname[i])[0],
+                    self._parse_colname(colname)[0] if parse_colname else colname,
                     None,
                     None,
                     None,
@@ -550,28 +563,6 @@ class Cursor(Iterator[Any]):
     def setoutputsize(self, size, column=None) -> None:
         pass
 
-    def _parse_colname(self, colname: str) -> Tuple[str, str]:
-        """
-        Parse the column name to extract the column name and the
-        declared type if present when it follows the syntax `colname [decltype]`.
-
-        Args:
-            colname (str): The column name with optional declared type.
-                Eg: "mycol [mytype]"
-
-        Returns:
-            Tuple[str, str]: The column name and the declared type.
-                Eg: ("mycol", "mytype")
-        """
-        # search for `[mytype]` in `mycol [mytype]`
-        pattern = r"\[(.*?)\]"
-
-        matches = re.findall(pattern, colname)
-        if not matches or len(matches) == 0:
-            return colname, None
-
-        return colname.replace(f"[{matches[0]}]", "").strip(), matches[0]
-
     def _call_row_factory(self, row: Tuple) -> object:
         if self.row_factory is None:
             return row
@@ -633,6 +624,28 @@ class Cursor(Iterator[Any]):
             return self._apply_text_factory(value)
 
         return value
+
+    def _parse_colname(self, colname: str) -> Tuple[str, str]:
+        """
+        Parse the column name to extract the column name and the
+        declared type if present when it follows the syntax `colname [decltype]`.
+
+        Args:
+            colname (str): The column name with optional declared type.
+                Eg: "mycol [mytype]"
+
+        Returns:
+            Tuple[str, str]: The column name and the declared type.
+                Eg: ("mycol", "mytype")
+        """
+        # search for `[mytype]` in `mycol [mytype]`
+        pattern = r"\[(.*?)\]"
+
+        matches = re.findall(pattern, colname)
+        if not matches or len(matches) == 0:
+            return colname, None
+
+        return colname.replace(f"[{matches[0]}]", "").strip(), matches[0]
 
     def _parse_colnames(self, value: Any, colname: str) -> Optional[Any]:
         """Convert the value using the explicit type in the column name."""

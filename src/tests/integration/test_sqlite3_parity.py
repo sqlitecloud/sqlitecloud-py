@@ -1,5 +1,6 @@
 import random
 import sqlite3
+import sys
 import time
 from datetime import date, datetime
 
@@ -226,17 +227,85 @@ class TestSQLite3FeatureParity:
             "sqlite3_connection",
         ],
     )
-    def test_cursor_description_with_explicit_decltype(self, connection, request):
+    @pytest.mark.parametrize(
+        "value",
+        [
+            ("'hello world'", "'hello world'"),
+            ('"hello" "world"', "world"),
+            ('"hello" "my world"', "my world"),
+        ],
+    )
+    def test_cursor_description_with_column_alias(self, connection, value, request):
         connection = request.getfixturevalue(connection)
 
-        cursor = connection.execute(
-            'SELECT "hello world", "hello" as "my world [sphere]", "hello" "world", "hello" "my world"'
-        )
+        cursor = connection.execute(f"SELECT {value[0]}")
 
-        assert cursor.description[0][0] == '"hello world"'
-        assert cursor.description[1][0] == "my world"
-        assert cursor.description[2][0] == "world"
-        assert cursor.description[3][0] == "my world"
+        assert cursor.description[0][0] == value[1]
+
+    # Only for py3.6
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 7), reason="Different behavior in py>=3.7"
+    )
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    @pytest.mark.parametrize(
+        "value",
+        [
+            ('"hello" as "world [sphere]"', "world"),
+            ('"hello" as "my world [sphere]"', "my world"),
+            ('"hello" "world [sphere]"', "world"),
+        ],
+    )
+    def test_cursor_description_with_explicit_decltype_regardless_detect_type(
+        self, connection, value, request
+    ):
+        """In py3.6 the `[decltype]` in column name is always parsed regardless the PARSE_COLNAMES.
+        See bpo-39652 https://github.com/python/cpython/issues/83833"""
+
+        connection = request.getfixturevalue(connection)
+
+        cursor = connection.execute(f"SELECT {value[0]}")
+
+        assert cursor.description[0][0] == value[1]
+
+    # Only for py>=3.7
+    @pytest.mark.skipif(sys.version_info < (3, 7), reason="Different behavior in py3.6")
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            (get_sqlitecloud_dbapi2_connection, sqlitecloud),
+            (get_sqlite3_connection, sqlite3),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "value, expected, parse_colnames",
+        [
+            ('"hello" as "world [sphere]"', "world", True),
+            ('"hello" as "my world [sphere]"', "my world", True),
+            ('"hello" "world [sphere]"', "world", True),
+            ('"hello" as "world [sphere]"', "world [sphere]", False),
+            ('"hello" as "my world [sphere]"', "my world [sphere]", False),
+            ('"hello" "world [sphere]"', "world [sphere]", False),
+        ],
+    )
+    def test_cursor_description_with_explicit_decltype(
+        self, connection, module, value, expected, parse_colnames
+    ):
+        """Since py3.7 the parsed of `[decltype]` disabled when PARSE_COLNAMES.
+        See bpo-39652 https://github.com/python/cpython/issues/83833"""
+        if parse_colnames:
+            connection = next(connection(module.PARSE_COLNAMES))
+        else:
+            connection = next(connection())
+
+        cursor = connection.execute(f"SELECT {value}")
+
+        assert cursor.description[0][0] == expected
 
     def test_fetch_one(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
