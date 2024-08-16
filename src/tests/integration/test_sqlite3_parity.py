@@ -131,8 +131,11 @@ class TestSQLite3FeatureParity:
         with pytest.raises(sqlite3.ProgrammingError) as e:
             sqlite3_cursor.fetchall()
 
-    def test_row_factory(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
-        sqlitecloud_connection = sqlitecloud_dbapi2_connection
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_row_factory(self, connection, request):
+        connection = request.getfixturevalue(connection)
 
         def simple_factory(cursor, row):
             return {
@@ -140,18 +143,64 @@ class TestSQLite3FeatureParity:
                 for i, description in enumerate(cursor.description)
             }
 
-        sqlitecloud_connection.row_factory = simple_factory
-        sqlite3_connection.row_factory = simple_factory
+        connection.row_factory = simple_factory
 
-        select_query = "SELECT * FROM albums WHERE AlbumId = 1"
-        sqlitecloud_cursor = sqlitecloud_connection.execute(select_query)
-        sqlite3_cursor = sqlite3_connection.execute(select_query)
+        select_query = "SELECT AlbumId, Title, ArtistId FROM albums WHERE AlbumId = 1"
+        cursor = connection.execute(select_query)
 
-        sqlitecloud_results = sqlitecloud_cursor.fetchall()
-        sqlite3_results = sqlite3_cursor.fetchall()
+        results = cursor.fetchall()
 
-        assert sqlitecloud_results == sqlite3_results
-        assert sqlitecloud_results[0]["Title"] == sqlite3_results[0]["Title"]
+        assert results[0]["AlbumId"] == 1
+        assert results[0]["Title"] == "For Those About To Rock We Salute You"
+        assert results[0]["ArtistId"] == 1
+        assert connection.row_factory == cursor.row_factory
+
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_cursor_row_factory_as_instance_variable(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        cursor = connection.execute("SELECT 1")
+        cursor.row_factory = lambda c, r: list(r)
+
+        cursor2 = connection.execute("SELECT 1")
+
+        assert cursor.row_factory != cursor2.row_factory
+
+    @pytest.mark.parametrize(
+        "connection, module",
+        [
+            ("sqlitecloud_dbapi2_connection", sqlitecloud),
+            ("sqlite3_connection", sqlite3),
+        ],
+    )
+    def test_row_factory_with_row_object(self, connection, module, request):
+        connection = request.getfixturevalue(connection)
+
+        connection.row_factory = module.Row
+
+        select_query = "SELECT AlbumId, Title, ArtistId FROM albums WHERE AlbumId = 1"
+        cursor = connection.execute(select_query)
+
+        row = cursor.fetchone()
+
+        assert row["AlbumId"] == 1
+        assert row["Title"] == "For Those About To Rock We Salute You"
+        assert row[1] == row["Title"]
+        assert row["Title"] == row["title"]
+        assert row.keys() == ["AlbumId", "Title", "ArtistId"]
+        assert len(row) == 3
+        assert next(iter(row)) == 1  # AlbumId
+        assert not row != row
+        assert row == row
+
+        cursor = connection.execute(
+            "SELECT AlbumId, Title, ArtistId FROM albums WHERE AlbumId = 2"
+        )
+        other_row = cursor.fetchone()
+
+        assert row != other_row
 
     @pytest.mark.parametrize(
         "connection",

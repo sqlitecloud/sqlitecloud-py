@@ -341,14 +341,13 @@ class Cursor(Iterator[Any]):
 
     arraysize: int = 1
 
-    row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
-
     def __init__(self, connection: Connection) -> None:
         self._driver = Driver()
-        self.row_factory = None
         self._connection = connection
         self._iter_row: int = 0
         self._resultset: SQLiteCloudResult = None
+
+        self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
 
     @property
     def connection(self) -> Connection:
@@ -577,6 +576,9 @@ class Cursor(Iterator[Any]):
         if self.row_factory is None:
             return row
 
+        if self.row_factory is Row:
+            return Row(row, [col[0] for col in self.description])
+
         return self.row_factory(self, row)
 
     def _is_result_rowset(self) -> bool:
@@ -695,6 +697,59 @@ class Cursor(Iterator[Any]):
             return self._call_row_factory(out)
 
         raise StopIteration
+
+
+class Row:
+    def __init__(self, data: Tuple[Any], column_names: List[str]):
+        """
+        Initialize the Row object with data and column names.
+
+        Args:
+            data (Tuple[Any]): A tuple containing the row data.
+            column_names (List[str]): A list of column names corresponding to the data.
+        """
+        self._data = data
+        self._column_names = column_names
+        self._column_map = {name.lower(): idx for idx, name in enumerate(column_names)}
+
+    def keys(self) -> List[str]:
+        """Return the column names."""
+        return self._column_names
+
+    def __getitem__(self, key):
+        """Support indexing by both column name and index."""
+        if isinstance(key, int):
+            return self._data[key]
+        elif isinstance(key, str):
+            return self._data[self._column_map[key.lower()]]
+        else:
+            raise TypeError("Invalid key type. Must be int or str.")
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._data)
+
+    def __repr__(self) -> str:
+        return "\n".join(
+            f"{name}: {self._data[idx]}" for idx, name in enumerate(self._column_names)
+        )
+
+    def __hash__(self) -> int:
+        return hash((self._data, tuple(self._column_map)))
+
+    def __eq__(self, other) -> bool:
+        """Check if both have the same data and column names."""
+        if not isinstance(other, Row):
+            return NotImplemented
+
+        return self._data == other._data and self._column_map == other._column_map
+
+    def __ne__(self, other):
+        if not isinstance(other, Row):
+            return NotImplemented
+        return not self.__eq__(other)
 
 
 class MissingDecltypeException(Exception):

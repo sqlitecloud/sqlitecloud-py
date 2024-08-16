@@ -246,3 +246,16 @@ class TestDBAPI2:
         assert row["AlbumId"] == 1
         assert row["Title"] == "For Those About To Rock We Salute You"
         assert row["ArtistId"] == 1
+
+    def test_row_object_for_factory_string_representation(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        connection.row_factory = sqlitecloud.Row
+
+        cursor = connection.execute('SELECT "foo" as Bar, "john" Doe')
+
+        row = cursor.fetchone()
+
+        assert str(row) == "Bar: foo\nDoe: john"
