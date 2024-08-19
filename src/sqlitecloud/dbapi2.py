@@ -330,6 +330,28 @@ class Connection:
 
         return value
 
+    def __enter__(self):
+        """
+        Context manager to handle transactions.
+
+        In sqlite3 module the control of the autocommit mode is governed by
+        the `isolation_level` of the connection. To follow this behavior, the
+        context manager does't start a new transaction implicitly. Instead,
+        it handles the commit or rollback of transactions that are explicitly opened.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+            logging.error(
+                f"Rolling back transaction - error '{exc_value}'",
+                exc_info=True,
+                extra={"traceback": traceback},
+            )
+
     def __del__(self) -> None:
         self.close()
 

@@ -1105,3 +1105,57 @@ class TestSQLite3FeatureParity:
 
         assert result[0] == 12
         assert result[1] == 25
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_transaction_context_manager_on_success(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        connection.execute("BEGIN")
+        with connection:
+            cursor = connection.execute(
+                "INSERT INTO albums (Title, ArtistId) VALUES ('Test Album 1', 1)"
+            )
+            id1 = cursor.lastrowid
+            cursor = connection.execute(
+                "INSERT INTO albums (Title, ArtistId) VALUES ('Test Album 2', 1)"
+            )
+            id2 = cursor.lastrowid
+
+        cursor = connection.execute(
+            "SELECT * FROM albums WHERE AlbumId IN (?, ?)", (id1, id2)
+        )
+        result = cursor.fetchall()
+
+        assert len(result) == 2
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_transaction_context_manager_on_failure(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        try:
+            connection.execute("BEGIN")
+            with connection:
+                cursor = connection.execute(
+                    "INSERT INTO albums (Title, ArtistId) VALUES ('Test Album 1', 1)"
+                )
+                id1 = cursor.lastrowid
+                connection.execute("INVALID COMMAND")
+        except Exception:
+            assert True
+
+        cursor = connection.execute("SELECT * FROM albums WHERE AlbumId = ?", (id1,))
+        result = cursor.fetchone()
+
+        assert result is None
