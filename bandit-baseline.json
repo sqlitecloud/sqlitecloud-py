@@ -1,17 +1,17 @@
 {
   "errors": [],
-  "generated_at": "2024-08-14T14:00:34Z",
+  "generated_at": "2024-08-19T12:33:05Z",
   "metrics": {
     "_totals": {
-      "CONFIDENCE.HIGH": 9.0,
+      "CONFIDENCE.HIGH": 16.0,
       "CONFIDENCE.LOW": 3.0,
-      "CONFIDENCE.MEDIUM": 9.0,
+      "CONFIDENCE.MEDIUM": 12.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 10.0,
-      "SEVERITY.MEDIUM": 11.0,
+      "SEVERITY.LOW": 17.0,
+      "SEVERITY.MEDIUM": 14.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 4127,
+      "loc": 4633,
       "nosec": 0
     },
     "src/setup.py": {
@@ -35,7 +35,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 20,
+      "loc": 26,
       "nosec": 0
     },
     "src/sqlitecloud/client.py": {
@@ -47,7 +47,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 104,
+      "loc": 103,
       "nosec": 0
     },
     "src/sqlitecloud/datatypes.py": {
@@ -71,7 +71,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 510,
+      "loc": 623,
       "nosec": 0
     },
     "src/sqlitecloud/download.py": {
@@ -95,7 +95,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 794,
+      "loc": 818,
       "nosec": 0
     },
     "src/sqlitecloud/pubsub.py": {
@@ -119,7 +119,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 89,
+      "loc": 111,
       "nosec": 0
     },
     "src/sqlitecloud/upload.py": {
@@ -155,7 +155,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 46,
+      "loc": 77,
       "nosec": 0
     },
     "src/tests/integration/__init__.py": {
@@ -191,7 +191,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 181,
+      "loc": 189,
       "nosec": 0
     },
     "src/tests/integration/test_download.py": {
@@ -207,15 +207,15 @@
       "nosec": 0
     },
     "src/tests/integration/test_driver.py": {
-      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.HIGH": 4.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
+      "SEVERITY.LOW": 4.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 31,
+      "loc": 86,
       "nosec": 0
     },
     "src/tests/integration/test_pandas.py": {
@@ -243,15 +243,15 @@
       "nosec": 0
     },
     "src/tests/integration/test_sqlite3_parity.py": {
-      "CONFIDENCE.HIGH": 8.0,
+      "CONFIDENCE.HIGH": 11.0,
       "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 8.0,
+      "CONFIDENCE.MEDIUM": 11.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 8.0,
-      "SEVERITY.MEDIUM": 8.0,
+      "SEVERITY.LOW": 11.0,
+      "SEVERITY.MEDIUM": 11.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 600,
+      "loc": 840,
       "nosec": 0
     },
     "src/tests/integration/test_upload.py": {
@@ -287,7 +287,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 260,
+      "loc": 263,
       "nosec": 0
     },
     "src/tests/unit/test_driver.py": {
@@ -299,7 +299,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 188,
+      "loc": 213,
       "nosec": 0
     },
     "src/tests/unit/test_resultset.py": {
@@ -311,7 +311,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 119,
+      "loc": 99,
       "nosec": 0
     },
     "src/tests/unit/test_types.py": {
@@ -395,6 +395,66 @@
       "test_name": "hardcoded_sql_expressions"
     },
     {
+      "code": "50 \n51         name = \"MyGenre\" + str(random.randint(0, 1000))\n52         query = \"INSERT INTO genres (Name) VALUES (?)\"\n",
+      "col_offset": 31,
+      "filename": "src/tests/integration/test_driver.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 51,
+      "line_range": [
+        51
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "73 \n74         name = \"MyGenre\" + str(random.randint(0, 1000))\n75         result_insert = driver.execute_statement(\n",
+      "col_offset": 31,
+      "filename": "src/tests/integration/test_driver.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 74,
+      "line_range": [
+        74
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "95 \n96         name = \"MyGenre\" + str(random.randint(0, 1000))\n97         result_insert = driver.execute_statement(\n",
+      "col_offset": 31,
+      "filename": "src/tests/integration/test_driver.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 96,
+      "line_range": [
+        96
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "100 \n101         new_name = \"AnotherMyGenre\" + str(random.randint(0, 1000))\n102         result = driver.execute_statement(\n",
+      "col_offset": 42,
+      "filename": "src/tests/integration/test_driver.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 101,
+      "line_range": [
+        101
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
       "code": "179         client.exec_query(\n180             f\"UPDATE genres SET Name = '{new_name}' WHERE GenreId = 1;\", connection\n181         )\n",
       "col_offset": 12,
       "filename": "src/tests/integration/test_pubsub.py",
@@ -410,240 +470,330 @@
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "385 \n386         tableName = \"TestTextFactory\" + str(random.randint(0, 99999))\n387         try:\n",
+      "code": "524 \n525         tableName = \"TestTextFactory\" + str(random.randint(0, 99999))\n526         try:\n",
       "col_offset": 44,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 386,
+      "line_number": 525,
       "line_range": [
-        386
+        525
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "390             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (15,))\n391             cursor.execute(f\"SELECT p FROM {tableName}\")\n392 \n",
+      "code": "529             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (15,))\n530             cursor.execute(f\"SELECT p FROM {tableName}\")\n531 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 391,
+      "line_number": 530,
       "line_range": [
-        391
+        530
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "414 \n415         tableName = \"TestTextFactory\" + str(random.randint(0, 99999))\n416         try:\n",
+      "code": "553 \n554         tableName = \"TestTextFactory\" + str(random.randint(0, 99999))\n555         try:\n",
       "col_offset": 44,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 415,
+      "line_number": 554,
       "line_range": [
-        415
+        554
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "419             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (\"15\",))\n420             cursor.execute(f\"SELECT p FROM {tableName}\")\n421 \n",
+      "code": "558             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (\"15\",))\n559             cursor.execute(f\"SELECT p FROM {tableName}\")\n560 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 420,
+      "line_number": 559,
       "line_range": [
-        420
+        559
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "476 \n477         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n478         try:\n",
+      "code": "615 \n616         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n617         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 477,
+      "line_number": 616,
       "line_range": [
-        477
+        616
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "481             cursor.executemany(f\"INSERT INTO {tableName}(p) VALUES (?)\", [(p1,), (p2,)])\n482             cursor.execute(f\"SELECT p FROM {tableName}\")\n483 \n",
+      "code": "620             cursor.executemany(f\"INSERT INTO {tableName}(p) VALUES (?)\", [(p1,), (p2,)])\n621             cursor.execute(f\"SELECT p FROM {tableName}\")\n622 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 482,
+      "line_number": 621,
       "line_range": [
-        482
+        621
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "663 \n664         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n665         try:\n",
+      "code": "804 \n805         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n806         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 664,
+      "line_number": 805,
       "line_range": [
-        664
+        805
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "668             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (str(p),))\n669             cursor.execute(f\"SELECT p FROM {tableName}\")\n670 \n",
+      "code": "809             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (str(p),))\n810             cursor.execute(f\"SELECT p FROM {tableName}\")\n811 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 669,
+      "line_number": 810,
       "line_range": [
-        669
+        810
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "693 \n694         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n695         try:\n",
+      "code": "829 \n830         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n831         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 694,
+      "line_number": 830,
       "line_range": [
-        694
+        830
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "698             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (mynumber,))\n699             cursor.execute(f\"SELECT p FROM {tableName}\")\n700 \n",
+      "code": "834             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (\"1.0,2.0\",))\n835             cursor.execute(f\"SELECT p FROM {tableName}\")\n836 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 699,
+      "line_number": 835,
       "line_range": [
-        699
+        835
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "726 \n727         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n728         try:\n",
+      "code": "856 \n857         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n858         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 727,
+      "line_number": 857,
       "line_range": [
-        727
+        857
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "731             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (pippo,))\n732             cursor.execute(f\"SELECT p FROM {tableName}\")\n733 \n",
+      "code": "861             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (mynumber,))\n862             cursor.execute(f\"SELECT p FROM {tableName}\")\n863 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 732,
+      "line_number": 862,
       "line_range": [
-        732
+        862
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "754 \n755         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n756         try:\n",
+      "code": "887 \n888         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n889         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 755,
+      "line_number": 888,
       "line_range": [
-        755
+        888
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "759             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (mynumber,))\n760             cursor.execute(f\"SELECT p FROM {tableName}\")\n761 \n",
+      "code": "892             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (pippo,))\n893             cursor.execute(f\"SELECT p FROM {tableName}\")\n894 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 760,
+      "line_number": 893,
       "line_range": [
-        760
+        893
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions"
     },
     {
-      "code": "778 \n779         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n780         try:\n",
+      "code": "914 \n915         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n916         try:\n",
       "col_offset": 47,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 779,
+      "line_number": 915,
       "line_range": [
-        779
+        915
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "791             )\n792             cursor.execute(f\"SELECT d, t FROM {tableName}\")\n793 \n",
+      "code": "919             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (mynumber,))\n920             cursor.execute(f\"SELECT p FROM {tableName}\")\n921 \n",
       "col_offset": 27,
       "filename": "src/tests/integration/test_sqlite3_parity.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "MEDIUM",
       "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 792,
+      "line_number": 920,
       "line_range": [
-        792
+        920
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "939 \n940         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n941         try:\n",
+      "col_offset": 47,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 940,
+      "line_range": [
+        940
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "952             )\n953             cursor.execute(f\"SELECT d, t FROM {tableName}\")\n954 \n",
+      "col_offset": 27,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 953,
+      "line_range": [
+        953
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "989 \n990         tableName = \"TestParseDeclTypes\" + str(random.randint(0, 99999))\n991         try:\n",
+      "col_offset": 47,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 990,
+      "line_range": [
+        990
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "995             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (p,))\n996             cursor.execute(f\"SELECT p FROM {tableName}\")\n997 \n",
+      "col_offset": 27,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 996,
+      "line_range": [
+        996
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "1070 \n1071         tableName = \"TestParseColnames\" + str(random.randint(0, 99999))\n1072         try:\n",
+      "col_offset": 46,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
+      "line_number": 1071,
+      "line_range": [
+        1071
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b311-random",
+      "test_id": "B311",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "1076             cursor.execute(f\"INSERT INTO {tableName}(p) VALUES (?)\", (str(p),))\n1077             cursor.execute(f'SELECT p, p \"lat lng [coordinate]\" FROM {tableName}')\n1078 \n",
+      "col_offset": 27,
+      "filename": "src/tests/integration/test_sqlite3_parity.py",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 1077,
+      "line_range": [
+        1077
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",

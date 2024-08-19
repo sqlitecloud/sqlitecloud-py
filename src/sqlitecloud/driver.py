@@ -5,7 +5,7 @@ import socket
 import ssl
 import threading
 from io import BufferedReader, BufferedWriter
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import lz4.block
 
@@ -16,14 +16,15 @@ from sqlitecloud.datatypes import (
     SQLITECLOUD_ROWSET,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
-    SQLiteCloudDataTypes,
     SQLiteCloudException,
     SQLiteCloudNumber,
     SQLiteCloudRowsetSignature,
     SQLiteCloudValue,
+    SQLiteDataTypes,
 )
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
+    SQLiteCloudOperationResult,
     SQLiteCloudResult,
     SQLiteCloudResultSet,
 )
@@ -81,9 +82,33 @@ class Driver:
         self, command: str, connection: SQLiteCloudConnect
     ) -> SQLiteCloudResult:
         """
-        Execute a query on the SQLite Cloud server.
+        Execute a command on the SQLite Cloud server.
         """
+        command = self._internal_serialize_command(command)
+
         return self._internal_run_command(connection, command)
+
+    def execute_statement(
+        self,
+        query: str,
+        bindings: Tuple[SQLiteDataTypes],
+        # bindings: Union[Tuple[SQLiteDataTypes], Dict[str, SQLiteDataTypes]],
+        connection: SQLiteCloudConnect,
+    ) -> Union[SQLiteCloudResult, SQLiteCloudOperationResult]:
+        """
+        Execute the statement on the SQLite Cloud server.
+        It supports only the `qmark` style for parameter binding.
+        """
+        command = self._internal_serialize_command(
+            [query] + list(bindings), zero_string=True
+        )
+
+        result = self._internal_run_command(connection, command)
+
+        if result.tag != SQLITECLOUD_RESULT_TYPE.RESULT_ARRAY:
+            return result
+
+        return SQLiteCloudOperationResult(result)
 
     def send_blob(self, blob: bytes, conn: SQLiteCloudConnect) -> SQLiteCloudResult:
         """
@@ -94,25 +119,6 @@ class Driver:
             return self._internal_run_command(conn, blob)
         finally:
             conn.isblob = False
-
-    def prepare_statement(
-        self,
-        query: str,
-        parameters: Union[
-            Tuple[SQLiteCloudDataTypes], Dict[Union[str, int], SQLiteCloudDataTypes]
-        ],
-    ) -> str:
-        # If parameters is a dictionary, replace the keys in the query with the values
-        if isinstance(parameters, dict):
-            for key, value in parameters.items():
-                query = query.replace(":" + str(key), self.escape_sql_parameter(value))
-
-        # If parameters is a tuple, replace each '?' in the query with a value from the tuple
-        elif isinstance(parameters, tuple):
-            for value in parameters:
-                query = query.replace("?", self.escape_sql_parameter(value), 1)
-
-        return query
 
     def is_connected(
         self, connection: SQLiteCloudConnect, main_socket: bool = True
@@ -130,33 +136,6 @@ class Driver:
             return False
 
         return True
-
-    def escape_sql_parameter(self, param):
-        if param is None or param is None:
-            return "NULL"
-
-        if isinstance(param, bool):
-            return "1" if param else "0"
-
-        if isinstance(param, str):
-            # replace single quote with two single quotes
-            param = param.replace("'", "''")
-            return f"'{param}'"
-
-        if isinstance(param, (int, float)):
-            return str(param)
-
-        # serialize buffer as X'...' hex encoded string
-        if isinstance(param, bytes):
-            return f"X'{param.hex()}'"
-
-        if isinstance(param, dict) or isinstance(param, list):
-            # serialize json then escape single quotes
-            json_string = json.dumps(param)
-            json_string = json_string.replace("'", "''")
-            return f"'{json_string}'"
-
-        raise SQLiteCloudException(f"Unsupported parameter type: {type(param)}")
 
     def _internal_connect(
         self, hostname: str, port: int, config: SQLiteCloudConfig
@@ -213,7 +192,9 @@ class Driver:
             connection.config,
         )
 
-        self._internal_run_command(connection, buffer, False)
+        self._internal_run_command(
+            connection, self._internal_serialize_command(buffer.decode()), False
+        )
         thread = threading.Thread(
             target=self._internal_pubsub_thread, args=(connection,)
         )
@@ -433,51 +414,54 @@ class Driver:
         if config.timeout > 0:
             connection.socket.settimeout(config.timeout)
 
-        buffer = ""
+        command = ""
 
         # it must be executed before authentication command
         if config.non_linearizable:
-            buffer += "SET CLIENT KEY NONLINEARIZABLE TO 1;"
+            command += "SET CLIENT KEY NONLINEARIZABLE TO 1;"
 
         if config.account.apikey:
-            buffer += f"AUTH APIKEY {config.account.apikey};"
+            command += f"AUTH APIKEY {config.account.apikey};"
 
         if config.account.username and config.account.password:
-            command = "HASH" if config.account.password_hashed else "PASSWORD"
-            buffer += f"AUTH USER {config.account.username} {command} {config.account.password};"
+            option = "HASH" if config.account.password_hashed else "PASSWORD"
+            command += f"AUTH USER {config.account.username} {option} {config.account.password};"
 
         if config.account.dbname:
             if config.create and not config.memory:
-                buffer += f"CREATE DATABASE {config.account.dbname} IF NOT EXISTS;"
-            buffer += f"USE DATABASE {config.account.dbname};"
+                command += f"CREATE DATABASE {config.account.dbname} IF NOT EXISTS;"
+            command += f"USE DATABASE {config.account.dbname};"
 
         if config.compression:
-            buffer += "SET CLIENT KEY COMPRESSION TO 1;"
+            command += "SET CLIENT KEY COMPRESSION TO 1;"
 
         if config.zerotext:
-            buffer += "SET CLIENT KEY ZEROTEXT TO 1;"
+            command += "SET CLIENT KEY ZEROTEXT TO 1;"
 
         if config.noblob:
-            buffer += "SET CLIENT KEY NOBLOB TO 1;"
+            command += "SET CLIENT KEY NOBLOB TO 1;"
 
         if config.maxdata:
-            buffer += f"SET CLIENT KEY MAXDATA TO {config.maxdata};"
+            command += f"SET CLIENT KEY MAXDATA TO {config.maxdata};"
 
         if config.maxrows:
-            buffer += f"SET CLIENT KEY MAXROWS TO {config.maxrows};"
+            command += f"SET CLIENT KEY MAXROWS TO {config.maxrows};"
 
         if config.maxrowset:
-            buffer += f"SET CLIENT KEY MAXROWSET TO {config.maxrowset};"
+            command += f"SET CLIENT KEY MAXROWSET TO {config.maxrowset};"
 
-        if len(buffer) > 0:
-            self._internal_run_command(connection, buffer)
+        if len(command) > 0:
+            self._internal_run_command(
+                connection, self._internal_serialize_command(command)
+            )
 
     def _internal_run_command(
         self,
         connection: SQLiteCloudConnect,
-        command: Union[str, bytes],
+        command: bytes,
         main_socket: bool = True,
     ) -> SQLiteCloudResult:
+        """Send serialized command to the server and read the response."""
         if not self.is_connected(connection, main_socket):
             raise SQLiteCloudException(
                 "The connection is closed.",
@@ -490,31 +474,24 @@ class Driver:
     def _internal_socket_write(
         self,
         connection: SQLiteCloudConnect,
-        command: Union[str, bytes],
+        command: bytes,
         main_socket: bool = True,
     ) -> None:
-        # compute header
-        delimit = "$" if connection.isblob else "+"
-        buffer = command.encode() if isinstance(command, str) else command
-        buffer_len = len(buffer)
-        header = f"{delimit}{buffer_len} "
+        """
+        Write to the socket the command serialized with the SCSP protocol.
 
-        sock = connection.socket if main_socket else connection.pubsub_socket
-
-        # write header
-        try:
-            sock.sendall(header.encode())
-        except Exception as exc:
-            raise SQLiteCloudException(
-                "An error occurred while writing header data.",
-                SQLITECLOUD_INTERNAL_ERRCODE.NETWORK,
-            ) from exc
-
+        Args:
+            connection (SQLiteCloudConnect): The connection object to the SQLite Cloud server.
+            command (bytes): The command to send.
+            main_socket (bool): If True, write to the main socket, otherwise write to the pubsub socket.
+        """
         # write buffer
-        if buffer_len == 0:
+        if len(command) == 0:
             return
         try:
-            sock.sendall(buffer)
+            sock = connection.socket if main_socket else connection.pubsub_socket
+
+            sock.sendall(command)
         except Exception as exc:
             raise SQLiteCloudException(
                 "An error occurred while writing data.",
@@ -692,7 +669,9 @@ class Driver:
             clone = buffer[cstart : cstart + len_]
 
             if cmd == SQLITECLOUD_CMD.COMMAND.value:
-                return self._internal_run_command(connection, clone)
+                return self._internal_run_command(
+                    connection, self._internal_serialize_command(clone.decode())
+                )
             elif cmd == SQLITECLOUD_CMD.PUBSUB.value:
                 return SQLiteCloudResult(
                     SQLITECLOUD_RESULT_TYPE.RESULT_OK,
@@ -1070,3 +1049,49 @@ class Driver:
             sqlitecloud_value = self._internal_parse_value(buffer, start)
             start += sqlitecloud_value.cellsize
             rowset.data.append(sqlitecloud_value.value)
+
+    def _internal_serialize_command(
+        self, data: Any, zero_string: bool = False
+    ) -> bytes:
+        if isinstance(data, str):
+            cmd = SQLITECLOUD_CMD.STRING.value
+            if zero_string:
+                cmd = SQLITECLOUD_CMD.ZEROSTRING.value
+                data += "\x00"
+
+            data = data.encode()
+            header = f"{cmd}{len(data)} ".encode()
+
+            return header + data
+
+        if isinstance(data, int):
+            return f"{SQLITECLOUD_CMD.INT.value}{data} ".encode()
+
+        if isinstance(data, float):
+            return f"{SQLITECLOUD_CMD.FLOAT.value}{data} ".encode()
+
+        if isinstance(data, bytes):
+            header = f"{SQLITECLOUD_CMD.BLOB.value}{len(data)} ".encode()
+            return header + data
+
+        if data is None:
+            return f"{SQLITECLOUD_CMD.NULL.value} ".encode()
+
+        if isinstance(data, List):
+            return self._internal_serialize_array(data, zero_string=zero_string)
+
+        raise SQLiteCloudException(
+            f"Unsupported data type for serialization: {type(data)}"
+        )
+
+    def _internal_serialize_array(self, data: List, zero_string: bool = False) -> str:
+        n = len(data)
+        serialized_data: bytes = f"{n} ".encode()
+        for i in range(n):
+            # the query must be zero-terminated
+            zs = i == 0 or zero_string
+            serialized_data += self._internal_serialize_command(data[i], zero_string=zs)
+
+        header = f"{SQLITECLOUD_CMD.ARRAY.value}{len(serialized_data)} ".encode()
+
+        return header + serialized_data

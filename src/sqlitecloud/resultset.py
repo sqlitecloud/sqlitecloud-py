@@ -114,3 +114,34 @@ class SQLiteCloudResultSet:
 
     def get_result(self) -> Optional[any]:
         return self.get_value(0, 0)
+
+
+class SQLiteCloudOperationResult:
+    """Result of a DML operation in a SQLite statement."""
+
+    def __init__(self, result: SQLiteCloudResult) -> None:
+        self._result = result
+
+    @property
+    def type(self) -> int:
+        return self._result.data[0][0]
+
+    @property
+    def index(self) -> int:
+        return self._result.data[0][1]
+
+    @property
+    def rowid(self) -> int:
+        return self._result.data[0][2]
+
+    @property
+    def changes(self) -> int:
+        return self._result.data[0][3]
+
+    @property
+    def total_changes(self) -> int:
+        return self._result.data[0][4]
+
+    @property
+    def finalized(self) -> int:
+        return self._result.data[0][5]
