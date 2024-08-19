@@ -259,3 +259,191 @@ class TestDBAPI2:
         row = cursor.fetchone()
 
         assert str(row) == "Bar: foo\nDoe: john"
+
+    def test_last_rowid_and_rowcount_with_select(self, sqlitecloud_dbapi2_connection):
+        connection = sqlitecloud_dbapi2_connection
+
+        cursor = connection.execute("SELECT * FROM genres LIMIT 3")
+
+        assert cursor.fetchone() is not None
+        assert cursor.lastrowid is None
+        assert cursor.rowcount == 3
+
+    def test_last_rowid_and_rowcount_with_execute_update(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name = "Jazz" + str(uuid.uuid4())
+        genreId = 2
+
+        cursor = connection.execute(
+            "UPDATE genres SET Name = ? WHERE GenreId = ?",
+            (new_name, genreId),
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid is None
+        assert cursor.rowcount == 1
+
+    def test_last_rowid_and_rowcount_with_execute_insert(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name = "Jazz" + str(uuid.uuid4())
+
+        cursor = connection.execute(
+            "INSERT INTO genres (Name) VALUES (?)",
+            (new_name,),
+        )
+
+        last_result = connection.execute(
+            "SELECT GenreId FROM genres WHERE Name = ?", (new_name,)
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid == last_result.fetchone()[0]
+        assert cursor.rowcount == 1
+
+    def test_last_rowid_and_rowcount_with_execute_delete(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name = "Jazz" + str(uuid.uuid4())
+
+        cursor_select = connection.execute(
+            "INSERT INTO genres (Name) VALUES (?)",
+            (new_name,),
+        )
+
+        cursor = connection.execute("DELETE FROM genres WHERE Name = ?", (new_name,))
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid == cursor_select.lastrowid
+        assert cursor.rowcount == 1
+
+    def test_last_rowid_and_rowcount_with_multiple_updates(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name = "Jazz" + str(uuid.uuid4())
+
+        cursor = connection.execute(
+            "UPDATE genres SET Name = ? WHERE GenreId = ? or GenreId = ?",
+            (new_name, 2, 3),
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid is None
+        assert cursor.rowcount == 2
+
+    def test_last_rowid_and_rowcount_with_multiple_deletes(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+
+        cursor = connection.executemany(
+            "INSERT INTO genres (Name) VALUES (?)",
+            [(new_name1,), (new_name2,)],
+        )
+
+        cursor = connection.execute(
+            "DELETE FROM genres WHERE Name = ? or Name = ?", (new_name1, new_name2)
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid > 0
+        assert cursor.rowcount == 2
+
+    def test_last_rowid_and_rowcount_with_executemany_updates(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+        genreId = 2
+
+        cursor = connection.executemany(
+            "UPDATE genres SET Name = ? WHERE GenreId = ?;",
+            [(new_name1, genreId), (new_name2, genreId)],
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid is None
+        assert cursor.rowcount == 1
+
+    def test_last_rowid_and_rowcount_with_executemany_inserts(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+
+        cursor = connection.executemany(
+            "INSERT INTO genres (Name) VALUES (?)",
+            [(new_name1,), (new_name2,)],
+        )
+
+        last_result = connection.execute(
+            "SELECT GenreId FROM genres WHERE Name = ?", (new_name2,)
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid == last_result.fetchone()[0]
+        assert cursor.rowcount == 1
+
+    def test_last_rowid_and_rowcount_with_executemany_deletes(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+
+        cursor_select = connection.executemany(
+            "INSERT INTO genres (Name) VALUES (?)",
+            [(new_name1,), (new_name2,)],
+        )
+
+        cursor = connection.executemany(
+            "DELETE FROM genres WHERE Name = ?", [(new_name1,), (new_name2,)]
+        )
+
+        assert cursor.fetchone() is None
+        assert cursor.lastrowid == cursor_select.lastrowid
+        assert cursor.rowcount == 1
+
+    def test_connection_total_changes(self, sqlitecloud_dbapi2_connection):
+        connection = sqlitecloud_dbapi2_connection
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+        new_name3 = "Jazz" + str(uuid.uuid4())
+
+        connection.executemany(
+            "INSERT INTO genres (Name) VALUES (?)",
+            [(new_name1,), (new_name2,)],
+        )
+        assert connection.total_changes == 2
+
+        connection.execute("SELECT * FROM genres")
+        assert connection.total_changes == 2
+
+        connection.execute(
+            "UPDATE genres SET Name = ? WHERE Name = ?", (new_name3, new_name1)
+        )
+        assert connection.total_changes == 3
+
+        connection.execute(
+            "DELETE FROM genres WHERE Name in (?, ?, ?)",
+            (new_name1, new_name2, new_name3),
+        )
+        assert connection.total_changes == 5

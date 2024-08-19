@@ -32,6 +32,7 @@ from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
     SQLITECLOUD_VALUE_TYPE,
+    SQLiteCloudOperationResult,
     SQLiteCloudResult,
 )
 
@@ -199,6 +200,8 @@ class Connection:
 
         self.detect_types = detect_types
 
+        self.total_changes = 0
+
     @property
     def sqlcloud_connection(self) -> SQLiteCloudConnect:
         """
@@ -347,6 +350,7 @@ class Cursor(Iterator[Any]):
         self._connection = connection
         self._iter_row: int = 0
         self._resultset: SQLiteCloudResult = None
+        self._result_operation: SQLiteCloudOperationResult = None
 
         self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
 
@@ -402,21 +406,26 @@ class Cursor(Iterator[Any]):
     @property
     def rowcount(self) -> int:
         """
-        The number of rows that the last .execute*() produced (for DQL statements like SELECT)
-
-        The number of rows affected by DML statements like UPDATE or INSERT is not supported.
-
-        Returns:
-            int: The number of rows in the result set or -1 if no result set is available.
+        The number of rows that the last .execute*() returned for DQL statements like SELECT or
+        the number rows affected by DML statements like UPDATE, INSERT and DELETE.
         """
-        return self._resultset.nrows if self._is_result_rowset() else -1
+        if self._is_result_rowset():
+            return self._resultset.nrows
+        if self._is_result_operation():
+            return self._result_operation.changes
+        return -1
 
     @property
     def lastrowid(self) -> Optional[int]:
         """
-        Not implemented yet in the library.
+        Last rowid for DML operations (INSERT, UPDATE, DELETE).
+        In case of `executemany()` it returns the last rowid of the last operation.
         """
-        return None
+        return (
+            self._result_operation.rowid
+            if self._result_operation and self._result_operation.rowid > 0
+            else None
+        )
 
     def close(self) -> None:
         """
@@ -430,7 +439,7 @@ class Cursor(Iterator[Any]):
     def execute(
         self,
         sql: str,
-        parameters: Union[Tuple[any], Dict[Union[str, int], any]] = (),
+        parameters: Union[Tuple[Any], Dict[Union[str, int], Any]] = (),
     ) -> "Cursor":
         """
         Prepare and execute a SQL statement (either a query or command) to the SQLite Cloud database.
@@ -459,19 +468,26 @@ class Cursor(Iterator[Any]):
 
         parameters = self._adapt_parameters(parameters)
 
-        prepared_statement = self._driver.prepare_statement(sql, parameters)
-        result = self._driver.execute(
-            prepared_statement, self.connection.sqlcloud_connection
+        # TODO: convert parameters from :name to `?` style
+        result = self._driver.execute_statement(
+            sql, parameters, self.connection.sqlcloud_connection
         )
 
-        self._resultset = result
+        self._resultset = None
+        self._result_operation = None
+
+        if isinstance(result, SQLiteCloudResult):
+            self._resultset = result
+        if isinstance(result, SQLiteCloudOperationResult):
+            self._result_operation = result
+            self._connection.total_changes = result.total_changes
 
         return self
 
     def executemany(
         self,
         sql: str,
-        seq_of_parameters: Iterable[Union[Tuple[any], Dict[Union[str, int], any]]],
+        seq_of_parameters: Iterable[Union[Tuple[Any], Dict[Union[str, int], Any]]],
     ) -> "Cursor":
         """
         Executes a SQL statement multiple times, each with a different set of parameters.
@@ -489,13 +505,16 @@ class Cursor(Iterator[Any]):
         self._ensure_connection()
 
         commands = ""
+        params = []
         for parameters in seq_of_parameters:
-            parameters = self._adapt_parameters(parameters)
+            params += list(parameters)
 
-            prepared_statement = self._driver.prepare_statement(sql, parameters)
-            commands += prepared_statement + ";"
+            if not sql.endswith(";"):
+                sql += ";"
 
-        self.execute(commands)
+            commands += sql
+
+        self.execute(commands, params)
 
         return self
 
@@ -577,6 +596,9 @@ class Cursor(Iterator[Any]):
             self._resultset
             and self._resultset.tag == SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET
         )
+
+    def _is_result_operation(self) -> bool:
+        return self._result_operation is not None
 
     def _ensure_connection(self):
         """
@@ -697,7 +719,8 @@ class Cursor(Iterator[Any]):
 
     def __next__(self) -> Optional[Tuple[Any]]:
         if (
-            not self._resultset.is_result
+            self._resultset
+            and not self._resultset.is_result
             and self._resultset.data
             and self._iter_row < self._resultset.nrows
         ):
