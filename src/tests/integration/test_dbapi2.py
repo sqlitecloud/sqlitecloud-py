@@ -143,6 +143,21 @@ class TestDBAPI2:
         assert cursor.rowcount == 1
         assert cursor.fetchone() == (1, "For Those About To Rock We Salute You", 1)
 
+    def test_execute_with_named_placeholder_and_a_fake_one_which_is_not_given(
+        self, sqlitecloud_dbapi2_connection
+    ):
+        """ "Expect the converter from name to qmark placeholder to not be fooled by the
+        fake name with the colon in it."""
+        connection = sqlitecloud_dbapi2_connection
+
+        cursor = connection.execute(
+            "SELECT * FROM albums WHERE AlbumId = :id and Title != 'special:name'",
+            {"id": 1},
+        )
+
+        assert cursor.rowcount == 1
+        assert cursor.fetchone() == (1, "For Those About To Rock We Salute You", 1)
+
     def test_execute_with_qmarks(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
 
@@ -408,7 +423,7 @@ class TestDBAPI2:
         new_name1 = "Jazz" + str(uuid.uuid4())
         new_name2 = "Jazz" + str(uuid.uuid4())
 
-        cursor_select = connection.executemany(
+        cursor_insert = connection.executemany(
             "INSERT INTO genres (Name) VALUES (?)",
             [(new_name1,), (new_name2,)],
         )
@@ -418,32 +433,5 @@ class TestDBAPI2:
         )
 
         assert cursor.fetchone() is None
-        assert cursor.lastrowid == cursor_select.lastrowid
+        assert cursor.lastrowid == cursor_insert.lastrowid
         assert cursor.rowcount == 1
-
-    def test_connection_total_changes(self, sqlitecloud_dbapi2_connection):
-        connection = sqlitecloud_dbapi2_connection
-
-        new_name1 = "Jazz" + str(uuid.uuid4())
-        new_name2 = "Jazz" + str(uuid.uuid4())
-        new_name3 = "Jazz" + str(uuid.uuid4())
-
-        connection.executemany(
-            "INSERT INTO genres (Name) VALUES (?)",
-            [(new_name1,), (new_name2,)],
-        )
-        assert connection.total_changes == 2
-
-        connection.execute("SELECT * FROM genres")
-        assert connection.total_changes == 2
-
-        connection.execute(
-            "UPDATE genres SET Name = ? WHERE Name = ?", (new_name3, new_name1)
-        )
-        assert connection.total_changes == 3
-
-        connection.execute(
-            "DELETE FROM genres WHERE Name in (?, ?, ?)",
-            (new_name1, new_name2, new_name3),
-        )
-        assert connection.total_changes == 5

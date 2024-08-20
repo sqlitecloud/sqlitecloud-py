@@ -1,7 +1,9 @@
 import random
 import sqlite3
+import string
 import sys
 import time
+import uuid
 from datetime import date, datetime
 
 import pytest
@@ -69,6 +71,62 @@ class TestSQLite3FeatureParity:
 
         assert sqlitecloud_results == sqlite3_results
 
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_executemany_with_a_iterator(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        class IterChars:
+            def __init__(self):
+                self.count = ord("a")
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.count > ord("z"):
+                    raise StopIteration
+                self.count += 1
+                return (chr(self.count - 1),)
+
+        try:
+            connection.execute("DROP TABLE IF EXISTS characters")
+            cursor = connection.execute("CREATE TABLE IF NOT EXISTS characters(c)")
+
+            theIter = IterChars()
+            cursor.executemany("INSERT INTO characters(c) VALUES (?)", theIter)
+
+            cursor.execute("SELECT c FROM characters")
+
+            results = cursor.fetchall()
+            assert len(results) == 26
+        finally:
+            connection.execute("DROP TABLE IF EXISTS characters")
+
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_executemany_with_yield_generator(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        def char_generator():
+            for c in string.ascii_lowercase:
+                yield (c,)
+
+        try:
+            connection.execute("DROP TABLE IF EXISTS characters")
+            cursor = connection.execute("CREATE TABLE IF NOT EXISTS characters(c)")
+
+            cursor.executemany("INSERT INTO characters(c) VALUES (?)", char_generator())
+
+            cursor.execute("SELECT c FROM characters")
+
+            results = cursor.fetchall()
+            assert len(results) == 26
+        finally:
+            connection.execute("DROP TABLE IF EXISTS characters")
+
     def test_execute_with_question_mark_style(
         self, sqlitecloud_dbapi2_connection, sqlite3_connection
     ):
@@ -84,20 +142,37 @@ class TestSQLite3FeatureParity:
 
         assert sqlitecloud_results == sqlite3_results
 
-    def test_execute_with_named_param_style(
-        self, sqlitecloud_dbapi2_connection, sqlite3_connection
-    ):
-        sqlitecloud_connection = sqlitecloud_dbapi2_connection
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_execute_with_named_param_style(self, connection, request):
+        connection = request.getfixturevalue(connection)
 
-        select_query = "SELECT * FROM albums WHERE AlbumId = :id"
-        params = {"id": 1}
-        sqlitecloud_cursor = sqlitecloud_connection.execute(select_query, params)
-        sqlite3_cursor = sqlite3_connection.execute(select_query, params)
+        select_query = "SELECT * FROM albums WHERE AlbumId = :id and Title = :title and AlbumId = :id"
+        params = {"id": 1, "title": "For Those About To Rock We Salute You"}
 
-        sqlitecloud_results = sqlitecloud_cursor.fetchall()
-        sqlite3_results = sqlite3_cursor.fetchall()
+        cursor = connection.execute(select_query, params)
 
-        assert sqlitecloud_results == sqlite3_results
+        results = cursor.fetchall()
+
+        assert len(results) == 1
+        assert results[0][0] == 1
+
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_executemany_with_named_param_style(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        select_query = "INSERT INTO customers (FirstName, Email, LastName) VALUES (:name, :email, :name)"
+        params = [
+            {"name": "pippo", "email": "pippo@disney.com"},
+            {"name": "pluto", "email": "pluto@disney.com"},
+        ]
+
+        connection.executemany(select_query, params)
+
+        assert connection.total_changes == 2
 
     @pytest.mark.skip(
         reason="Rowcount does not contain the number of inserted rows yet"
@@ -1151,7 +1226,7 @@ class TestSQLite3FeatureParity:
                     "INSERT INTO albums (Title, ArtistId) VALUES ('Test Album 1', 1)"
                 )
                 id1 = cursor.lastrowid
-                connection.execute("INVALID COMMAND")
+                connection.execute("insert into pippodd (p) values (1)")
         except Exception:
             assert True
 
@@ -1159,3 +1234,39 @@ class TestSQLite3FeatureParity:
         result = cursor.fetchone()
 
         assert result is None
+
+    @pytest.mark.parametrize(
+        "connection",
+        [
+            "sqlitecloud_dbapi2_connection",
+            "sqlite3_connection",
+        ],
+    )
+    def test_connection_total_changes(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        new_name1 = "Jazz" + str(uuid.uuid4())
+        new_name2 = "Jazz" + str(uuid.uuid4())
+        new_name3 = "Jazz" + str(uuid.uuid4())
+
+        connection.executemany(
+            "INSERT INTO genres (Name) VALUES (?)",
+            [(new_name1,), (new_name2,)],
+        )
+        assert connection.total_changes == 2
+
+        connection.execute(
+            "SELECT * FROM genres WHERE Name IN (?, ?)", (new_name1, new_name2)
+        )
+        assert connection.total_changes == 2
+
+        connection.execute(
+            "UPDATE genres SET Name = ? WHERE Name = ?", (new_name3, new_name1)
+        )
+        assert connection.total_changes == 3
+
+        connection.execute(
+            "DELETE FROM genres WHERE Name in (?, ?, ?)",
+            (new_name1, new_name2, new_name3),
+        )
+        assert connection.total_changes == 5

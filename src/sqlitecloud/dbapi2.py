@@ -430,6 +430,8 @@ class Cursor(Iterator[Any]):
         """
         The number of rows that the last .execute*() returned for DQL statements like SELECT or
         the number rows affected by DML statements like UPDATE, INSERT and DELETE.
+
+        For the executemany() it returns the number of changes only for the last operation.
         """
         if self._is_result_rowset():
             return self._resultset.nrows
@@ -490,7 +492,9 @@ class Cursor(Iterator[Any]):
 
         parameters = self._adapt_parameters(parameters)
 
-        # TODO: convert parameters from :name to `?` style
+        if isinstance(parameters, dict):
+            parameters = self._named_to_question_mark_parameters(sql, parameters)
+
         result = self._driver.execute_statement(
             sql, parameters, self.connection.sqlcloud_connection
         )
@@ -529,6 +533,9 @@ class Cursor(Iterator[Any]):
         commands = ""
         params = []
         for parameters in seq_of_parameters:
+            if isinstance(parameters, dict):
+                parameters = self._named_to_question_mark_parameters(sql, parameters)
+
             params += list(parameters)
 
             if not sql.endswith(";"):
@@ -725,6 +732,25 @@ class Cursor(Iterator[Any]):
             return self._connection.text_factory(value.encode("utf-8"))
 
         return value
+
+    def _named_to_question_mark_parameters(
+        self, sql: str, params: Dict[str, Any]
+    ) -> Tuple[Any]:
+        """
+        Convert named placeholders parameters from a dictionary to a list of
+        parameters for question mark style.
+
+        SCSP protocol does not support named placeholders yet.
+        """
+        pattern = r":(\w+)"
+        matches = re.findall(pattern, sql)
+
+        params_list = ()
+        for match in matches:
+            if match in params:
+                params_list += (params[match],)
+
+        return params_list
 
     def _get_value(self, row: int, col: int) -> Optional[Any]:
         if not self._is_result_rowset():
