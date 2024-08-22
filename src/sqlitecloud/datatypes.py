@@ -228,14 +228,6 @@ class SQLiteCloudConfig:
             ) from e
 
 
-class SQLiteCloudException(Exception):
-    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
-        super().__init__(message)
-        self.errmsg = str(message)
-        self.errcode = code
-        self.xerrcode = xerrcode
-
-
 class SQLiteCloudNumber:
     """
     Represents the parsed number or the error code.
@@ -256,3 +248,34 @@ class SQLiteCloudValue:
         self.value: Optional[SQLiteCloudDataTypes] = None
         self.len: int = 0
         self.cellsize: int = 0
+
+
+class SQLiteCloudWarning(Exception):
+    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+        super().__init__(message)
+        self.errmsg = str(message)
+        self.errcode = code
+        self.xerrcode = xerrcode
+
+
+class SQLiteCloudError(Exception):
+    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+        super().__init__(message)
+        self.errmsg = str(message)
+        self.errcode = code
+        self.xerrcode = xerrcode
+
+
+# class SQLiteCloudInterfaceError(SQLiteCloudError):
+#     def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+#         super().__init__(message, code, xerrcode)
+
+
+# class SQLiteCloudDatabaseError(SQLiteCloudError):
+#     def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+#         super().__init__(message, code, xerrcode)
+
+
+class SQLiteCloudException(SQLiteCloudError):
+    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
+        super().__init__(message, code, xerrcode)

@@ -2,6 +2,7 @@
 # the classes and functions from the dbapi2 module.
 # eg:  sqlite3.connect() -> sqlitecloud.connect()
 #
+
 from .dbapi2 import (
     PARSE_COLNAMES,
     PARSE_DECLTYPES,
@@ -28,5 +29,3 @@ __all__ = [
     "converters",
     "Row",
 ]
-
-VERSION = "0.0.79"

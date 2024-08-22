@@ -3,10 +3,12 @@
 # PEP 249 – Python Database API Specification v2.0
 # https://peps.python.org/pep-0249/
 #
+import collections
+import datetime
 import logging
 import re
 import sys
-from datetime import date, datetime
+import time
 from typing import (
     Any,
     Callable,
@@ -25,7 +27,9 @@ from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
+    SQLiteCloudError,
     SQLiteCloudException,
+    SQLiteCloudWarning,
     SQLiteDataTypes,
 )
 from sqlitecloud.driver import Driver
@@ -35,6 +39,36 @@ from sqlitecloud.resultset import (
     SQLiteCloudOperationResult,
     SQLiteCloudResult,
 )
+
+version = "0.1.0"
+version_info = (0, 1, 0)
+
+# version from sqlite3 in py3.6
+sqlite_version = "3.34.1"
+sqlite_version_info = (3, 34, 1)
+
+Binary = bytes
+Date = datetime.date
+Time = datetime.time
+Timestamp = datetime.datetime
+
+Warning = SQLiteCloudWarning
+Error = SQLiteCloudError
+InterfaceError = SQLiteCloudException
+DatabaseError = SQLiteCloudException
+DataError = SQLiteCloudException
+OperationalError = SQLiteCloudException
+IntegrityError = SQLiteCloudException
+InternalError = SQLiteCloudException
+ProgrammingError = SQLiteCloudException
+NotSupportedError = SQLiteCloudException
+
+# Map for types for SQLite
+STRING = "TEXT"
+BINARY = "BINARY"
+NUMBER = "INTEGER"
+DATETIME = "TIMESTAMP"
+ROWID = "INTEGER PRIMARY KEY"
 
 # SQLite supported types
 SQLiteTypes = Union[int, float, str, bytes, None]
@@ -193,6 +227,7 @@ class Connection:
         self, sqlitecloud_connection: SQLiteCloudConnect, detect_types: int = 0
     ) -> None:
         self._driver = Driver()
+        self._autocommit = True
         self.sqlitecloud_connection = sqlitecloud_connection
 
         self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
@@ -211,6 +246,17 @@ class Connection:
             SQLiteCloudConnect: The SQLite Cloud connection object.
         """
         return self.sqlitecloud_connection
+
+    @property
+    def autocommit(self) -> bool:
+        """Autocommit enabled is the only currently supported option in SQLite Cloud."""
+        return self._autocommit
+
+    @autocommit.setter
+    def autocommit(self, value: bool) -> None:
+        # TODO: raise NotSupportedError
+        if not value:
+            raise SQLiteCloudException("Disable Autocommit is not supported.")
 
     def execute(
         self,
@@ -253,6 +299,50 @@ class Connection:
         cursor = self.cursor()
         return cursor.executemany(sql, seq_of_parameters)
 
+    def executescript(self, sql_script: str):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("executescript() is not supported.")
+
+    def create_function(self, name, num_params, func):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("create_function() is not supported.")
+
+    def create_aggregate(self, name, num_params, aggregate_class):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("create_aggregate() is not supported.")
+
+    def create_collation(self, name, func):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("create_collation() is not supported.")
+
+    def interrupt(self):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("interrupt() is not supported.")
+
+    def set_authorizer(self, authorizer):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("set_authorizer() is not supported.")
+
+    def set_progress_handler(self, handler, n):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("set_progress_handler() is not supported.")
+
+    def set_trace_callback(self, trace_callback):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("set_trace_callback() is not supported.")
+
+    def enable_load_extension(self, enable):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("enable_load_extension() is not supported.")
+
+    def load_extension(path):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("load_extension() is not supported.")
+
+    def iterdump(self):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("iterdump() is not supported.")
+
     def close(self):
         """
         Closes the database connection.
@@ -277,7 +367,7 @@ class Connection:
                 and "no transaction is active" in e.errmsg
             ):
                 # compliance to sqlite3
-                logging.warning(e)
+                logging.debug(e)
 
     def rollback(self):
         """
@@ -297,7 +387,7 @@ class Connection:
                 and "no transaction is active" in e.errmsg
             ):
                 # compliance to sqlite3
-                logging.warning(e)
+                logging.debug(e)
 
     def cursor(self):
         """
@@ -606,10 +696,20 @@ class Cursor(Iterator[Any]):
         return self.fetchmany(self.rowcount)
 
     def setinputsizes(self, sizes) -> None:
-        pass
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("setinputsizes() is not supported.")
 
     def setoutputsize(self, size, column=None) -> None:
-        pass
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("setoutputsize() is not supported.")
+
+    def scroll(value, mode="relative"):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("scroll() is not supported.")
+
+    def messages(self):
+        # TODO: raise NotSupportedError
+        raise SQLiteCloudException("messages() is not supported.")
 
     def _call_row_factory(self, row: Tuple) -> object:
         if self.row_factory is None:
@@ -842,6 +942,18 @@ class MissingDecltypeException(Exception):
         self.message = message
 
 
+def DateFromTicks(ticks):
+    return Date(*time.localtime(ticks)[:3])
+
+
+def TimeFromTicks(ticks):
+    return Time(*time.localtime(ticks)[3:6])
+
+
+def TimestampFromTicks(ticks):
+    return Timestamp(*time.localtime(ticks)[:6])
+
+
 def register_adapters_and_converters():
     """
     sqlite3 default adapters and converters.
@@ -858,7 +970,7 @@ def register_adapters_and_converters():
         return val.isoformat(" ")
 
     def convert_date(val):
-        return date(*map(int, val.split(b"-")))
+        return datetime.date(*map(int, val.split(b"-")))
 
     def convert_timestamp(val):
         datepart, timepart = val.split(b" ")
@@ -870,13 +982,14 @@ def register_adapters_and_converters():
         else:
             microseconds = 0
 
-        val = datetime(year, month, day, hours, minutes, seconds, microseconds)
+        val = datetime.datetime(year, month, day, hours, minutes, seconds, microseconds)
         return val
 
-    register_adapter(date, adapt_date)
-    register_adapter(datetime, adapt_datetime)
+    register_adapter(datetime.date, adapt_date)
+    register_adapter(datetime.datetime, adapt_datetime)
     register_converter("date", convert_date)
     register_converter("timestamp", convert_timestamp)
 
 
 register_adapters_and_converters()
+collections.abc.Sequence.register(Row)
