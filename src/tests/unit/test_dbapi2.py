@@ -3,13 +3,10 @@ from pytest_mock import MockerFixture
 
 import sqlitecloud
 from sqlitecloud import Cursor
-from sqlitecloud.datatypes import (
-    SQLiteCloudAccount,
-    SQLiteCloudConfig,
-    SQLiteCloudException,
-)
+from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConfig
 from sqlitecloud.dbapi2 import Connection
 from sqlitecloud.driver import Driver
+from sqlitecloud.exceptions import SQLiteCloudException
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
 
 

@@ -9,7 +9,7 @@ from datetime import date, datetime
 import pytest
 
 import sqlitecloud
-from sqlitecloud.datatypes import SQLiteCloudException
+from sqlitecloud.exceptions import SQLiteCloudException
 from tests.conftest import get_sqlite3_connection, get_sqlitecloud_dbapi2_connection
 
 

@@ -10,8 +10,8 @@ from sqlitecloud.datatypes import (
     SQLITECLOUD_INTERNAL_ERRCODE,
     SQLiteCloudAccount,
     SQLiteCloudConnect,
-    SQLiteCloudException,
 )
+from sqlitecloud.exceptions import SQLiteCloudException
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE
 
 

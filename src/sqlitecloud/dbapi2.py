@@ -27,12 +27,21 @@ from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
-    SQLiteCloudError,
-    SQLiteCloudException,
-    SQLiteCloudWarning,
     SQLiteDataTypes,
 )
 from sqlitecloud.driver import Driver
+from sqlitecloud.exceptions import (
+    SQLiteCloudDatabaseError,
+    SQLiteCloudDataError,
+    SQLiteCloudError,
+    SQLiteCloudIntegrityError,
+    SQLiteCloudInterfaceError,
+    SQLiteCloudInternalError,
+    SQLiteCloudNotSupportedError,
+    SQLiteCloudOperationalError,
+    SQLiteCloudProgrammingError,
+    SQLiteCloudWarning,
+)
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
     SQLITECLOUD_VALUE_TYPE,
@@ -54,14 +63,14 @@ Timestamp = datetime.datetime
 
 Warning = SQLiteCloudWarning
 Error = SQLiteCloudError
-InterfaceError = SQLiteCloudException
-DatabaseError = SQLiteCloudException
-DataError = SQLiteCloudException
-OperationalError = SQLiteCloudException
-IntegrityError = SQLiteCloudException
-InternalError = SQLiteCloudException
-ProgrammingError = SQLiteCloudException
-NotSupportedError = SQLiteCloudException
+InterfaceError = SQLiteCloudInterfaceError
+DatabaseError = SQLiteCloudDatabaseError
+DataError = SQLiteCloudDataError
+OperationalError = SQLiteCloudOperationalError
+IntegrityError = SQLiteCloudIntegrityError
+InternalError = SQLiteCloudInternalError
+ProgrammingError = SQLiteCloudProgrammingError
+NotSupportedError = SQLiteCloudNotSupportedError
 
 # Map for types for SQLite
 STRING = "TEXT"
@@ -254,9 +263,8 @@ class Connection:
 
     @autocommit.setter
     def autocommit(self, value: bool) -> None:
-        # TODO: raise NotSupportedError
         if not value:
-            raise SQLiteCloudException("Disable Autocommit is not supported.")
+            raise SQLiteCloudNotSupportedError("Disable Autocommit is not supported.")
 
     def execute(
         self,
@@ -300,48 +308,37 @@ class Connection:
         return cursor.executemany(sql, seq_of_parameters)
 
     def executescript(self, sql_script: str):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("executescript() is not supported.")
+        raise SQLiteCloudNotSupportedError("executescript() is not supported.")
 
     def create_function(self, name, num_params, func):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("create_function() is not supported.")
+        raise SQLiteCloudNotSupportedError("create_function() is not supported.")
 
     def create_aggregate(self, name, num_params, aggregate_class):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("create_aggregate() is not supported.")
+        raise SQLiteCloudNotSupportedError("create_aggregate() is not supported.")
 
     def create_collation(self, name, func):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("create_collation() is not supported.")
+        raise SQLiteCloudNotSupportedError("create_collation() is not supported.")
 
     def interrupt(self):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("interrupt() is not supported.")
+        raise SQLiteCloudNotSupportedError("interrupt() is not supported.")
 
     def set_authorizer(self, authorizer):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("set_authorizer() is not supported.")
+        raise SQLiteCloudNotSupportedError("set_authorizer() is not supported.")
 
     def set_progress_handler(self, handler, n):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("set_progress_handler() is not supported.")
+        raise SQLiteCloudNotSupportedError("set_progress_handler() is not supported.")
 
     def set_trace_callback(self, trace_callback):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("set_trace_callback() is not supported.")
+        raise SQLiteCloudNotSupportedError("set_trace_callback() is not supported.")
 
     def enable_load_extension(self, enable):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("enable_load_extension() is not supported.")
+        raise SQLiteCloudNotSupportedError("enable_load_extension() is not supported.")
 
     def load_extension(path):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("load_extension() is not supported.")
+        raise SQLiteCloudNotSupportedError("load_extension() is not supported.")
 
     def iterdump(self):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("iterdump() is not supported.")
+        raise SQLiteCloudNotSupportedError("iterdump() is not supported.")
 
     def close(self):
         """
@@ -360,7 +357,7 @@ class Connection:
         """
         try:
             self._driver.execute("COMMIT;", self.sqlitecloud_connection)
-        except SQLiteCloudException as e:
+        except SQLiteCloudOperationalError as e:
             if (
                 e.errcode == 1
                 and e.xerrcode == 1
@@ -380,7 +377,7 @@ class Connection:
         """
         try:
             self._driver.execute("ROLLBACK;", self.sqlitecloud_connection)
-        except SQLiteCloudException as e:
+        except SQLiteCloudOperationalError as e:
             if (
                 e.errcode == 1
                 and e.xerrcode == 1
@@ -696,20 +693,16 @@ class Cursor(Iterator[Any]):
         return self.fetchmany(self.rowcount)
 
     def setinputsizes(self, sizes) -> None:
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("setinputsizes() is not supported.")
+        raise SQLiteCloudNotSupportedError("setinputsizes() is not supported.")
 
     def setoutputsize(self, size, column=None) -> None:
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("setoutputsize() is not supported.")
+        raise SQLiteCloudNotSupportedError("setoutputsize() is not supported.")
 
     def scroll(value, mode="relative"):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("scroll() is not supported.")
+        raise SQLiteCloudNotSupportedError("scroll() is not supported.")
 
     def messages(self):
-        # TODO: raise NotSupportedError
-        raise SQLiteCloudException("messages() is not supported.")
+        raise SQLiteCloudNotSupportedError("messages() is not supported.")
 
     def _call_row_factory(self, row: Tuple) -> object:
         if self.row_factory is None:
@@ -737,7 +730,7 @@ class Cursor(Iterator[Any]):
             SQLiteCloudException: If the cursor is closed.
         """
         if not self._connection:
-            raise SQLiteCloudException("The cursor is closed.")
+            raise SQLiteCloudOperationalError("The cursor is closed.")
 
     def _adapt_parameters(self, parameters: Union[Dict, Tuple]) -> Union[Dict, Tuple]:
         if isinstance(parameters, dict):

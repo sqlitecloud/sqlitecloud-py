@@ -16,11 +16,14 @@ from sqlitecloud.datatypes import (
     SQLITECLOUD_ROWSET,
     SQLiteCloudConfig,
     SQLiteCloudConnect,
-    SQLiteCloudException,
     SQLiteCloudNumber,
     SQLiteCloudRowsetSignature,
     SQLiteCloudValue,
     SQLiteDataTypes,
+)
+from sqlitecloud.exceptions import (
+    SQLiteCloudException,
+    raise_sqlitecloud_error_with_extended_code,
 )
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
@@ -485,6 +488,12 @@ class Driver:
             command (bytes): The command to send.
             main_socket (bool): If True, write to the main socket, otherwise write to the pubsub socket.
         """
+        # try:
+        #     if "ATTACH DATABASE" in command.decode() or '"test_schema".table_info' in command.decode():
+        #         pdb.set_trace()
+        # except:
+        #     pass
+
         # write buffer
         if len(command) == 0:
             return
@@ -712,7 +721,9 @@ class Driver:
             len_ -= cstart2
             errmsg = clone[cstart2:]
 
-            raise SQLiteCloudException(errmsg.decode(), errcode, xerrcode)
+            raise raise_sqlitecloud_error_with_extended_code(
+                errmsg.decode(), errcode, xerrcode
+            )
 
         elif cmd in [SQLITECLOUD_CMD.ROWSET.value, SQLITECLOUD_CMD.ROWSET_CHUNK.value]:
             # CMD_ROWSET:          *LEN 0:VERSION ROWS COLS DATA

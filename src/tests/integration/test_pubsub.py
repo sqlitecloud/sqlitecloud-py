@@ -3,11 +3,8 @@ import uuid
 
 import pytest
 
-from sqlitecloud.datatypes import (
-    SQLITECLOUD_ERRCODE,
-    SQLITECLOUD_PUBSUB_SUBJECT,
-    SQLiteCloudException,
-)
+from sqlitecloud.datatypes import SQLITECLOUD_ERRCODE, SQLITECLOUD_PUBSUB_SUBJECT
+from sqlitecloud.exceptions import SQLiteCloudException
 from sqlitecloud.pubsub import SQLiteCloudPubSub
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResultSet
 

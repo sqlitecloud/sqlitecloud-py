@@ -4,7 +4,8 @@ import tempfile
 import pytest
 
 from sqlitecloud import download
-from sqlitecloud.datatypes import SQLITECLOUD_ERRCODE, SQLiteCloudException
+from sqlitecloud.datatypes import SQLITECLOUD_ERRCODE
+from sqlitecloud.exceptions import SQLiteCloudException
 
 
 class TestDownload:

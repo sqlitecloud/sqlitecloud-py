@@ -4,11 +4,8 @@ import uuid
 import pytest
 
 import sqlitecloud
-from sqlitecloud.datatypes import (
-    SQLITECLOUD_INTERNAL_ERRCODE,
-    SQLiteCloudAccount,
-    SQLiteCloudException,
-)
+from sqlitecloud.datatypes import SQLITECLOUD_INTERNAL_ERRCODE, SQLiteCloudAccount
+from sqlitecloud.exceptions import SQLiteCloudException
 
 
 class TestDBAPI2:

@@ -8,9 +8,9 @@ from sqlitecloud.datatypes import (
     SQLiteCloudConfig,
     SQLiteCloudConnect,
     SQLiteCloudDataTypes,
-    SQLiteCloudException,
 )
 from sqlitecloud.driver import Driver
+from sqlitecloud.exceptions import SQLiteCloudException
 from sqlitecloud.resultset import SQLiteCloudResultSet
 
 
