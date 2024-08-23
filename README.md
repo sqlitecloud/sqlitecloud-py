@@ -4,7 +4,7 @@
   <img src="https://sqlitecloud.io/social/logo.png" height="300" alt="SQLite Cloud logo">
 </p>
 
-![Build Status](https://github.com/sqlitecloud/sqlitecloud-py/actions/workflows/deploy.yaml/badge.svg "Build Status")
+![Build Status](https://github.com/sqlitecloud/sqlitecloud-py/actions/workflows/test.yaml/badge.svg "Build Status")
 [![codecov](https://codecov.io/github/sqlitecloud/python/graph/badge.svg?token=38G6FGOWKP)](https://codecov.io/github/sqlitecloud/python)
 ![PyPI - Version](https://img.shields.io/pypi/v/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2FSqliteCloud%2F)

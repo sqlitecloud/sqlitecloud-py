@@ -4,3 +4,6 @@ ADD https://dl.yarnpkg.com/debian/pubkey.gpg /etc/apt/trusted.gpg.d/yarn.asc
 
 RUN chmod +r /etc/apt/trusted.gpg.d/*.asc && \
     echo "deb http://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
+
+COPY install-legacy-extensions.sh /usr/local/bin/install-legacy-extensions.sh
+RUN chmod +x /usr/local/bin/install-legacy-extensions.sh

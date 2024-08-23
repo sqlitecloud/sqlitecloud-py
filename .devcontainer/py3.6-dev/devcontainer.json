@@ -17,13 +17,13 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	"postCreateCommand": "install-legacy-extensions.sh",
 
 	// Configure tool-specific properties.
 	// Py3.6 support (switch extensions to `pre-release` and `install another version`):
 	// Pylance v2022.6.30
 	// Python v2022.8.1
-	// Python Debugger v2023.1.XXX (pre-release version | debugpy v1.5.1)
+	// Python Debugger v2023.1.12492010 (pre-release version | debugpy v1.5.1)
 	// Black Formatter v2022.2.0
 	// Isort v2022.1.11601002 (pre-release)
 	"customizations": {
@@ -31,15 +31,10 @@
 			"extensions": [
 				"littlefoxteam.vscode-python-test-adapter",
 				"jkillian.custom-local-formatters",
-				"ms-python.vscode-pylance",
-				"ms-python.python",
-				"ms-python.debugpy",
-				"ms-python.black-formatter",
-				"ms-python.isort",
 				"ms-toolsai.jupyter"
 			]
 		}
-	}
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"

@@ -3,7 +3,7 @@ import sqlite3
 from copy import deepcopy
 
 import pytest
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 import sqlitecloud
 from sqlitecloud.client import SQLiteCloudClient
@@ -12,7 +12,7 @@ from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConnect
 
 @pytest.fixture(autouse=True)
 def load_env_vars():
-    load_dotenv(".env")
+    load_dotenv(find_dotenv(filename=".env", raise_error_if_not_found=True))
 
 
 @pytest.fixture(autouse=True)

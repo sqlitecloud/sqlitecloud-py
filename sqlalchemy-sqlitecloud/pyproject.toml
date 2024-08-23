@@ -1,0 +1,5 @@
+# Configuration file to store build system requirements for Python projects
+# https://www.python.org/dev/peps/pep-0518/
+
+[tool.pytest.ini_options]
+addopts = "--tb native -v -r fxX --maxfail=25 -p no:warnings --requirements sqlalchemy_sqlitecloud.requirements:Requirements"
