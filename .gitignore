@@ -18,3 +18,5 @@ playground.ipynb
 
 src/tests/assets/*-shm
 src/tests/assets/*-wal
+
+chinook.sqlite

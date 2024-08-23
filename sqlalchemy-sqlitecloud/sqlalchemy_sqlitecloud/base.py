@@ -35,6 +35,9 @@ class _SQLite_pysqliteDate(DATE):
 
 
 class SQLiteCloudDialect(SQLiteDialect):
+    name = "sqlitecloud"
+    driver = "sqlitecloud"
+
     default_paramstyle = "qmark"
     supports_statement_cache = False
 
@@ -45,8 +48,6 @@ class SQLiteCloudDialect(SQLiteDialect):
             sqltypes.TIMESTAMP: _SQLite_pysqliteTimeStamp,
         },
     )
-
-    driver = "sqlitecloud"
 
     @classmethod
     def dbapi(cls):
@@ -104,8 +105,8 @@ class SQLiteCloudDialect(SQLiteDialect):
                 "SQLite Cloud URL is required.\n"
                 "Register on https://sqlitecloud.io/ to get your free SQLite Cloud account.\n"
                 "Valid SQLite Cloud URL are:\n"
-                " sqlite+sqlitecloud:///myuser:mypass@myserver.sqlite.cloud/mydb.sqlite?non_linearizable=true\n"
-                " sqlite+sqlitecloud:///myserver.sqlite.cloud/?apikey=mykey1234"
+                " sqlitecloud:///myuser:mypass@myserver.sqlite.cloud/mydb.sqlite?non_linearizable=true\n"
+                " sqlitecloud:///myserver.sqlite.cloud/?apikey=mykey1234"
             )
 
         # TODO: this should be the list of SQLite Cloud Config params

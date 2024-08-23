@@ -1,3 +1,7 @@
+import os
+
+from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
 from sqlalchemy.pool import Pool
 from sqlalchemy.testing.provision import (
     generate_driver_url,
@@ -11,13 +15,22 @@ _drivernames = {
 }
 
 
-@generate_driver_url.for_db("sqlite")
+@generate_driver_url.for_db("sqlitecloud")
 def generate_driver_url(url, driver, query_str):
-    # eg: sqlite+sqlitecloud://mynode.sqlite.cloud/sqlalchemy_cloud.db?apikey=key123
-    return url
+    # no database specified here, it's created and used later
+    # eg: sqlitecloud://mynode.sqlite.cloud/?apikey=key123
+
+    load_dotenv("../../.env")
+
+    connection_string = os.getenv("SQLITE_CONNECTION_STRING")
+    apikey = os.getenv("SQLITE_API_KEY")
+
+    connection_string += f"?apikey={apikey}"
+
+    return make_url(connection_string)
 
 
-@post_configure_engine.for_db("sqlite")
+@post_configure_engine.for_db("sqlitecloud")
 def _sqlite_post_configure_engine(url, engine, follower_ident):
     from sqlalchemy import event
 
@@ -48,11 +61,11 @@ def _create_dbs(url, database):
         )
 
 
-@stop_test_class_outside_fixtures.for_db("sqlite")
+@stop_test_class_outside_fixtures.for_db("sqlitecloud")
 def stop_test_class_outside_fixtures(config, db, cls):
     db.dispose()
 
 
-@temp_table_keyword_args.for_db("sqlite")
+@temp_table_keyword_args.for_db("sqlitecloud")
 def _sqlite_temp_table_keyword_args(cfg, eng):
     return {"prefixes": ["TEMPORARY"]}

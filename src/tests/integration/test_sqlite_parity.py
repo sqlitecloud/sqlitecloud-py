@@ -13,7 +13,7 @@ from sqlitecloud.exceptions import SQLiteCloudException
 from tests.conftest import get_sqlite3_connection, get_sqlitecloud_dbapi2_connection
 
 
-class TestSQLite3FeatureParity:
+class TestSQLiteFeatureParity:
     def test_connection_close(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
 
@@ -30,9 +30,6 @@ class TestSQLite3FeatureParity:
 
         assert isinstance(e.value, sqlite3.ProgrammingError)
 
-    @pytest.mark.skip(
-        reason="SQLite Cloud does not convert to int a column without an explicit SQLite Type"
-    )
     def test_ping_select(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
 

@@ -951,7 +951,7 @@ def register_adapters_and_converters():
     """
     sqlite3 default adapters and converters.
 
-    This code is adapted from the Python standard library's sqlite3 module.
+    This code comes from the Python standard library's sqlite3 module.
     The Python standard library is licensed under the Python Software Foundation License.
     Source: https://github.com/python/cpython/blob/3.6/Lib/sqlite3/dbapi2.py
     """
