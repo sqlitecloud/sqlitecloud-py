@@ -5,8 +5,7 @@ import sqlitecloud
 from sqlitecloud import Cursor
 from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConfig
 from sqlitecloud.dbapi2 import Connection
-from sqlitecloud.driver import Driver
-from sqlitecloud.exceptions import SQLiteCloudException
+from sqlitecloud.exceptions import SQLiteCloudProgrammingError
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
 
 
@@ -100,55 +99,6 @@ class TestCursor:
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
         assert cursor.rowcount == -1
-
-    def test_execute_escaped(self, mocker: MockerFixture):
-        parameters = ("John's",)
-
-        execute_mock = mocker.patch.object(Driver, "execute")
-
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
-        apply_adapter_mock.return_value = parameters
-
-        sql = "SELECT * FROM users WHERE name = ?"
-
-        cursor.execute(sql, parameters)
-
-        assert (
-            execute_mock.call_args[0][0] == "SELECT * FROM users WHERE name = 'John''s'"
-        )
-
-    def test_executemany(self, mocker):
-        seq_of_parameters = [("John", 25), ("Jane", 30), ("Bob", 40)]
-
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        execute_mock = mocker.patch.object(cursor, "execute")
-        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
-        apply_adapter_mock.side_effect = seq_of_parameters
-
-        sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-
-        cursor.executemany(sql, seq_of_parameters)
-
-        execute_mock.assert_called_once_with(
-            "INSERT INTO users (name, age) VALUES ('John', 25);INSERT INTO users (name, age) VALUES ('Jane', 30);INSERT INTO users (name, age) VALUES ('Bob', 40);"
-        )
-
-    def test_executemany_escaped(self, mocker):
-        seq_of_parameters = [("O'Conner", 25)]
-
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        execute_mock = mocker.patch.object(cursor, "execute")
-        apply_adapter_mock = mocker.patch.object(cursor, "_adapt_parameters")
-        apply_adapter_mock.side_effect = seq_of_parameters
-
-        sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-
-        cursor.executemany(sql, seq_of_parameters)
-
-        execute_mock.assert_called_once_with(
-            "INSERT INTO users (name, age) VALUES ('O''Conner', 25);"
-        )
 
     def test_fetchone_with_no_resultset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
@@ -358,7 +308,7 @@ class TestCursor:
 
         cursor.close()
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudProgrammingError) as e:
             getattr(cursor, method)(*args)
 
         assert e.value.args[0] == "The cursor is closed."

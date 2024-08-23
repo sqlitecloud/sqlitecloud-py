@@ -23,7 +23,7 @@ from sqlitecloud.datatypes import (
 )
 from sqlitecloud.exceptions import (
     SQLiteCloudException,
-    raise_sqlitecloud_error_with_extended_code,
+    get_sqlitecloud_error_with_extended_code,
 )
 from sqlitecloud.resultset import (
     SQLITECLOUD_RESULT_TYPE,
@@ -117,11 +117,7 @@ class Driver:
         """
         Send a blob to the SQLite Cloud server.
         """
-        try:
-            conn.isblob = True
-            return self._internal_run_command(conn, blob)
-        finally:
-            conn.isblob = False
+        return self._internal_run_command(conn, self._internal_serialize_command(blob))
 
     def is_connected(
         self, connection: SQLiteCloudConnect, main_socket: bool = True
@@ -314,7 +310,9 @@ class Driver:
             command = f"UPLOAD DATABASE '{dbname}' {keyarg}{keyvalue}"
 
         # execute command on server side
-        result = self._internal_run_command(connection, command)
+        result = self._internal_run_command(
+            connection, self._internal_serialize_command(command)
+        )
         if not result.data[0]:
             raise SQLiteCloudException(
                 "An error occurred while initializing the upload of the database."
@@ -350,7 +348,9 @@ class Driver:
                     # Upload completed
                     break
         except Exception as e:
-            self._internal_run_command(connection, "UPLOAD ABORT")
+            self._internal_run_command(
+                connection, self._internal_serialize_command("UPLOAD ABORT")
+            )
             raise e
 
     def download_database(
@@ -377,7 +377,10 @@ class Driver:
         """
         exists_cmd = " IF EXISTS" if if_exists else ""
         result = self._internal_run_command(
-            connection, f"DOWNLOAD DATABASE {dbname}{exists_cmd};"
+            connection,
+            self._internal_serialize_command(
+                f"DOWNLOAD DATABASE {dbname}{exists_cmd};"
+            ),
         )
 
         if result.nrows == 0:
@@ -394,7 +397,9 @@ class Driver:
 
         try:
             while progress_size < db_size:
-                result = self._internal_run_command(connection, "DOWNLOAD STEP")
+                result = self._internal_run_command(
+                    connection, self._internal_serialize_command("DOWNLOAD STEP")
+                )
 
                 # res is BLOB, decode it
                 data = result.data[0]
@@ -408,7 +413,9 @@ class Driver:
                 if data_len == 0:
                     break
         except Exception as e:
-            self._internal_run_command(connection, "DOWNLOAD ABORT")
+            self._internal_run_command(
+                connection, self._internal_serialize_command("DOWNLOAD ABORT")
+            )
             raise e
 
     def _internal_config_apply(
@@ -488,12 +495,6 @@ class Driver:
             command (bytes): The command to send.
             main_socket (bool): If True, write to the main socket, otherwise write to the pubsub socket.
         """
-        # try:
-        #     if "ATTACH DATABASE" in command.decode() or '"test_schema".table_info' in command.decode():
-        #         pdb.set_trace()
-        # except:
-        #     pass
-
         # write buffer
         if len(command) == 0:
             return
@@ -594,30 +595,36 @@ class Driver:
         sqlitecloud_number = SQLiteCloudNumber()
         sqlitecloud_number.value = 0
         extvalue = 0
-        isext = False
+        offcode = 0
+        isext = 0
         blen = len(buffer)
 
         # from 1 to skip the first command type character
         for i in range(index, blen):
             c = chr(buffer[i])
 
-            # check for optional extended error code (ERRCODE:EXTERRCODE)
+            # check for optional extended error code (ERRCODE:EXTERRCODE:OFFCODE)
             if c == ":":
-                isext = True
+                isext += 1
                 continue
 
             # check for end of value
             if c == " ":
                 sqlitecloud_number.cstart = i + 1
                 sqlitecloud_number.extcode = extvalue
+                sqlitecloud_number.offcode = offcode
                 return sqlitecloud_number
 
             val = int(c) if c.isdigit() else 0
 
-            # compute numeric value
-            if isext:
+            if isext == 1:
+                # XERRCODE
                 extvalue = (extvalue * 10) + val
+            elif isext == 2:
+                # OFFCODE
+                offcode = (offcode * 10) + val
             else:
+                # generic value or ERRCODE
                 sqlitecloud_number.value = (sqlitecloud_number.value * 10) + val
 
         sqlitecloud_number.value = 0
@@ -706,7 +713,7 @@ class Driver:
             return SQLiteCloudResult(tag, clone)
 
         elif cmd == SQLITECLOUD_CMD.ERROR.value:
-            # -LEN ERRCODE:EXTCODE ERRMSG
+            # -LEN ERRCODE:EXTCODE:OFFCODE ERRMSG
             sqlite_number = self._internal_parse_number(buffer)
             len_ = sqlite_number.value
             cstart = sqlite_number.cstart
@@ -721,9 +728,9 @@ class Driver:
             len_ -= cstart2
             errmsg = clone[cstart2:]
 
-            raise raise_sqlitecloud_error_with_extended_code(
+            raise get_sqlitecloud_error_with_extended_code(
                 errmsg.decode(), errcode, xerrcode
-            )
+            )(errmsg.decode(), errcode, xerrcode)
 
         elif cmd in [SQLITECLOUD_CMD.ROWSET.value, SQLITECLOUD_CMD.ROWSET_CHUNK.value]:
             # CMD_ROWSET:          *LEN 0:VERSION ROWS COLS DATA

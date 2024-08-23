@@ -76,10 +76,12 @@ class SQLiteCloudException(SQLiteCloudError):
         super().__init__(message, code, xerrcode)
 
 
-def raise_sqlitecloud_error_with_extended_code(
+def get_sqlitecloud_error_with_extended_code(
     message: str, code: int, xerrcode: int
 ) -> None:
-    # Define base error codes and their corresponding exceptions
+    """Mapping of sqlite error codes: https://www.sqlite.org/rescode.html"""
+
+    # define base error codes and their corresponding exceptions
     base_error_mapping = {
         1: SQLiteCloudOperationalError,  # SQLITE_ERROR
         2: SQLiteCloudInternalError,  # SQLITE_INTERNAL
@@ -113,7 +115,7 @@ def raise_sqlitecloud_error_with_extended_code(
         101: SQLiteCloudWarning,  # SQLITE_DONE (not an error)
     }
 
-    # Define extended error codes and their corresponding exceptions
+    # define extended error codes and their corresponding exceptions
     extended_error_mapping = {
         257: SQLiteCloudOperationalError,  # SQLITE_ERROR_MISSING_COLLSEQ
         279: SQLiteCloudOperationalError,  # SQLITE_AUTH_USER
@@ -176,11 +178,10 @@ def raise_sqlitecloud_error_with_extended_code(
         283: SQLiteCloudWarning,  # SQLITE_NOTICE_RECOVER_ROLLBACK
         284: SQLiteCloudWarning,  # SQLITE_WARNING_AUTOINDEX
     }
-    # Combine base and extended mappings
+
     error_mapping = {**base_error_mapping, **extended_error_mapping}
 
-    # Retrieve the corresponding exception based on the error code
+    # retrieve the corresponding exception based on the error code
     exception = error_mapping.get(xerrcode, error_mapping.get(code, SQLiteCloudError))
 
-    # Raise the corresponding exception
-    raise exception(message, code, xerrcode)
+    return exception

@@ -9,8 +9,12 @@ from datetime import date, datetime
 import pytest
 
 import sqlitecloud
-from sqlitecloud.exceptions import SQLiteCloudException
-from tests.conftest import get_sqlite3_connection, get_sqlitecloud_dbapi2_connection
+from sqlitecloud.exceptions import SQLiteCloudException, SQLiteCloudProgrammingError
+from tests.conftest import (
+    close_generator,
+    get_sqlite3_connection,
+    get_sqlitecloud_dbapi2_connection,
+)
 
 
 class TestSQLiteFeatureParity:
@@ -41,32 +45,32 @@ class TestSQLiteFeatureParity:
 
         assert sqlitecloud_cursor == sqlite3_cursor
 
-    def test_create_table_and_insert_many(
-        self, sqlitecloud_dbapi2_connection, sqlite3_connection
-    ):
-        sqlitecloud_connection = sqlitecloud_dbapi2_connection
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_create_table_and_insert_many(self, connection, request):
+        connection = request.getfixturevalue(connection)
 
         create_table_query = "CREATE TABLE IF NOT EXISTS sqlitetest (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"
-        sqlitecloud_connection.execute(create_table_query)
-        sqlite3_connection.execute(create_table_query)
+        connection.execute(create_table_query)
 
         truncate_table_query = "DELETE FROM sqlitetest"
-        sqlitecloud_connection.execute(truncate_table_query)
-        sqlite3_connection.execute(truncate_table_query)
+        connection.execute(truncate_table_query)
 
         insert_query = "INSERT INTO sqlitetest (name, age) VALUES (?, ?)"
         params = [("Alice", 25), ("Bob", 30)]
-        sqlitecloud_connection.executemany(insert_query, params)
-        sqlite3_connection.executemany(insert_query, params)
+        connection.executemany(insert_query, params)
 
         select_query = "SELECT * FROM sqlitetest"
-        sqlitecloud_cursor = sqlitecloud_connection.execute(select_query)
-        sqlite3_cursor = sqlite3_connection.execute(select_query)
+        cursor = connection.execute(select_query)
 
-        sqlitecloud_results = sqlitecloud_cursor.fetchall()
-        sqlite3_results = sqlite3_cursor.fetchall()
+        results = cursor.fetchall()
 
-        assert sqlitecloud_results == sqlite3_results
+        assert len(results) == 2
+        assert results[0][1] == "Alice"
+        assert results[0][2] == 25
+        assert results[1][1] == "Bob"
+        assert results[1][2] == 30
 
     @pytest.mark.parametrize(
         "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
@@ -196,10 +200,10 @@ class TestSQLiteFeatureParity:
         sqlitecloud_cursor.close()
         sqlite3_cursor.close()
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudProgrammingError) as e:
             sqlitecloud_cursor.fetchall()
 
-        assert isinstance(e.value, SQLiteCloudException)
+        assert isinstance(e.value, SQLiteCloudProgrammingError)
 
         with pytest.raises(sqlite3.ProgrammingError) as e:
             sqlite3_cursor.fetchall()
@@ -476,21 +480,28 @@ class TestSQLiteFeatureParity:
     ):
         seed = str(int(time.time()))
 
+        sqlitecloud_conn_gen = get_sqlitecloud_dbapi2_connection()
+        sqlite_conn_gen = get_sqlite3_connection()
+
         connections = [
-            (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
-            (sqlite3_connection, next(get_sqlite3_connection())),
+            (sqlitecloud_dbapi2_connection, next(sqlitecloud_conn_gen)),
+            (sqlite3_connection, next(sqlite_conn_gen)),
         ]
 
-        for (connection, control_connection) in connections:
-            connection.execute(
-                "INSERT INTO albums (Title, ArtistId) VALUES (? , 1);",
-                (f"Test {seed}",),
-            )
+        try:
+            for (connection, control_connection) in connections:
+                connection.execute(
+                    "INSERT INTO albums (Title, ArtistId) VALUES (? , 1);",
+                    (f"Test {seed}",),
+                )
 
-            cursor2 = control_connection.execute(
-                "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
-            )
-            assert cursor2.fetchone() is not None
+                cursor2 = control_connection.execute(
+                    "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
+                )
+                assert cursor2.fetchone() is not None
+        finally:
+            close_generator(sqlitecloud_conn_gen)
+            close_generator(sqlite_conn_gen)
 
     def test_explicit_transaction_to_commit(
         self,
@@ -499,26 +510,36 @@ class TestSQLiteFeatureParity:
     ):
         seed = str(int(time.time()))
 
+        sqlitecloud_conn_gen = get_sqlitecloud_dbapi2_connection()
+        sqlite_conn_gen = get_sqlite3_connection()
+
         connections = [
-            (sqlitecloud_dbapi2_connection, next(get_sqlitecloud_dbapi2_connection())),
-            (sqlite3_connection, next(get_sqlite3_connection())),
+            (sqlitecloud_dbapi2_connection, next(sqlitecloud_conn_gen)),
+            (sqlite3_connection, next(sqlite_conn_gen)),
         ]
 
-        for (connection, control_connection) in connections:
-            cursor1 = connection.execute("BEGIN;")
-            cursor1.execute(
-                "INSERT INTO albums (Title, ArtistId) VALUES (?, 1);", (f"Test {seed}",)
-            )
+        try:
+            for (connection, control_connection) in connections:
+                cursor1 = connection.execute("BEGIN;")
+                cursor1.execute(
+                    "INSERT INTO albums (Title, ArtistId) VALUES (?, 1);",
+                    (f"Test {seed}",),
+                )
 
-            cursor2 = control_connection.execute(
-                "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
-            )
-            assert cursor2.fetchone() is None
+                cursor2 = control_connection.execute(
+                    "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
+                )
+                assert cursor2.fetchone() is None
 
-            connection.commit()
+                connection.commit()
 
-            cursor2.execute("SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",))
-            assert cursor2.fetchone() is not None
+                cursor2.execute(
+                    "SELECT * FROM albums WHERE Title = ?", (f"Test {seed}",)
+                )
+                assert cursor2.fetchone() is not None
+        finally:
+            close_generator(sqlitecloud_conn_gen)
+            close_generator(sqlite_conn_gen)
 
     def test_explicit_transaction_to_rollback(
         self,
@@ -920,7 +941,8 @@ class TestSQLiteFeatureParity:
         ],
     )
     def test_register_converter_case_insensitive(self, connection, module):
-        connection = next(connection(module.PARSE_DECLTYPES))
+        conn_gen = connection(module.PARSE_DECLTYPES)
+        connection = next(conn_gen)
 
         module.register_converter("integer", lambda x: int(x.decode("utf-8")) + 7)
 
@@ -938,6 +960,7 @@ class TestSQLiteFeatureParity:
             assert result[0] == 17
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -950,7 +973,8 @@ class TestSQLiteFeatureParity:
         self, connection, module
     ):
         """Expect the registered converter to the TEXT decltype to be used in place of the text_factory."""
-        connection = next(connection(module.PARSE_DECLTYPES))
+        conn_gen = connection(module.PARSE_DECLTYPES)
+        connection = next(conn_gen)
 
         module.register_converter("TEXT", lambda x: x.decode("utf-8") + "Foo")
         connection.text_factory = bytes
@@ -969,6 +993,7 @@ class TestSQLiteFeatureParity:
             assert result[0] == pippo + "Foo"
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -978,7 +1003,8 @@ class TestSQLiteFeatureParity:
         ],
     )
     def test_parse_native_decltype(self, connection, module):
-        connection = next(connection(module.PARSE_DECLTYPES))
+        conn_gen = connection(module.PARSE_DECLTYPES)
+        connection = next(conn_gen)
 
         module.register_converter("INTEGER", lambda x: int(x.decode("utf-8")) + 10)
 
@@ -996,6 +1022,7 @@ class TestSQLiteFeatureParity:
             assert result[0] == 20
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -1007,7 +1034,8 @@ class TestSQLiteFeatureParity:
     def test_register_adapters_and_converters_for_date_and_datetime_by_default(
         self, connection, module
     ):
-        connection = next(connection(module.PARSE_DECLTYPES))
+        conn_gen = connection(module.PARSE_DECLTYPES)
+        connection = next(conn_gen)
 
         tableName = "TestParseDeclTypes" + str(random.randint(0, 99999))
         try:
@@ -1032,6 +1060,7 @@ class TestSQLiteFeatureParity:
             assert result[1] == now
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -1041,7 +1070,8 @@ class TestSQLiteFeatureParity:
         ],
     )
     def test_adapt_and_convert_custom_decltype(self, connection, module):
-        connection = next(connection(module.PARSE_DECLTYPES))
+        conn_gen = connection(module.PARSE_DECLTYPES)
+        connection = next(conn_gen)
 
         class Point:
             def __init__(self, x, y):
@@ -1074,6 +1104,7 @@ class TestSQLiteFeatureParity:
             assert result[0].y == p.y
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -1083,7 +1114,8 @@ class TestSQLiteFeatureParity:
         ],
     )
     def test_parse_colnames(self, connection, module):
-        connection = next(connection(module.PARSE_COLNAMES))
+        conn_gen = connection(module.PARSE_COLNAMES)
+        connection = next(conn_gen)
 
         class Point:
             def __init__(self, x, y):
@@ -1100,13 +1132,16 @@ class TestSQLiteFeatureParity:
 
         p = Point(4.0, -3.2)
 
-        cursor = connection.execute('SELECT ? as "p i [point]"', (str(p),))
+        try:
+            cursor = connection.execute('SELECT ? as "p i [point]"', (str(p),))
 
-        result = cursor.fetchone()
+            result = cursor.fetchone()
 
-        assert isinstance(result[0], Point)
-        assert result[0].x == p.x
-        assert result[0].y == p.y
+            assert isinstance(result[0], Point)
+            assert result[0].x == p.x
+            assert result[0].y == p.y
+        finally:
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -1117,8 +1152,8 @@ class TestSQLiteFeatureParity:
     )
     def test_parse_colnames_first_and_then_decltypes(self, connection, module):
         """Expect the PARSE_COLNAMES to have priority over PARSE_DECLTYPES."""
-
-        connection = next(connection(module.PARSE_DECLTYPES | module.PARSE_COLNAMES))
+        conn_gen = connection(module.PARSE_DECLTYPES | module.PARSE_COLNAMES)
+        connection = next(conn_gen)
 
         class Point:
             def __init__(self, x, y):
@@ -1156,6 +1191,7 @@ class TestSQLiteFeatureParity:
             assert result[1] == "lat: 4.0, lng: -3.2"
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection, module",
@@ -1167,16 +1203,20 @@ class TestSQLiteFeatureParity:
     def test_parse_colnames_and_decltypes_when_both_are_not_specified(
         self, connection, module
     ):
-        connection = next(connection(module.PARSE_DECLTYPES | module.PARSE_COLNAMES))
+        conn_gen = connection(module.PARSE_DECLTYPES | module.PARSE_COLNAMES)
+        connection = next(conn_gen)
 
         cursor = connection.cursor()
 
-        cursor.execute('SELECT 12, 25 "lat lng [coordinate]"')
+        try:
+            cursor.execute('SELECT 12, 25 "lat lng [coordinate]"')
 
-        result = cursor.fetchone()
+            result = cursor.fetchone()
 
-        assert result[0] == 12
-        assert result[1] == 25
+            assert result[0] == 12
+            assert result[1] == 25
+        finally:
+            close_generator(conn_gen)
 
     @pytest.mark.parametrize(
         "connection",

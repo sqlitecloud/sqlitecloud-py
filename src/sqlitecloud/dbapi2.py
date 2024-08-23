@@ -730,7 +730,7 @@ class Cursor(Iterator[Any]):
             SQLiteCloudException: If the cursor is closed.
         """
         if not self._connection:
-            raise SQLiteCloudOperationalError("The cursor is closed.")
+            raise SQLiteCloudProgrammingError("The cursor is closed.")
 
     def _adapt_parameters(self, parameters: Union[Dict, Tuple]) -> Union[Dict, Tuple]:
         if isinstance(parameters, dict):

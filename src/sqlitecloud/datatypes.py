@@ -123,7 +123,6 @@ class SQLiteCloudConnect:
     def __init__(self):
         self.socket: any = None
         self.config: SQLiteCloudConfig
-        self.isblob: bool = False
 
         self.pubsub_socket: any = None
         self.pubsub_callback: Callable[
@@ -239,6 +238,7 @@ class SQLiteCloudNumber:
         self.value: Optional[int] = None
         self.cstart: int = 0
         self.extcode: int = None
+        self.offcode: int = None
 
 
 class SQLiteCloudValue:

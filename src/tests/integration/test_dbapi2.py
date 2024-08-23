@@ -5,7 +5,7 @@ import pytest
 
 import sqlitecloud
 from sqlitecloud.datatypes import SQLITECLOUD_INTERNAL_ERRCODE, SQLiteCloudAccount
-from sqlitecloud.exceptions import SQLiteCloudException
+from sqlitecloud.exceptions import SQLiteCloudError, SQLiteCloudException
 
 
 class TestDBAPI2:
@@ -74,7 +74,7 @@ class TestDBAPI2:
     def test_column_not_found(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             connection.execute("SELECT not_a_column FROM albums")
 
         assert e.value.errcode == 1
@@ -123,7 +123,7 @@ class TestDBAPI2:
     def test_error(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             connection.execute("TEST ERROR")
 
         assert e.value.errcode == 66666

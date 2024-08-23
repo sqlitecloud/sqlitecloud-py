@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from sqlitecloud.datatypes import SQLITECLOUD_ERRCODE, SQLITECLOUD_PUBSUB_SUBJECT
-from sqlitecloud.exceptions import SQLiteCloudException
+from sqlitecloud.exceptions import SQLiteCloudError
 from sqlitecloud.pubsub import SQLiteCloudPubSub
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResultSet
 
@@ -78,7 +78,7 @@ class TestPubSub:
 
         pubsub.create_channel(connection, channel_name, if_not_exists=True)
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             pubsub.create_channel(connection, channel_name, if_not_exists=False)
 
         assert (

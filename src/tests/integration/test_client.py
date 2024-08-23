@@ -11,7 +11,11 @@ from sqlitecloud.datatypes import (
     SQLiteCloudAccount,
     SQLiteCloudConnect,
 )
-from sqlitecloud.exceptions import SQLiteCloudException
+from sqlitecloud.exceptions import (
+    SQLiteCloudError,
+    SQLiteCloudException,
+    SQLiteCloudOperationalError,
+)
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE
 
 
@@ -56,7 +60,7 @@ class TestClient:
 
         client = SQLiteCloudClient(cloud_account=account)
 
-        with pytest.raises(SQLiteCloudException):
+        with pytest.raises(SQLiteCloudError):
             client.open_connection()
 
     def test_connect_with_string(self):
@@ -124,7 +128,7 @@ class TestClient:
 
     def test_column_not_found(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudOperationalError) as e:
             client.exec_query("SELECT not_a_column FROM albums", connection)
 
         assert e.value.errcode == 1
@@ -267,7 +271,7 @@ class TestClient:
     def test_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("TEST ERROR", connection)
 
         assert e.value.errcode == 66666
@@ -276,7 +280,7 @@ class TestClient:
     def test_ext_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("TEST EXTERROR", connection)
 
         assert e.value.errcode == 66666
@@ -354,7 +358,7 @@ class TestClient:
 
         connection = client.open_connection()
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("SELECT * FROM albums", connection)
 
         client.disconnect(connection)
@@ -736,18 +740,6 @@ class TestClient:
         assert 1 == rowset.ncols
         assert 147 == len(rowset.data)
         assert "key" == rowset.get_name(0)
-
-    def test_exec_statement_with_named_placeholder(self, sqlitecloud_connection):
-        connection, client = sqlitecloud_connection
-
-        result = client.exec_statement(
-            "SELECT * FROM albums WHERE AlbumId = :id and Title = :title",
-            {"id": 1, "title": "For Those About To Rock We Salute You"},
-            connection,
-        )
-
-        assert result.nrows == 1
-        assert result.get_value(0, 0) == 1
 
     def test_exec_statement_with_qmarks(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection

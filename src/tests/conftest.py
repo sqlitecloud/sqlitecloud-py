@@ -72,10 +72,7 @@ def sqlitecloud_dbapi2_connection():
 
     yield connection
 
-    try:
-        next(connection_generator)
-    except StopIteration:
-        pass
+    close_generator(connection_generator)
 
 
 def get_sqlitecloud_dbapi2_connection(detect_types: int = 0):
@@ -103,10 +100,7 @@ def sqlite3_connection():
 
     yield connection
 
-    try:
-        next(connection_generator)
-    except StopIteration:
-        pass
+    close_generator(connection_generator)
 
 
 def get_sqlite3_connection(detect_types: int = 0):
@@ -120,3 +114,10 @@ def get_sqlite3_connection(detect_types: int = 0):
     yield connection
 
     connection.close()
+
+
+def close_generator(generator):
+    try:
+        next(generator)
+    except StopIteration:
+        pass
