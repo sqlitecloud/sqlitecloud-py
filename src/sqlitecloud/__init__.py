@@ -30,4 +30,4 @@ __all__ = [
     "Row",
 ]
 
-VERSION = "0.0.80"
+VERSION = "0.0.81"
