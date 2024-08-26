@@ -29,3 +29,5 @@ __all__ = [
     "converters",
     "Row",
 ]
+
+VERSION = "0.0.79"
