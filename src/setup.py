@@ -19,7 +19,7 @@ setup(
         "lz4 >= 3.1.10",
     ],
     classifiers=[
-        "Development Status :: 3 - Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.6",
