@@ -2,7 +2,7 @@
 build/
 experiments/
 sdk/
-venv/
+.venv*/
 main.dSYM/
 .env
 *.pyc
@@ -12,6 +12,11 @@ main.dSYM/
 .DS_Store
 
 .idea
-SqliteCloud.egg-info
+sqlitecloud.egg-info
 
 playground.ipynb
+
+src/tests/assets/*-shm
+src/tests/assets/*-wal
+
+chinook.sqlite

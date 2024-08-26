@@ -8,9 +8,9 @@ from sqlitecloud.datatypes import (
     SQLiteCloudConfig,
     SQLiteCloudConnect,
     SQLiteCloudDataTypes,
-    SQLiteCloudException,
 )
 from sqlitecloud.driver import Driver
+from sqlitecloud.exceptions import SQLiteCloudException
 from sqlitecloud.resultset import SQLiteCloudResultSet
 
 
@@ -121,9 +121,7 @@ class SQLiteCloudClient:
         Returns:
             SqliteCloudResultSet: The result set obtained from executing the query.
         """
-        prepared_statement = self._driver.prepare_statement(query, parameters)
-
-        result = self._driver.execute(prepared_statement, conn)
+        result = self._driver.execute_statement(query, parameters, conn)
 
         return SQLiteCloudResultSet(result)
 

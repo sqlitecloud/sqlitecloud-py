@@ -1,4 +1,5 @@
 import os
+import random
 import time
 
 import pytest
@@ -9,7 +10,11 @@ from sqlitecloud.datatypes import (
     SQLITECLOUD_INTERNAL_ERRCODE,
     SQLiteCloudAccount,
     SQLiteCloudConnect,
+)
+from sqlitecloud.exceptions import (
+    SQLiteCloudError,
     SQLiteCloudException,
+    SQLiteCloudOperationalError,
 )
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE
 
@@ -55,7 +60,7 @@ class TestClient:
 
         client = SQLiteCloudClient(cloud_account=account)
 
-        with pytest.raises(SQLiteCloudException):
+        with pytest.raises(SQLiteCloudError):
             client.open_connection()
 
     def test_connect_with_string(self):
@@ -123,7 +128,7 @@ class TestClient:
 
     def test_column_not_found(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudOperationalError) as e:
             client.exec_query("SELECT not_a_column FROM albums", connection)
 
         assert e.value.errcode == 1
@@ -266,7 +271,7 @@ class TestClient:
     def test_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("TEST ERROR", connection)
 
         assert e.value.errcode == 66666
@@ -275,7 +280,7 @@ class TestClient:
     def test_ext_error(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("TEST EXTERROR", connection)
 
         assert e.value.errcode == 66666
@@ -295,8 +300,8 @@ class TestClient:
         assert isinstance(result_array, list)
         assert len(result_array) == 5
         assert result_array[0] == "Hello World"
-        assert result_array[1] == "123456"
-        assert result_array[2] == "3.1415"
+        assert result_array[1] == 123456
+        assert result_array[2] == 3.1415
         assert result_array[3] is None
 
     def test_rowset(self, sqlitecloud_connection):
@@ -309,6 +314,19 @@ class TestClient:
         assert result.version in [1, 2]
         assert result.get_name(0) == "key"
         assert result.get_name(1) == "value"
+
+    def test_rowset_data_types(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+
+        bindings = ("hello world", 15175, 3.14, b"bytes world", None)
+        result = client.exec_statement("SELECT ?, ?, ?, ?, ?", bindings, connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET == result.tag
+        assert result.get_value(0, 0) == "hello world"
+        assert result.get_value(0, 1) == 15175
+        assert result.get_value(0, 2) == 3.14
+        assert result.get_value(0, 3) == b"bytes world"
+        assert result.get_value(0, 4) is None
 
     def test_max_rows_option(self):
         account = SQLiteCloudAccount()
@@ -340,7 +358,7 @@ class TestClient:
 
         connection = client.open_connection()
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             client.exec_query("SELECT * FROM albums", connection)
 
         client.disconnect(connection)
@@ -419,7 +437,7 @@ class TestClient:
             assert 2 == rowset.ncols
             assert "count" == rowset.get_name(0)
             assert "string" == rowset.get_name(1)
-            assert str(i) == rowset.get_value(0, 0)
+            assert i == rowset.get_value(0, 0)
             assert rowset.version in [1, 2]
 
     def test_query_timeout(self):
@@ -504,7 +522,7 @@ class TestClient:
         assert rowset.ncols == 2
         assert rowset.get_name(0) == "42"
         assert rowset.get_name(1) == "'hello'"
-        assert rowset.get_value(0, 0) == "42"
+        assert rowset.get_value(0, 0) == 42
         assert rowset.get_value(0, 1) == "hello"
 
     def test_select_long_formatted_string(self, sqlitecloud_connection):
@@ -616,6 +634,7 @@ class TestClient:
                         query_ms < self.EXPECT_SPEED_MS
                     ), f"{num_queries}x batched selects, {query_ms}ms per query"
 
+    @pytest.mark.slow
     def test_big_rowset(self):
         account = SQLiteCloudAccount()
         account.hostname = os.getenv("SQLITE_HOST")
@@ -623,31 +642,33 @@ class TestClient:
         account.dbname = os.getenv("SQLITE_DB")
 
         client = SQLiteCloudClient(cloud_account=account)
+        client.config.timeout = 120
 
         connection = client.open_connection()
 
+        table_name = "TestCompress" + str(random.randint(0, 99999))
         try:
             client.exec_query(
-                "CREATE TABLE IF NOT EXISTS TestCompress (id INTEGER PRIMARY KEY, name TEXT)",
+                f"CREATE TABLE {table_name} (id INTEGER PRIMARY KEY, name TEXT)",
                 connection,
             )
-            client.exec_query("DELETE FROM TestCompress", connection)
 
-            nRows = 1000
+            nRows = 5000
 
             sql = ""
             for i in range(nRows):
-                sql += f"INSERT INTO TestCompress (name) VALUES ('Test {i}'); "
+                sql += f"INSERT INTO {table_name} (name) VALUES ('Test-{i}'); "
 
             client.exec_query(sql, connection)
 
             rowset = client.exec_query(
-                "SELECT * from TestCompress",
+                f"SELECT * from {table_name}",
                 connection,
             )
 
             assert rowset.nrows == nRows
         finally:
+            client.exec_query(f"DROP TABLE IF EXISTS {table_name}", connection)
             client.disconnect(connection)
 
     def test_compression_single_column(self):
@@ -719,18 +740,6 @@ class TestClient:
         assert 1 == rowset.ncols
         assert 147 == len(rowset.data)
         assert "key" == rowset.get_name(0)
-
-    def test_exec_statement_with_named_placeholder(self, sqlitecloud_connection):
-        connection, client = sqlitecloud_connection
-
-        result = client.exec_statement(
-            "SELECT * FROM albums WHERE AlbumId = :id and Title = :title",
-            {"id": 1, "title": "For Those About To Rock We Salute You"},
-            connection,
-        )
-
-        assert result.nrows == 1
-        assert result.get_value(0, 0) == 1
 
     def test_exec_statement_with_qmarks(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection

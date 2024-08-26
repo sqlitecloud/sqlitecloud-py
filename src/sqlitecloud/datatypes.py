@@ -3,7 +3,13 @@ from enum import Enum
 from typing import Any, Callable, Dict, Optional, Union
 from urllib import parse
 
+from sqlitecloud.exceptions import SQLiteCloudException
+
 from .resultset import SQLiteCloudResultSet
+
+# SQLite supported data types
+SQLiteDataTypes = Union[str, int, float, bytes, None]
+
 
 # Basic types supported by SQLite Cloud APIs
 SQLiteCloudDataTypes = Union[str, int, bool, Dict[Union[str, int], Any], bytes, None]
@@ -117,7 +123,6 @@ class SQLiteCloudConnect:
     def __init__(self):
         self.socket: any = None
         self.config: SQLiteCloudConfig
-        self.isblob: bool = False
 
         self.pubsub_socket: any = None
         self.pubsub_callback: Callable[
@@ -224,14 +229,6 @@ class SQLiteCloudConfig:
             ) from e
 
 
-class SQLiteCloudException(Exception):
-    def __init__(self, message: str, code: int = -1, xerrcode: int = 0) -> None:
-        super().__init__(message)
-        self.errmsg = str(message)
-        self.errcode = code
-        self.xerrcode = xerrcode
-
-
 class SQLiteCloudNumber:
     """
     Represents the parsed number or the error code.
@@ -241,6 +238,7 @@ class SQLiteCloudNumber:
         self.value: Optional[int] = None
         self.cstart: int = 0
         self.extcode: int = None
+        self.offcode: int = None
 
 
 class SQLiteCloudValue:
@@ -249,6 +247,6 @@ class SQLiteCloudValue:
     """
 
     def __init__(self) -> None:
-        self.value: Optional[str] = None
+        self.value: Optional[SQLiteCloudDataTypes] = None
         self.len: int = 0
         self.cellsize: int = 0

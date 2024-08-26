@@ -22,7 +22,8 @@ class TestPanads:
             }
         )
 
-        conn.executemany("DROP TABLE IF EXISTS ?", [("PRICES",), ("TICKER_MAPPING",)])
+        for table in ["PRICES", "TICKER_MAPPING"]:
+            conn.execute(f"DROP TABLE IF EXISTS {table}")
 
         # arg if_exists="replace" raises the error
         dfprices.to_sql("PRICES", conn, index=False)

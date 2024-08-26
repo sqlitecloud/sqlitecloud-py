@@ -4,7 +4,7 @@ import tempfile
 import pytest
 
 from sqlitecloud import download
-from sqlitecloud.datatypes import SQLITECLOUD_ERRCODE, SQLiteCloudException
+from sqlitecloud.exceptions import SQLiteCloudError
 
 
 class TestDownload:
@@ -25,8 +25,7 @@ class TestDownload:
 
         temp_file = tempfile.mkstemp(prefix="missing")[1]
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudError) as e:
             download.download_db(connection, "missing.sqlite", temp_file)
 
-        assert e.value.errcode == SQLITECLOUD_ERRCODE.COMMAND.value
         assert e.value.errmsg == "Database missing.sqlite does not exist."

@@ -37,11 +37,11 @@ class TestDriver:
             ("+11 Hello World", "Hello World", 11, 15),
             ("!6 Hello0", "Hello", 5, 9),
             ("+0 ", "", 0, 3),
-            (":5678 ", "5678", 0, 6),
-            (":0 ", "0", 0, 3),
-            (",3.14 ", "3.14", 0, 6),
-            (",0 ", "0", 0, 3),
-            (",0.0 ", "0.0", 0, 5),
+            (":5678 ", 5678, 0, 6),
+            (":0 ", 0, 0, 3),
+            (",3.14 ", 3.14, 0, 6),
+            (",0 ", 0, 0, 3),
+            (",0.0 ", 0.0, 0, 5),
             ("_ ", None, 0, 2),
         ],
         ids=[
@@ -73,7 +73,7 @@ class TestDriver:
     def test_parse_array(self):
         driver = Driver()
         buffer = b"=5 +11 Hello World:123456 ,3.1415 _ $10 0123456789"
-        expected_list = ["Hello World", "123456", "3.1415", None, "0123456789"]
+        expected_list = ["Hello World", 123456, 3.1415, None, b"0123456789"]
 
         result = driver._internal_parse_array(buffer)
 
@@ -92,128 +92,6 @@ class TestDriver:
         assert 1 == result.nrows
         assert 2 == result.ncols
 
-    def test_prepare_statement_with_tuple_parameters(self):
-        driver = Driver()
-
-        query = "SELECT * FROM users WHERE age > ? AND name = ?"
-        parameters = (18, "John")
-
-        expected_result = "SELECT * FROM users WHERE age > 18 AND name = 'John'"
-        result = driver.prepare_statement(query, parameters)
-
-        assert expected_result == result
-
-    def test_prepare_statement_with_dict_parameters(self):
-        driver = Driver()
-
-        query = "INSERT INTO users (name, age) VALUES (:name, :age)"
-        parameters = {"name": "Alice", "age": 25}
-
-        expected_result = "INSERT INTO users (name, age) VALUES ('Alice', 25)"
-        result = driver.prepare_statement(query, parameters)
-
-        assert expected_result == result
-
-    def test_prepare_statement_with_missing_parameters_does_not_raise_exception(self):
-        driver = Driver()
-
-        query = "UPDATE users SET name = :name, age = :age WHERE id = :id"
-        parameters = {"name": "Bob"}
-
-        expected_result = "UPDATE users SET name = 'Bob', age = :age WHERE id = :id"
-
-        result = driver.prepare_statement(query, parameters)
-
-        assert expected_result == result
-
-    def test_prepare_statement_with_extra_parameters(self):
-        driver = Driver()
-
-        query = "SELECT * FROM users WHERE age > :age"
-        parameters = {"age": 30, "name": "Alice"}
-
-        expected_result = "SELECT * FROM users WHERE age > 30"
-
-        result = driver.prepare_statement(query, parameters)
-
-        assert expected_result == result
-
-    def test_prepare_statement_with_sql_injection_threat(self):
-        driver = Driver()
-
-        query = "SELECT * FROM phone WHERE name = ?"
-        parameter = ("Jack's phone; DROP TABLE phone;",)
-
-        expected_result = (
-            "SELECT * FROM phone WHERE name = 'Jack''s phone; DROP TABLE phone;'"
-        )
-        result = driver.prepare_statement(query, parameter)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_string(self):
-        driver = Driver()
-        param = "John's SQL"
-
-        expected_result = "'John''s SQL'"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_integer(self):
-        driver = Driver()
-        param = 123
-
-        expected_result = "123"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_float(self):
-        driver = Driver()
-        param = 3.14
-
-        expected_result = "3.14"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_none(self):
-        driver = Driver()
-        param = None
-
-        expected_result = "NULL"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_bool(self):
-        driver = Driver()
-        param = True
-
-        expected_result = "1"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_bytes(self):
-        driver = Driver()
-        param = b"Hello"
-
-        expected_result = "X'48656c6c6f'"
-        result = driver.escape_sql_parameter(param)
-
-        assert expected_result == result
-
-    def test_escape_sql_parameter_with_dict(self):
-        driver = Driver()
-        param = {"name": "O'Conner", "age": 25}
-
-        expected_result = '\'{"name": "O\'\'Conner", "age": 25}\''
-        driver.escape_sql_parameter(param)
-
-        assert expected_result
-
     def test_nonlinearizable_command_before_auth_with_account(
         self, mocker: MockerFixture
     ):
@@ -231,7 +109,7 @@ class TestDriver:
         driver.connect("myhost", 8860, config)
 
         expected_buffer = (
-            "SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH USER pippo PASSWORD pluto;"
+            b"SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH USER pippo PASSWORD pluto;"
         )
 
         run_command_mock.assert_called_once()
@@ -252,7 +130,7 @@ class TestDriver:
 
         driver.connect("myhost", 8860, config)
 
-        expected_buffer = "SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH APIKEY abc123;"
+        expected_buffer = b"SET CLIENT KEY NONLINEARIZABLE TO 1;AUTH APIKEY abc123;"
 
         run_command_mock.assert_called_once()
         assert expected_buffer in run_command_mock.call_args[0][1]
@@ -269,7 +147,35 @@ class TestDriver:
 
         driver.connect("myhost", 8860, config)
 
-        expected_buffer = "SET CLIENT KEY COMPRESSION TO 1;"
+        expected_buffer = b"SET CLIENT KEY COMPRESSION TO 1;"
 
         run_command_mock.assert_called_once()
         assert expected_buffer in run_command_mock.call_args[0][1]
+
+    @pytest.mark.parametrize(
+        "data, expected, zero_string",
+        [
+            ("hello world", b"+11 hello world", False),
+            ("hello world", b"!12 hello world\0", True),
+            (123, b":123 ", False),
+            (3.14, b",3.14 ", False),
+            (b"hello", b"$5 hello", False),
+            (None, b"_ ", False),
+            (
+                ["SELECT ?, ?, ?, ?, ?", "world", 123, 3.14, None, b"hello"],
+                b"=57 6 !21 SELECT ?, ?, ?, ?, ?\x00!6 world\x00:123 ,3.14 _ $5 hello",
+                True,
+            ),
+            (
+                ["SELECT ?", "'hello world'"],
+                b"=31 2 !9 SELECT ?\x00+13 'hello world'",
+                False,
+            ),
+        ],
+    )
+    def test_internal_serialize_command(self, data, zero_string, expected):
+        driver = Driver()
+
+        serialized = driver._internal_serialize_command(data, zero_string=zero_string)
+
+        assert serialized == expected

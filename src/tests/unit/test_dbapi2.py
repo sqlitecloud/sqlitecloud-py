@@ -3,13 +3,9 @@ from pytest_mock import MockerFixture
 
 import sqlitecloud
 from sqlitecloud import Cursor
-from sqlitecloud.datatypes import (
-    SQLiteCloudAccount,
-    SQLiteCloudConfig,
-    SQLiteCloudException,
-)
+from sqlitecloud.datatypes import SQLiteCloudAccount, SQLiteCloudConfig
 from sqlitecloud.dbapi2 import Connection
-from sqlitecloud.driver import Driver
+from sqlitecloud.exceptions import SQLiteCloudProgrammingError
 from sqlitecloud.resultset import SQLITECLOUD_RESULT_TYPE, SQLiteCloudResult
 
 
@@ -104,45 +100,6 @@ class TestCursor:
 
         assert cursor.rowcount == -1
 
-    def test_execute_escaped(self, mocker: MockerFixture):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        execute_mock = mocker.patch.object(Driver, "execute")
-
-        sql = "SELECT * FROM users WHERE name = ?"
-        parameters = ("John's",)
-
-        cursor.execute(sql, parameters)
-
-        assert (
-            execute_mock.call_args[0][0] == "SELECT * FROM users WHERE name = 'John''s'"
-        )
-
-    def test_executemany(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        execute_mock = mocker.patch.object(cursor, "execute")
-
-        sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-        seq_of_parameters = [("John", 25), ("Jane", 30), ("Bob", 40)]
-
-        cursor.executemany(sql, seq_of_parameters)
-
-        execute_mock.assert_called_once_with(
-            "INSERT INTO users (name, age) VALUES ('John', 25);INSERT INTO users (name, age) VALUES ('Jane', 30);INSERT INTO users (name, age) VALUES ('Bob', 40);"
-        )
-
-    def test_executemany_escaped(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
-        execute_mock = mocker.patch.object(cursor, "execute")
-
-        sql = "INSERT INTO users (name, age) VALUES (?, ?)"
-        seq_of_parameters = [("O'Conner", 25)]
-
-        cursor.executemany(sql, seq_of_parameters)
-
-        execute_mock.assert_called_once_with(
-            "INSERT INTO users (name, age) VALUES ('O''Conner', 25);"
-        )
-
     def test_fetchone_with_no_resultset(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 
@@ -157,7 +114,10 @@ class TestCursor:
         assert cursor.fetchone() is None
 
     def test_fetchone_with_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -195,7 +155,10 @@ class TestCursor:
         assert cursor.fetchmany() == []
 
     def test_fetchmany_with_rowset_and_default_size(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -207,7 +170,10 @@ class TestCursor:
         assert cursor.fetchmany(None) == [("myname1",)]
 
     def test_fetchmany_twice_to_retrieve_whole_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -220,7 +186,10 @@ class TestCursor:
         assert cursor.fetchmany() == []
 
     def test_fetchmany_with_size_higher_than_rowcount(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -245,7 +214,10 @@ class TestCursor:
         assert cursor.fetchall() == []
 
     def test_fetchall_with_rowset(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -257,7 +229,10 @@ class TestCursor:
         assert cursor.fetchall() == [("myname1",), ("myname2",), ("myname3",)]
 
     def test_fetchall_twice_and_expect_empty_list(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -270,7 +245,10 @@ class TestCursor:
         assert cursor.fetchall() == []
 
     def test_fetchall_to_return_remaining_rows(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -283,7 +261,10 @@ class TestCursor:
         assert cursor.fetchall() == [("myname2",)]
 
     def test_iterator(self, mocker):
-        cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
+        connection = mocker.patch("sqlitecloud.Connection")
+        connection.text_factory = str
+
+        cursor = Cursor(connection)
 
         result = SQLiteCloudResult(SQLITECLOUD_RESULT_TYPE.RESULT_ROWSET)
         result.ncols = 1
@@ -327,7 +308,7 @@ class TestCursor:
 
         cursor.close()
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudProgrammingError) as e:
             getattr(cursor, method)(*args)
 
         assert e.value.args[0] == "The cursor is closed."
