@@ -147,7 +147,7 @@ class TestDriver:
 
         driver.connect("myhost", 8860, config)
 
-        expected_buffer = "SET CLIENT KEY COMPRESSION TO 1;"
+        expected_buffer = b"SET CLIENT KEY COMPRESSION TO 1;"
 
         run_command_mock.assert_called_once()
         assert expected_buffer in run_command_mock.call_args[0][1]

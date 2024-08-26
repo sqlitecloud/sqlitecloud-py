@@ -9,7 +9,7 @@ from datetime import date, datetime
 import pytest
 
 import sqlitecloud
-from sqlitecloud.exceptions import SQLiteCloudException, SQLiteCloudProgrammingError
+from sqlitecloud.exceptions import SQLiteCloudProgrammingError
 from tests.conftest import (
     close_generator,
     get_sqlite3_connection,
@@ -18,32 +18,53 @@ from tests.conftest import (
 
 
 class TestSQLiteFeatureParity:
-    def test_connection_close(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
-        sqlitecloud_connection = sqlitecloud_dbapi2_connection
+    @pytest.mark.parametrize(
+        "connection, expected",
+        [
+            ("sqlitecloud_dbapi2_connection", SQLiteCloudProgrammingError),
+            ("sqlite3_connection", sqlite3.ProgrammingError),
+        ],
+    )
+    def test_connection_close(self, connection, expected, request):
+        connection = request.getfixturevalue(connection)
 
-        sqlitecloud_connection.close()
-        sqlite3_connection.close()
+        connection.close()
 
-        with pytest.raises(SQLiteCloudException) as e:
-            sqlitecloud_connection.execute("SELECT 1")
+        with pytest.raises(expected) as e:
+            connection.execute("SELECT 1")
 
-        assert isinstance(e.value, SQLiteCloudException)
+        assert isinstance(e.value, expected)
 
-        with pytest.raises(sqlite3.ProgrammingError) as e:
-            sqlite3_connection.execute("SELECT 1")
+    @pytest.mark.parametrize(
+        "connection, expected",
+        [
+            ("sqlitecloud_dbapi2_connection", SQLiteCloudProgrammingError),
+            ("sqlite3_connection", sqlite3.ProgrammingError),
+        ],
+    )
+    def test_cursor_close(self, connection, expected, request):
+        connection = request.getfixturevalue(connection)
 
-        assert isinstance(e.value, sqlite3.ProgrammingError)
+        cursor = connection.cursor()
 
-    def test_ping_select(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
-        sqlitecloud_connection = sqlitecloud_dbapi2_connection
+        cursor.close()
 
-        sqlitecloud_cursor = sqlitecloud_connection.execute("SELECT 1")
-        sqlite3_cursor = sqlite3_connection.execute("SELECT 1")
+        with pytest.raises(expected) as e:
+            cursor.execute("SELECT 1")
 
-        sqlitecloud_cursor = sqlitecloud_cursor.fetchall()
-        sqlite3_cursor = sqlite3_cursor.fetchall()
+        assert isinstance(e.value, expected)
 
-        assert sqlitecloud_cursor == sqlite3_cursor
+    @pytest.mark.parametrize(
+        "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
+    )
+    def test_ping_select(self, connection, request):
+        connection = request.getfixturevalue(connection)
+
+        cursor = connection.execute("SELECT 1")
+
+        cursor = cursor.fetchall()
+
+        assert cursor == [(1,)]
 
     @pytest.mark.parametrize(
         "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
@@ -51,26 +72,27 @@ class TestSQLiteFeatureParity:
     def test_create_table_and_insert_many(self, connection, request):
         connection = request.getfixturevalue(connection)
 
-        create_table_query = "CREATE TABLE IF NOT EXISTS sqlitetest (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"
-        connection.execute(create_table_query)
+        table = "sqlitetest" + str(random.randint(0, 99999))
+        try:
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {table} (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"
+            connection.execute(create_table_query)
 
-        truncate_table_query = "DELETE FROM sqlitetest"
-        connection.execute(truncate_table_query)
+            insert_query = f"INSERT INTO {table} (name, age) VALUES (?, ?)"
+            params = [("Alice", 25), ("Bob", 30)]
+            connection.executemany(insert_query, params)
 
-        insert_query = "INSERT INTO sqlitetest (name, age) VALUES (?, ?)"
-        params = [("Alice", 25), ("Bob", 30)]
-        connection.executemany(insert_query, params)
+            select_query = f"SELECT * FROM {table}"
+            cursor = connection.execute(select_query)
 
-        select_query = "SELECT * FROM sqlitetest"
-        cursor = connection.execute(select_query)
+            results = cursor.fetchall()
 
-        results = cursor.fetchall()
-
-        assert len(results) == 2
-        assert results[0][1] == "Alice"
-        assert results[0][2] == 25
-        assert results[1][1] == "Bob"
-        assert results[1][2] == 30
+            assert len(results) == 2
+            assert results[0][1] == "Alice"
+            assert results[0][2] == 25
+            assert results[1][1] == "Bob"
+            assert results[1][2] == 30
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {table}")
 
     @pytest.mark.parametrize(
         "connection", ["sqlitecloud_dbapi2_connection", "sqlite3_connection"]
@@ -175,9 +197,6 @@ class TestSQLiteFeatureParity:
 
         assert connection.total_changes == 2
 
-    @pytest.mark.skip(
-        reason="Rowcount does not contain the number of inserted rows yet"
-    )
     def test_insert_result(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
 
@@ -375,13 +394,18 @@ class TestSQLiteFeatureParity:
         """Since py3.7 the parsed of `[decltype]` disabled when PARSE_COLNAMES.
         See bpo-39652 https://github.com/python/cpython/issues/83833"""
         if parse_colnames:
-            connection = next(connection(module.PARSE_COLNAMES))
+            connection_gen = connection(module.PARSE_COLNAMES)
         else:
-            connection = next(connection())
+            connection_gen = connection()
 
-        cursor = connection.execute(f"SELECT {value}")
+        connection = next(connection_gen)
 
-        assert cursor.description[0][0] == expected
+        try:
+            cursor = connection.execute(f"SELECT {value}")
+
+            assert cursor.description[0][0] == expected
+        finally:
+            close_generator(connection_gen)
 
     def test_fetch_one(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
@@ -508,7 +532,7 @@ class TestSQLiteFeatureParity:
         sqlitecloud_dbapi2_connection: sqlitecloud.Connection,
         sqlite3_connection: sqlite3.Connection,
     ):
-        seed = str(int(time.time()))
+        seed = str(uuid.uuid4())
 
         sqlitecloud_conn_gen = get_sqlitecloud_dbapi2_connection()
         sqlite_conn_gen = get_sqlite3_connection()
@@ -878,7 +902,9 @@ class TestSQLiteFeatureParity:
         ],
     )
     def test_parse_decltypes(self, connection, module):
-        connection = next(connection(module.PARSE_DECLTYPES))
+        connection_gen = connection(module.PARSE_DECLTYPES)
+
+        connection = next(connection_gen)
 
         class Point:
             def __init__(self, x, y):
@@ -909,6 +935,7 @@ class TestSQLiteFeatureParity:
             assert result[0].y == p.y
         finally:
             connection.execute(f"DROP TABLE IF EXISTS {tableName}")
+            close_generator(connection_gen)
 
     @pytest.mark.parametrize(
         "connection, module",

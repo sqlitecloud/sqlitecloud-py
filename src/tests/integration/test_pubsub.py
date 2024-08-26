@@ -133,15 +133,16 @@ class TestPubSub:
         assert pubsub.is_connected(connection)
 
         connection2 = client.open_connection()
-        pubsub2 = SQLiteCloudPubSub()
-        pubsub2.notify_channel(connection2, channel, "message-in-a-bottle")
+        try:
+            pubsub2 = SQLiteCloudPubSub()
+            pubsub2.notify_channel(connection2, channel, "message-in-a-bottle")
 
-        client.disconnect(connection2)
+            # wait for callback to be called
+            flag.wait(30)
 
-        # wait for callback to be called
-        flag.wait(30)
-
-        assert callback_called
+            assert callback_called
+        finally:
+            client.disconnect(connection2)
 
     def test_listen_table_for_update(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection

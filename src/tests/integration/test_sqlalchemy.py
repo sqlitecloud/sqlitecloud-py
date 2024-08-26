@@ -39,23 +39,33 @@ def sqlitecloud_connection_string():
     database = os.getenv("SQLITE_DB")
     apikey = os.getenv("SQLITE_API_KEY")
 
-    return f"{connection_string}/{database}?apikey={apikey}"
+    engine = db.create_engine(f"{connection_string}/{database}?apikey={apikey}")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    yield session
+
+    session.close()
+    engine.dispose()
 
 
 @pytest.fixture()
 def sqlite_connection_string():
-    return "sqlite:///src/tests/assets/chinook.sqlite"
+    engine = db.create_engine("sqlite:///src/tests/assets/chinook.sqlite")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    yield session
+
+    session.close()
+    engine.dispose()
 
 
 @pytest.mark.parametrize(
-    "connection_string", ["sqlitecloud_connection_string", "sqlite_connection_string"]
+    "session", ["sqlitecloud_connection_string", "sqlite_connection_string"]
 )
-def test_insert_and_select(connection_string, request):
-    connection_string = request.getfixturevalue(connection_string)
-
-    engine = db.create_engine(connection_string)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+def test_insert_and_select(session, request):
+    session = request.getfixturevalue(session)
 
     name = "Mattew" + str(uuid.uuid4())
     query = db.insert(Artist).values(Name=name)

@@ -1,5 +1,6 @@
 import random
 import tempfile
+import uuid
 
 from sqlitecloud.driver import Driver
 from sqlitecloud.resultset import SQLiteCloudOperationResult, SQLiteCloudResult
@@ -48,7 +49,7 @@ class TestDriver:
 
         connection, _ = sqlitecloud_connection
 
-        name = "MyGenre" + str(random.randint(0, 1000))
+        name = "MyGenre" + str(uuid.uuid4())
         query = "INSERT INTO genres (Name) VALUES (?)"
         bindings = [name]
 

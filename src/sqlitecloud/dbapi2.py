@@ -225,11 +225,10 @@ class Connection:
     Represents a DB-API 2.0 connection to the SQLite Cloud database.
 
     Args:
-        SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
+        sqlitecloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
 
     Attributes:
-        _driver (Driver): The driver object used for database operations.
-        SQLiteCloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
+        sqlitecloud_connection (SQLiteCloudConnect): The SQLite Cloud connection object.
     """
 
     def __init__(
@@ -245,16 +244,6 @@ class Connection:
         self.detect_types = detect_types
 
         self.total_changes = 0
-
-    @property
-    def sqlcloud_connection(self) -> SQLiteCloudConnect:
-        """
-        Returns the SQLite Cloud connection object.
-
-        Returns:
-            SQLiteCloudConnect: The SQLite Cloud connection object.
-        """
-        return self.sqlitecloud_connection
 
     @property
     def autocommit(self) -> bool:
@@ -350,6 +339,15 @@ class Connection:
             Therefore, only the main socket is closed.
         """
         self._driver.disconnect(self.sqlitecloud_connection, True)
+
+    def is_connected(self) -> bool:
+        """
+        Check if the connection to SQLite Cloud database is still open.
+
+        Returns:
+            bool: True if the connection is open, False otherwise.
+        """
+        return self._driver.is_connected(self.sqlitecloud_connection)
 
     def commit(self):
         """
@@ -583,7 +581,7 @@ class Cursor(Iterator[Any]):
             parameters = self._named_to_question_mark_parameters(sql, parameters)
 
         result = self._driver.execute_statement(
-            sql, parameters, self.connection.sqlcloud_connection
+            sql, parameters, self.connection.sqlitecloud_connection
         )
 
         self._resultset = None
@@ -729,8 +727,8 @@ class Cursor(Iterator[Any]):
         Raises:
             SQLiteCloudException: If the cursor is closed.
         """
-        if not self._connection:
-            raise SQLiteCloudProgrammingError("The cursor is closed.")
+        if not self._connection or not self._connection.is_connected():
+            raise SQLiteCloudProgrammingError("The cursor is closed.", code=1)
 
     def _adapt_parameters(self, parameters: Union[Dict, Tuple]) -> Union[Dict, Tuple]:
         if isinstance(parameters, dict):

@@ -4,8 +4,8 @@ import uuid
 import pytest
 
 import sqlitecloud
-from sqlitecloud.datatypes import SQLITECLOUD_INTERNAL_ERRCODE, SQLiteCloudAccount
-from sqlitecloud.exceptions import SQLiteCloudError, SQLiteCloudException
+from sqlitecloud.datatypes import SQLiteCloudAccount
+from sqlitecloud.exceptions import SQLiteCloudError, SQLiteCloudProgrammingError
 
 
 class TestDBAPI2:
@@ -46,11 +46,11 @@ class TestDBAPI2:
 
         assert isinstance(connection, sqlitecloud.Connection)
 
-        with pytest.raises(SQLiteCloudException) as e:
+        with pytest.raises(SQLiteCloudProgrammingError) as e:
             connection.execute("SELECT 1")
 
-        assert e.value.errcode == SQLITECLOUD_INTERNAL_ERRCODE.NETWORK
-        assert e.value.errmsg == "The connection is closed."
+        assert e.value.errcode == 1
+        assert e.value.errmsg == "The cursor is closed."
 
     def test_select(self, sqlitecloud_dbapi2_connection):
         connection = sqlitecloud_dbapi2_connection
@@ -432,3 +432,12 @@ class TestDBAPI2:
         assert cursor.fetchone() is None
         assert cursor.lastrowid == cursor_insert.lastrowid
         assert cursor.rowcount == 1
+
+    def test_connection_is_connected(self, sqlitecloud_dbapi2_connection):
+        connection = sqlitecloud_dbapi2_connection
+
+        assert connection.is_connected()
+
+        connection.close()
+
+        assert not connection.is_connected()

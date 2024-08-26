@@ -642,7 +642,7 @@ class TestClient:
         account.dbname = os.getenv("SQLITE_DB")
 
         client = SQLiteCloudClient(cloud_account=account)
-        client.config.timeout = 100
+        client.config.timeout = 120
 
         connection = client.open_connection()
 
