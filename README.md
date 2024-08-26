@@ -105,7 +105,7 @@ _This is an initial release, features and stability may not be guaranteed in all
 _If you encounter any bugs or issues, please feel free to open an issue on our GitHub repository._
 
 We’ve implemented the initial support for `sqlitecloud` with [SQLAlchemy](https://www.sqlalchemy.org/), allowing you to utilize all standard SQLAlchemy operations and queries.
-For further information, please see the dedicated [REDAME](https://github.com/sqlitecloud/sqlitecloud-py/tree/%238-compatibility-sqlite3-dbapi2/sqlalchemy-sqlitecloud).
+For further information, please see the dedicated [REDAME](https://github.com/sqlitecloud/sqlitecloud-py/tree/main/sqlalchemy-sqlitecloud).
 
 ### Example
 

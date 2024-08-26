@@ -1,5 +1,10 @@
 # SQLite Cloud Dialect for SQLAlchemy (Beta)
 
+![PyPI - Version](https://img.shields.io/pypi/v/sqlalchemy-sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2Fsqlalchemy-sqlitecloud%2F)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/sqlalchemy-sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2Fsqlalchemy-sqlitecloud%2F)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sqlalchemy-sqlitecloud?link=https%3A%2F%2Fpypi.org%2Fproject%2Fsqlalchemy-sqlitecloud%2F)
+
+
 This package enables SQLAlchemy to work seamlessly with SQLite Cloud. The dialect is built upon the existing `sqlite` dialect in SQLAlchemy.
 
 ## Beta Version
