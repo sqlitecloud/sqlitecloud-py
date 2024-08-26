@@ -61,8 +61,18 @@ def test_insert_and_select(connection_string, request):
     query = db.insert(Artist).values(Name=name)
     result_insert = session.execute(query)
 
-    query = db.select(Artist).where(Artist.ArtistId == result_insert.lastrowid)
-    result_select = session.execute(query).fetchone()
+    title = "The Album" + str(uuid.uuid4())
+    query = db.insert(Album).values(ArtistId=result_insert.lastrowid, Title=title)
+    session.execute(query)
 
-    assert result_select[0].ArtistId == result_insert.lastrowid
-    assert result_select[0].Name == name
+    query = (
+        db.select(Artist, Album)
+        .join(Album, Artist.ArtistId == Album.ArtistId)
+        .where(Artist.ArtistId == result_insert.lastrowid)
+    )
+
+    result = session.execute(query).fetchone()
+
+    assert result[0].ArtistId == result_insert.lastrowid
+    assert result[0].Name == name
+    assert result[1].Title == title

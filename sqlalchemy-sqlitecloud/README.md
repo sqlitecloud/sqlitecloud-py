@@ -37,6 +37,65 @@ from sqlalchemy import create_engine
 engine = create_engine('sqlitecloud://mynode.sqlite.io?apikey=key1234')
 ```
 
+### Example
+
+_The example is based on `chinook.sqlite` database on SQLite Cloud_
+
+```python
+import sqlalchemy
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.dialects import registry
+from sqlalchemy.orm import backref, declarative_base, relationship, sessionmaker
+
+Base = declarative_base()
+
+
+class Artist(Base):
+    __tablename__ = "artists"
+
+    ArtistId = Column("ArtistId", Integer, primary_key=True)
+    Name = Column("Name", String)
+    Albums = relationship("Album", backref=backref("artist"))
+
+
+class Album(Base):
+    __tablename__ = "albums"
+
+    AlbumId = Column("AlbumId", Integer, primary_key=True)
+    ArtistId = Column("ArtistId", Integer, ForeignKey("artists.ArtistId"))
+    Title = Column("Title", String)
+
+# SQLite Cloud connection string
+connection_string = "sqlitecloud://myhost.sqlite.cloud:8860/mydatabase.sqlite?apikey=myapikey"
+
+engine = sqlalchemy.create_engine(connection_string)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+name = "John Doe"
+query = sqlalchemy.insert(Artist).values(Name=name)
+result_insert = session.execute(query)
+
+title = "The Album"
+query = sqlalchemy.insert(Album).values(
+    ArtistId=result_insert.lastrowid, Title=title
+)
+session.execute(query)
+
+query = (
+    sqlalchemy.select(Artist, Album)
+    .join(Album, Artist.ArtistId == Album.ArtistId)
+    .where(Artist.ArtistId == result_insert.lastrowid)
+)
+
+result = session.execute(query).fetchone()
+
+print("Artist Name: " + result[0].Name)
+print("Album Title: " + result[1].Title)
+
+```
+
+
 
 # Run the Test Suite
 
