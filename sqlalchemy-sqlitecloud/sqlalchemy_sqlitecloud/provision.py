@@ -1,6 +1,6 @@
 import os
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from sqlalchemy.engine import make_url
 from sqlalchemy.pool import Pool
 from sqlalchemy.testing.provision import (
@@ -10,17 +10,13 @@ from sqlalchemy.testing.provision import (
     temp_table_keyword_args,
 )
 
-_drivernames = {
-    "sqlitecloud",
-}
-
 
 @generate_driver_url.for_db("sqlitecloud")
 def generate_driver_url(url, driver, query_str):
     # no database specified here, it's created and used later
     # eg: sqlitecloud://mynode.sqlite.cloud/?apikey=key123
 
-    load_dotenv("../../.env")
+    load_dotenv(find_dotenv("../../.env"))
 
     connection_string = os.getenv("SQLITE_CONNECTION_STRING")
     apikey = os.getenv("SQLITE_API_KEY")
