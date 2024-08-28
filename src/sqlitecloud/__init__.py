@@ -4,4 +4,4 @@
 #
 from .dbapi2 import *  # noqa
 
-VERSION = "0.0.82"
+VERSION = "0.0.83"
