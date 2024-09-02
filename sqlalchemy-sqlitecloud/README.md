@@ -11,17 +11,16 @@ This package enables SQLAlchemy to work seamlessly with SQLite Cloud. The dialec
 
 This dialect is in its early stages and is compatible with Python >= 3.6.
 
-**Note:** It has been tested only `SQLAlchemy 1.4`.
+It has been tested on both `SQLAlchemy 2.0` and `SQLAlchemy 1.4`.
 
 The dialect has undergone testing against the SQLAlchemy `test_suite`, as outlined in the [official documentation](https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_53/README.dialects.rst).
 
-You can track the progress of the remaining test issues [in this issue](https://github.com/sqlitecloud/sqlitecloud-py/issues/21#issuecomment-2305162632).
-
-_The same tests failed and passed on both Python 3.6 and Python 3.11._
+You can track the progress of the remaining test issues [in this issue](https://github.com/sqlitecloud/sqlitecloud-py/issues/32).   
+_The same tests failed and passed on Python 3.6, 3.7 and 3.11._
 
 ## References
 
-- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/en/14/index.html)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/en/20/)
 - [SQLAlchemy Official Website](https://www.sqlalchemy.org/)
 
 ## Installation and Usage

@@ -6,7 +6,7 @@ long_description = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="sqlalchemy-sqlitecloud",
-    version="0.1.0",
+    version="0.1.2",
     author="sqlitecloud.io",
     description="SQLAlchemy Dialect for SQLite Cloud.",
     long_description=long_description,
@@ -14,7 +14,7 @@ setup(
     url="https://github.com/sqlitecloud/sqlitecloud-py",
     packages=find_packages(),
     install_requires=[
-        "sqlitecloud",
+        "sqlitecloud >= 0.0.83",
     ],
     keywords="SQLAlchemy SQLite Cloud",
     classifiers=[

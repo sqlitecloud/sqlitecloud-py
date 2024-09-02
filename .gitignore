@@ -12,7 +12,8 @@ main.dSYM/
 .DS_Store
 
 .idea
-sqlitecloud.egg-info
+**/*.egg-info
+**/dist
 
 playground.ipynb
 
