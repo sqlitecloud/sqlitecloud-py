@@ -207,10 +207,10 @@ class Driver:
     def _internal_pubsub_thread(self, connection: SQLiteCloudConnect) -> None:
         blen = 2048
         buffer: bytes = b""
+        tread = 0
 
         try:
             while True:
-                tread = 0
 
                 try:
                     if not connection.pubsub_socket:
@@ -240,7 +240,6 @@ class Driver:
 
                 nread = len(data)
                 tread += nread
-                blen -= nread
                 buffer += data
 
                 sqlitecloud_number = self._internal_parse_number(buffer)
@@ -262,11 +261,16 @@ class Driver:
                 connection.pubsub_callback(
                     connection, SQLiteCloudResultSet(result), connection.pubsub_data
                 )
+
+                # reset after having read the message
+                tread = 0
+                buffer: bytes = b""
         except Exception as e:
             logging.error(f"An error occurred while parsing data: {e}.")
 
         finally:
-            connection.pubsub_callback(connection, None, connection.pubsub_data)
+            if connection and connection.pubsub_callback:
+                connection.pubsub_callback(connection, None, connection.pubsub_data)
 
     def upload_database(
         self,

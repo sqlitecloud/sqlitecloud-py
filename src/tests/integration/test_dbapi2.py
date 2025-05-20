@@ -441,3 +441,18 @@ class TestDBAPI2:
         connection.close()
 
         assert not connection.is_connected()
+
+    def test_fetchall_returns_right_nrows_number(self, sqlitecloud_dbapi2_connection):
+        connection = sqlitecloud_dbapi2_connection
+
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM Genres LIMIT 3")
+
+        assert len(cursor.fetchall()) == 3
+        assert cursor.rowcount == 3
+
+        cursor.execute("SELECT * FROM Albums LIMIT 4")
+
+        assert len(cursor.fetchall()) == 4
+        assert cursor.rowcount == 4

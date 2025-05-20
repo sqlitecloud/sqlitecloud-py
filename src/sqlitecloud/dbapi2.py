@@ -584,8 +584,7 @@ class Cursor(Iterator[Any]):
             sql, parameters, self.connection.sqlitecloud_connection
         )
 
-        self._resultset = None
-        self._result_operation = None
+        self._reset()
 
         if isinstance(result, SQLiteCloudResult):
             self._resultset = result
@@ -852,6 +851,12 @@ class Cursor(Iterator[Any]):
         decltype = self._resultset.get_decltype(col)
 
         return self._convert_value(value, colname, decltype)
+
+    def _reset(self) -> None:
+        self._resultset = None
+        self._result_operation = None
+
+        self._iter_row = 0
 
     def __iter__(self) -> "Cursor":
         return self
