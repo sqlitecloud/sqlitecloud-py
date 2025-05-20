@@ -47,6 +47,38 @@ class TestPubSub:
 
         assert callback_called
 
+    def test_notify_multiple_messages(self, sqlitecloud_connection):
+        connection, _ = sqlitecloud_connection
+
+        called_times = 3
+        flag = threading.Event()
+
+        def assert_callback(conn, result, data):
+            nonlocal called_times
+            nonlocal flag
+
+            if isinstance(result, SQLiteCloudResultSet):
+                assert data == ["somedataX"]
+                called_times -= 1
+                if called_times == 0:
+                    flag.set()
+
+        pubsub = SQLiteCloudPubSub()
+        subject_type = SQLITECLOUD_PUBSUB_SUBJECT.CHANNEL
+        channel = "channel" + str(uuid.uuid4())
+
+        pubsub.create_channel(connection, channel)
+        pubsub.listen(connection, subject_type, channel, assert_callback, ["somedataX"])
+
+        pubsub.notify_channel(connection, channel, "somedataX")
+        pubsub.notify_channel(connection, channel, "somedataX")
+        pubsub.notify_channel(connection, channel, "somedataX")
+
+        # wait for callback to be called
+        flag.wait(30)
+
+        assert called_times == 0
+
     def test_unlisten_channel(self, sqlitecloud_connection):
         connection, _ = sqlitecloud_connection
 
