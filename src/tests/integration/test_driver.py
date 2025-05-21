@@ -1,3 +1,4 @@
+import hashlib
 import random
 import tempfile
 import uuid
@@ -113,3 +114,28 @@ class TestDriver:
         assert result.changes == 1
         assert result.total_changes == 2  # insert + update
         assert result.finalized == 1
+
+    def test_prepare_statement_insert_blob(self, sqlitecloud_connection):
+        driver = Driver()
+
+        connection, _ = sqlitecloud_connection
+
+        hash_data = hashlib.sha256(b"my blob data").digest()
+
+        driver.execute_statement(
+            "CREATE TABLE IF NOT EXISTS blobs (id INTEGER PRIMARY KEY, hash BLOB NOT NULL);",
+            [],
+            connection,
+        )
+        insert_result = driver.execute_statement(
+            "INSERT INTO blobs (hash) VALUES (?);", (hash_data,), connection
+        )
+        result = driver.execute_statement(
+            "SELECT id, hash FROM blobs WHERE id = ? and hash = ?;",
+            (insert_result.rowid, hash_data),
+            connection,
+        )
+
+        assert result.nrows == 1
+        assert result.get_value(0, 1) == hash_data
+        assert result.get_value(0, 0) == insert_result.rowid

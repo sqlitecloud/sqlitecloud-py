@@ -179,3 +179,21 @@ class TestDriver:
         serialized = driver._internal_serialize_command(data, zero_string=zero_string)
 
         assert serialized == expected
+
+    def test_expect_command_auth_token(self, mocker: MockerFixture):
+        driver = Driver()
+
+        config = SQLiteCloudConfig()
+        config.account = SQLiteCloudAccount()
+        config.account.token = "abc123"
+
+        mocker.patch.object(driver, "_internal_connect", return_value=None)
+        run_command_mock = mocker.patch.object(driver, "_internal_run_command")
+
+        driver.connect("myhost", 8860, config)
+
+        expected_buffer = b"AUTH TOKEN abc123;"
+
+        run_command_mock.assert_called_once()
+        assert expected_buffer in run_command_mock.call_args[0][1]
+        assert b"AUTH APIKEY" not in run_command_mock.call_args[0][1]

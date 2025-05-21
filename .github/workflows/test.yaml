@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         # last supported for sqlitecloud, last security maintained, last release
-        python-version: ["3.9", "3.10", "3.12"]
+        python-version: ["3.9", "3.10", "3.13"]
 
     steps:
     - uses: actions/checkout@v4

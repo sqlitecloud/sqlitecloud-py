@@ -3,7 +3,7 @@ from sqlitecloud.client import SQLiteCloudClient
 
 class TestClient:
     def test_parse_connection_string_with_apikey(self):
-        connection_string = "sqlitecloud://user:pass@host.com:8860/dbname?apikey=abc123&timeout=10&compression=true"
+        connection_string = "sqlitecloud://host.com:8860/dbname?apikey=abc123&timeout=10&compression=true"
         client = SQLiteCloudClient(connection_str=connection_string)
 
         assert not client.config.account.username
