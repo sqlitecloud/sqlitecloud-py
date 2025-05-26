@@ -832,8 +832,11 @@ class Cursor(Iterator[Any]):
 
         SCSP protocol does not support named placeholders yet.
         """
-        pattern = r":(\w+)"
+        # Python variable names: start with letter or underscore, followed by letters, digits, or underscores
+        pattern = r":([a-zA-Z_][a-zA-Z0-9_]*)"
         matches = re.findall(pattern, sql)
+        # filter out duplicates
+        matches = list(dict.fromkeys(matches))
 
         params_list = ()
         for match in matches:

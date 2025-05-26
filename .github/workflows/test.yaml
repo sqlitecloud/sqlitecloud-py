@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         # last supported for sqlitecloud, last security maintained, last release
-        python-version: ["3.9", "3.10", "3.12"]
+        python-version: ["3.9", "3.10", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -36,6 +36,7 @@ jobs:
         SQLITE_USER: ${{ secrets.SQLITE_USER }}
         SQLITE_PASSWORD: ${{ secrets.SQLITE_PASSWORD }}
         SQLITE_API_KEY: ${{ secrets.SQLITE_API_KEY }}
+        SQLITE_ACCESS_TOKEN: ${{ secrets.SQLITE_ACCESS_TOKEN }}
         SQLITE_HOST: ${{ vars.SQLITE_HOST }}
         SQLITE_DB: ${{ vars.SQLITE_DB }}
         SQLITE_PORT: ${{ vars.SQLITE_PORT }}

@@ -436,8 +436,9 @@ class Driver:
 
         if config.account.apikey:
             command += f"AUTH APIKEY {config.account.apikey};"
-
-        if config.account.username and config.account.password:
+        elif config.account.token:
+            command += f"AUTH TOKEN {config.account.token};"
+        elif config.account.username and config.account.password:
             option = "HASH" if config.account.password_hashed else "PASSWORD"
             command += f"AUTH USER {config.account.username} {option} {config.account.password};"
 

@@ -99,6 +99,7 @@ class SQLiteCloudAccount:
         dbname: Optional[str] = "",
         port: int = SQLITECLOUD_DEFAULT.PORT.value,
         apikey: Optional[str] = "",
+        token: Optional[str] = "",
     ) -> None:
         # User name is required unless connectionstring is provided
         self.username = username
@@ -106,8 +107,10 @@ class SQLiteCloudAccount:
         self.password = password
         # Password is hashed
         self.password_hashed = False
-        # API key instead of username and password
+        # API key
         self.apikey = apikey
+        # Access Token
+        self.token = token
         # Name of database to open
         self.dbname = dbname
         # Like mynode.sqlitecloud.io
@@ -205,13 +208,19 @@ class SQLiteCloudConfig:
                 elif hasattr(self.account, opt):
                     setattr(self.account, opt, value)
 
-            # apikey or username/password is accepted
-            if not self.account.apikey:
-                self.account.username = (
-                    parse.unquote(params.username) if params.username else ""
-                )
-                self.account.password = (
-                    parse.unquote(params.password) if params.password else ""
+            if params.username and params.password:
+                self.account.username = parse.unquote(params.username)
+                self.account.password = parse.unquote(params.password)
+
+            # either you use an apikey, token or username and password
+            if (
+                bool(self.account.apikey)
+                + bool(self.account.token)
+                + bool(self.account.username or self.account.password)
+                > 1
+            ):
+                raise SQLiteCloudException(
+                    "Choose between apikey, token or username/password"
                 )
 
             path = params.path
@@ -224,9 +233,7 @@ class SQLiteCloudConfig:
                 int(params.port) if params.port else SQLITECLOUD_DEFAULT.PORT.value
             )
         except Exception as e:
-            raise SQLiteCloudException(
-                f"Invalid connection string {connection_string}"
-            ) from e
+            raise SQLiteCloudException("Invalid connection string") from e
 
 
 class SQLiteCloudNumber:

@@ -187,15 +187,28 @@ class TestSQLiteFeatureParity:
     def test_executemany_with_named_param_style(self, connection, request):
         connection = request.getfixturevalue(connection)
 
-        select_query = "INSERT INTO customers (FirstName, Email, LastName) VALUES (:name, :email, :name)"
+        random_str1 = str(uuid.uuid4())
+        random_str2 = str(uuid.uuid4())
+        insert_query = "INSERT INTO customers (FirstName, Email, LastName) VALUES (:name, :email, :name)"
         params = [
-            {"name": "pippo", "email": "pippo@disney.com"},
-            {"name": "pluto", "email": "pluto@disney.com"},
+            {"name": random_str1, "email": "pippo@disney.com"},
+            {"name": random_str2, "email": "pluto@disney.com"},
         ]
 
-        connection.executemany(select_query, params)
+        connection.executemany(insert_query, params)
 
         assert connection.total_changes == 2
+
+        select_query = "SELECT FirstName, Email, LastName FROM customers WHERE FirstName = ? OR FirstName = ?"
+        rows = connection.execute(select_query, (random_str1, random_str2)).fetchmany(2)
+
+        assert len(rows) == 2
+        assert rows[0][0] == random_str1
+        assert rows[0][1] == "pippo@disney.com"
+        assert rows[0][2] == random_str1
+        assert rows[1][0] == random_str2
+        assert rows[1][1] == "pluto@disney.com"
+        assert rows[1][2] == random_str2
 
     def test_insert_result(self, sqlitecloud_dbapi2_connection, sqlite3_connection):
         sqlitecloud_connection = sqlitecloud_dbapi2_connection
@@ -513,7 +526,7 @@ class TestSQLiteFeatureParity:
         ]
 
         try:
-            for (connection, control_connection) in connections:
+            for connection, control_connection in connections:
                 connection.execute(
                     "INSERT INTO albums (Title, ArtistId) VALUES (? , 1);",
                     (f"Test {seed}",),
@@ -543,7 +556,7 @@ class TestSQLiteFeatureParity:
         ]
 
         try:
-            for (connection, control_connection) in connections:
+            for connection, control_connection in connections:
                 cursor1 = connection.execute("BEGIN;")
                 cursor1.execute(
                     "INSERT INTO albums (Title, ArtistId) VALUES (?, 1);",

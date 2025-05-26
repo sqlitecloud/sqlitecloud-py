@@ -42,7 +42,21 @@ class TestClient:
 
     def test_connection_with_apikey(self):
         account = SQLiteCloudAccount()
-        account.username = os.getenv("SQLITE_API_KEY")
+        account.apikey = os.getenv("SQLITE_API_KEY")
+        account.dbname = os.getenv("SQLITE_DB")
+        account.hostname = os.getenv("SQLITE_HOST")
+        account.port = int(os.getenv("SQLITE_PORT"))
+
+        client = SQLiteCloudClient(cloud_account=account)
+        conn = client.open_connection()
+        assert isinstance(conn, SQLiteCloudConnect)
+
+        client.disconnect(conn)
+
+    def test_connection_with_access_token(self):
+        account = SQLiteCloudAccount()
+        account.token = os.getenv("SQLITE_ACCESS_TOKEN")
+        account.dbname = os.getenv("SQLITE_DB")
         account.hostname = os.getenv("SQLITE_HOST")
         account.port = int(os.getenv("SQLITE_PORT"))
 
@@ -200,6 +214,13 @@ class TestClient:
 
         assert SQLITECLOUD_RESULT_TYPE.RESULT_INTEGER == result.tag
         assert 123456 == result.get_result()
+
+    def test_integer_64_bit(self, sqlitecloud_connection):
+        connection, client = sqlitecloud_connection
+        result = client.exec_query("TEST INT64", connection)
+
+        assert SQLITECLOUD_RESULT_TYPE.RESULT_INTEGER == result.tag
+        assert 9223372036854775807 == result.get_result()
 
     def test_float(self, sqlitecloud_connection):
         connection, client = sqlitecloud_connection
