@@ -194,7 +194,7 @@ class TestPubSub:
                 assert content["channel"] == "genres"
                 assert len(content["payload"]) > 0
                 assert content["payload"][0]["Name"] == new_name
-                assert content["payload"][0]["type"] == "UPDATE"
+                assert content["payload"][0]["sqlite_type"] == "UPDATE"
 
                 assert data == ["somedata"]
                 callback_called = True
