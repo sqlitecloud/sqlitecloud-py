@@ -9,12 +9,20 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         # last supported for sqlitecloud, last security maintained, last release
-        python-version: ["3.9", "3.10", "3.13"]
+        include:
+          # Python 3.9 is not available on the Ubuntu 26.04 image behind
+          # ubuntu-latest, so keep it on the latest image that supplies it.
+          - python-version: "3.9"
+            os: ubuntu-24.04
+          - python-version: "3.10"
+            os: ubuntu-latest
+          - python-version: "3.13"
+            os: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
