@@ -41,6 +41,32 @@ def test_connect_with_connection_string_and_parameters(mocker: MockerFixture):
 
 
 class TestCursor:
+    def test_commit_and_rollback_are_noops_in_autocommit_mode(self, mocker):
+        connection = Connection(mocker.Mock())
+        execute = mocker.patch.object(connection._driver, "execute")
+
+        connection.commit()
+        connection.rollback()
+
+        execute.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "method, command", [("commit", "COMMIT;"), ("rollback", "ROLLBACK;")]
+    )
+    def test_explicit_transaction_uses_transaction_control_command(
+        self, mocker, method, command
+    ):
+        connection = Connection(mocker.Mock())
+        cursor = connection.cursor()
+        mocker.patch.object(cursor._driver, "execute_statement")
+        execute = mocker.patch.object(connection._driver, "execute")
+
+        cursor.execute("BEGIN")
+        getattr(connection, method)()
+
+        execute.assert_called_once_with(command, connection.sqlitecloud_connection)
+        assert not connection._in_transaction
+
     def test_description_empty(self, mocker):
         cursor = Cursor(mocker.patch("sqlitecloud.Connection"))
 

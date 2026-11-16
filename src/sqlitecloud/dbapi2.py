@@ -236,6 +236,7 @@ class Connection:
     ) -> None:
         self._driver = Driver()
         self._autocommit = True
+        self._in_transaction = False
         self.sqlitecloud_connection = sqlitecloud_connection
 
         self.row_factory: Optional[Callable[["Cursor", Tuple], object]] = None
@@ -353,6 +354,9 @@ class Connection:
         """
         Commit any pending transactions on database.
         """
+        if not self._in_transaction:
+            return
+
         try:
             self._driver.execute("COMMIT;", self.sqlitecloud_connection)
         except SQLiteCloudOperationalError as e:
@@ -363,6 +367,10 @@ class Connection:
             ):
                 # compliance to sqlite3
                 logging.debug(e)
+            else:
+                raise
+
+        self._in_transaction = False
 
     def rollback(self):
         """
@@ -373,6 +381,9 @@ class Connection:
         See the documentation on the `ON CONFLICT <https://docs.sqlitecloud.io/docs/sqlite/lang_conflict>`
         clause for additional information about the ROLLBACK conflict resolution algorithm.
         """
+        if not self._in_transaction:
+            return
+
         try:
             self._driver.execute("ROLLBACK;", self.sqlitecloud_connection)
         except SQLiteCloudOperationalError as e:
@@ -383,6 +394,23 @@ class Connection:
             ):
                 # compliance to sqlite3
                 logging.debug(e)
+            else:
+                raise
+
+        self._in_transaction = False
+
+    def _update_transaction_state(self, sql: str) -> None:
+        """Track explicit transaction control statements issued through a cursor."""
+        parts = sql.lstrip().split(None, 1)
+        if not parts:
+            return
+
+        command = parts[0].rstrip(";").upper()
+
+        if command == "BEGIN":
+            self._in_transaction = True
+        elif command in {"COMMIT", "END", "ROLLBACK"}:
+            self._in_transaction = False
 
     def cursor(self):
         """
@@ -583,6 +611,8 @@ class Cursor(Iterator[Any]):
         result = self._driver.execute_statement(
             sql, parameters, self.connection.sqlitecloud_connection
         )
+
+        self.connection._update_transaction_state(sql)
 
         self._reset()
 
