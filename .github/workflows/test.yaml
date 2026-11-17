@@ -12,6 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # The integration suite mutates the shared configured cloud database.
+      # Keep matrix entries isolated from one another until each uses its own database.
+      max-parallel: 1
       matrix:
         # last supported for sqlitecloud, last security maintained, last release
         include:
